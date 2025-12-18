@@ -7,14 +7,16 @@ import { Modal } from "../components/ui/modal";
 import Button from "../components/ui/button/Button";
 import { BoxIcon } from "../icons";
 import { clientesApi, cotizacionesApi } from "../services/api";
+import Alert from '../components/ui/alert/Alert';
 
 type TableRow = { id: number; date: string; code: string; client: string; description: string; amount: string };
 
 export default function Cotizaciones() {
   const [query, setQuery] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const todayStr = new Date().toISOString().slice(0, 10);
   const [newRow, setNewRow] = useState({
-    date: "",
+    date: todayStr,
     client: "",
     amount: "",
   });
@@ -105,14 +107,23 @@ export default function Cotizaciones() {
 
   const mapApiToRow = useMemo(
     () =>
-      (item: Record<string, unknown>, index: number): TableRow => ({
-        id: (item.id as number) ?? index + 1,
-        date: (item.date as string) ?? (item.fecha as string) ?? "",
-        code: (item.code as string) ?? (item.codigo as string) ?? "",
-        client: (item.client as string) ?? (item.cliente as string) ?? "",
-        description: (item.description as string) ?? (item.descripcion as string) ?? "",
-        amount: (item.amount as string) ?? (item.monto as string) ?? "",
-      }),
+      (item: Record<string, unknown>, index: number): TableRow => {
+        // Use top-level description if present, otherwise join item descriptions
+        let description = (item.description as string) ?? (item.descripcion as string) ?? "";
+        if (!description && Array.isArray(item.items) && item.items.length > 0) {
+          description = item.items
+            .map((it: any) => it.description || "(Sin descripción)")
+            .join("\n");
+        }
+        return {
+          id: (item.id as number) ?? index + 1,
+          date: (item.date as string) ?? (item.fecha as string) ?? "",
+          code: (item.code as string) ?? (item.codigo as string) ?? "",
+          client: (item.client_name as string) ?? (item.client as string) ?? (item.cliente as string) ?? "",
+          description,
+          amount: (item.total as string) ?? (item.amount as string) ?? (item.monto as string) ?? "",
+        };
+      },
     []
   );
 
@@ -132,25 +143,32 @@ export default function Cotizaciones() {
         console.log("📦 API Response:", response);
         
         // Backend returns: { status: true, data: { total, page, pageSize, data: [...] } }
+        // Or: { status: true, data: [...] } (array directly)
         let items: Array<Record<string, unknown>> = [];
         let totalCount = 0;
         
         if (response.data && typeof response.data === 'object') {
           console.log("response.data exists:", response.data);
-          // If response.data has the paginated structure
-          const respData = response.data as unknown as Record<string, unknown>;
-          if ('data' in respData && Array.isArray(respData.data)) {
-            items = respData.data as Array<Record<string, unknown>>;
-            totalCount = (respData.total as number) || 0;
-            console.log("✅ Found paginated data:", { items: items.length, total: totalCount });
-          } else if (Array.isArray(response.data)) {
-            // If response.data is directly an array
+          console.log("response.data type:", typeof response.data);
+          console.log("Is array?:", Array.isArray(response.data));
+          
+          // If response.data is directly an array
+          if (Array.isArray(response.data)) {
             items = response.data as Array<Record<string, unknown>>;
             totalCount = items.length;
             console.log("✅ response.data is direct array:", { items: items.length });
+          } else {
+            // If response.data has the paginated structure
+            const respData = response.data as unknown as Record<string, unknown>;
+            if ('data' in respData && Array.isArray(respData.data)) {
+              items = respData.data as Array<Record<string, unknown>>;
+              totalCount = (respData.total as number) || items.length;
+              console.log("✅ Found paginated data:", { items: items.length, total: totalCount });
+            }
           }
         }
         
+        console.log("📋 Items before mapping:", items);
         const data: TableRow[] = items.map(mapApiToRow);
         console.log("🔄 Mapped rows:", data);
         if (!ignore) {
@@ -182,14 +200,17 @@ export default function Cotizaciones() {
 
     setItems((prev) => [...prev, { id: Date.now(), description, amount, quantity }]);
     setItemForm({ description: "", amount: "", quantity: "1" });
+
+  console.log(1,items);
+  console.log(2,itemForm);
   };
 
   const handleRemoveItem = (id: number) => {
     setItems((prev) => prev.filter((item) => item.id !== id));
   };
 
-//   alert(debouncedQuery);
-    
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+
   return (
     <div>
       <PageMeta
@@ -223,10 +244,67 @@ export default function Cotizaciones() {
         <h2 className="mb-4 text-lg font-semibold text-gray-800 dark:text-white">Nueva Cotización</h2>
         <form
           className="space-y-4"
-          onSubmit={(e) => {
+          onSubmit={async (e) => {
             e.preventDefault();
-            // TODO: call create API, then refresh list
-            setIsCreateOpen(false);
+            
+            // Build the payload that would be sent to api/cotizaciones
+            const payload = {
+              client_id: selectedCliente?.id ?? null,
+              client_name: selectedCliente?.client_name ?? selectedCliente?.nombre ?? selectedCliente?.name ?? null,
+              date: newRow.date,
+              items: items.map((item) => ({
+                description: item.description,
+                amount: item.amount,
+                quantity: item.quantity,
+                subtotal: item.amount * item.quantity,
+              })),
+              total: totalAmount,
+            };
+            
+            try {
+              console.log("📤 Sending to api/cotizaciones:", payload);
+              const response = await cotizacionesApi.createCotizacion(payload);
+              console.log("✅ Response:", response);
+              
+              const cotizacionId = response.data?.id;
+              // Show success alert
+              setShowSuccessAlert(true);
+              setTimeout(() => setShowSuccessAlert(false), 3500);
+              // Reset form state
+              setNewRow({ date: todayStr, client: "", amount: "" });
+              setItems([]);
+              setSelectedCliente(null);
+              setClienteQuery("");
+              setShowClienteOptions(true);
+              // Close modal and refresh list
+              setIsCreateOpen(false);
+              setPage(1); // This will trigger a refetch
+              // Open PDF in new tab
+              if (cotizacionId) {
+                try {
+                  const pdfResponse = await cotizacionesApi.getCotizacionPdf(cotizacionId);
+                  // Try to get base64 from content or data.content
+                  let base64Data = pdfResponse?.content || pdfResponse?.data?.content || pdfResponse?.data;
+                  if (typeof base64Data === "string" && base64Data.length > 0) {
+                    const byteCharacters = atob(base64Data);
+                    const byteNumbers = new Array(byteCharacters.length);
+                    for (let i = 0; i < byteCharacters.length; i++) {
+                      byteNumbers[i] = byteCharacters.charCodeAt(i);
+                    }
+                    const byteArray = new Uint8Array(byteNumbers);
+                    const blob = new Blob([byteArray], { type: "application/pdf" });
+                    const blobUrl = URL.createObjectURL(blob);
+                    window.open(blobUrl, "_blank");
+                  } else {
+                    console.error("❌ PDF response is not valid base64:", base64Data);
+                  }
+                } catch (pdfErr) {
+                  console.error("❌ Error fetching PDF:", pdfErr);
+                }
+              }
+            } catch (err) {
+              console.error("❌ Error creating cotización:", err);
+            }
           }}
         >
           <div>
@@ -437,6 +515,13 @@ export default function Cotizaciones() {
             </Button>
           </div>
         </form>
+        {showSuccessAlert && (
+          <Alert
+            variant="success"
+            title="Cotización creada"
+            message="La cotización ha sido creada correctamente."
+          />
+        )}
       </Modal>
           <BasicTableOne
             dataType="cotizaciones"

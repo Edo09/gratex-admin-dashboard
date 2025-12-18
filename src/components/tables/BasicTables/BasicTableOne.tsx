@@ -256,7 +256,13 @@ export default function BasicTableOne({
               >
                 <TableCell className="px-5 py-4 sm:px-6 text-start">
                   <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
-                    {row.date}
+                    {(() => {
+                      // Format date to dd/mm/yyyy
+                      if (!row.date) return "";
+                      const d = row.date.split(" ")[0]; // Remove time if present
+                      const [y, m, day] = d.split("-");
+                      return `${day}/${m}/${y}`;
+                    })()}
                   </span>
                 </TableCell>
                 <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
@@ -266,7 +272,12 @@ export default function BasicTableOne({
                   {row.client}
                 </TableCell>
                 <TableCell className="px-4 py-3 text-gray-700 text-start text-theme-sm dark:text-gray-300">
-                  {row.description}
+                  {row.description.split(/\n|\r\n?/).map((desc, idx) => (
+                    <span key={idx}>
+                      {desc}
+                      <br />
+                    </span>
+                  ))}
                 </TableCell>
                 <TableCell className="px-4 py-3 text-gray-800 text-theme-sm dark:text-gray-200">
                   {row.amount}

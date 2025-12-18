@@ -1,6 +1,6 @@
 // API Service with token management
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:80/testAPI/index.php/";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 interface RequestOptions extends RequestInit {
   skipAuth?: boolean;
@@ -48,12 +48,18 @@ export interface Factura {
 
 export interface Cotizacion {
   id: number;
+  code: string;
   date: string;
-  code?: string;
-  client: string;
-  description?: string;
-  amount: string | number;
-  items?: Array<{ description: string; amount: number; quantity: number }>;
+  client_id: number;
+  client_name: string;
+  total: string;
+  items?: Array<{ 
+    id: number; 
+    description: string; 
+    amount: string; 
+    quantity: number; 
+    subtotal: string;
+  }>;
 }
 
 class ApiService {
@@ -307,11 +313,13 @@ export const cotizacionesApi = {
 
   // Create a new cotizacion
   createCotizacion: (data: { 
-    date: string; 
-    client: string;
-    items: Array<{ description: string; amount: number; quantity: number }>;
+    client_id: number | null;
+    client_name: string | null;
+    date: string;
+    items: Array<{ description: string; amount: number; quantity: number; subtotal: number }>;
+    total: number;
   }) =>
-    apiClient.post<Cotizacion>("/api/cotizaciones", data),
+    apiClient.post<{ id: number; code: string; message: string }>("/api/cotizaciones", data),
 
   // Get cotizacion by ID
   getCotizacionById: (id: number) =>
