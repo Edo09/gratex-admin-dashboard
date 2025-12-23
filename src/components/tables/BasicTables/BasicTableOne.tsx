@@ -14,7 +14,7 @@ type DataType = "cotizaciones" | "facturas";
 interface BasicTableOneProps {
   query?: string;
   dataType?: DataType;
-  rows?: RecordRow[];
+  rows: RecordRow[];
   loading?: boolean;
   error?: string;
   pagination?: "client" | "server";
@@ -27,59 +27,17 @@ interface BasicTableOneProps {
 interface RecordRow {
   id: number;
   date: string;
-  code: string;
-  client: string;
+  code?: string;
+  client?: string;
   description: string;
   amount: string;
+  no_factura?: string;
+  client_name?: string;
+  total: string;
+  ncf?: string;
 }
 
-const tableData: RecordRow[] = [
-  {
-    id: 1,
-    date: "11/12/25",
-    code: "FEK396",
-    client: "Jessica Ruiz",
-    description:
-      "Set de 20 Bloques \"Contrato de Garantía\" Material: Papel Bond 20 xerográfico Impresión: Dos colores tiro/retiro Tipo de numeración: Electrónica digital Tamaño final: 8.5x14 pulgadas",
-    amount: "17,110.00",
-  },
-  {
-    id: 2,
-    date: "10/12/25",
-    code: "FEL102",
-    client: "Comercial López",
-    description:
-      "Impresión de volantes a color, tamaño carta, papel couché 150g, tiraje 5,000 unidades",
-    amount: "8,950.00",
-  },
-  {
-    id: 3,
-    date: "09/12/25",
-    code: "FEA785",
-    client: "Grupo Ávila",
-    description:
-      "Carpetas corporativas, papel couché 300g, laminado mate, impresión a full color, 1,000 unidades",
-    amount: "22,400.00",
-  },
-  {
-    id: 4,
-    date: "08/12/25",
-    code: "FEP233",
-    client: "María Torres",
-    description:
-      "Talones de pago numerados, block de 50, papel bond 75g, tinta negra, 30 juegos",
-    amount: "3,250.00",
-  },
-  {
-    id: 5,
-    date: "07/12/25",
-    code: "FEX919",
-    client: "Servicios Delta",
-    description:
-      "Etiquetas adhesivas personalizadas, 5x5 cm, impresión a color, rollos de 1,000 unidades (3 rollos)",
-    amount: "5,780.00",
-  },
-];
+
 
 export default function BasicTableOne({
   query = "",
@@ -136,7 +94,7 @@ export default function BasicTableOne({
       alert("Error al abrir el PDF");
     }
   };
-  const source = rows && rows.length ? rows : tableData;
+  const source = rows && rows.length ? rows : [];
   const filtered = useMemo(() => {
     if (pagination === "server") return source;
     const q = query.trim().toLowerCase();
@@ -196,30 +154,67 @@ export default function BasicTableOne({
               >
                 Fecha
               </TableCell>
-              <TableCell
-                isHeader
-                className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
-              >
-                Codigo
-              </TableCell>
-              <TableCell
-                isHeader
-                className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
-              >
-                Cliente
-              </TableCell>
-              <TableCell
-                isHeader
-                className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
-              >
-                Descripcion
-              </TableCell>
-              <TableCell
-                isHeader
-                className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
-              >
-                Monto
-              </TableCell>
+              {dataType === "facturas" ? (
+                <>
+                  <TableCell
+                    isHeader
+                    className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                  >
+                    No. Factura
+                  </TableCell>
+                  <TableCell
+                    isHeader
+                    className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                  >
+                    Cliente
+                  </TableCell>
+                  <TableCell
+                    isHeader
+                    className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                  >
+                    NCF
+                  </TableCell>
+                  <TableCell
+                    isHeader
+                    className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                  >
+                    Descripcion
+                  </TableCell>
+                  <TableCell
+                    isHeader
+                    className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                  >
+                    Monto
+                  </TableCell>
+                </>
+              ) : (
+                <>
+                  <TableCell
+                    isHeader
+                    className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                  >
+                    Codigo
+                  </TableCell>
+                  <TableCell
+                    isHeader
+                    className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                  >
+                    Cliente
+                  </TableCell>
+                  <TableCell
+                    isHeader
+                    className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                  >
+                    Descripcion
+                  </TableCell>
+                  <TableCell
+                    isHeader
+                    className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                  >
+                    Monto
+                  </TableCell>
+                </>
+              )}
             </TableRow>
           </TableHeader>
 
@@ -265,23 +260,50 @@ export default function BasicTableOne({
                     })()}
                   </span>
                 </TableCell>
-                <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                  {row.code}
-                </TableCell>
-                <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                  {row.client}
-                </TableCell>
-                <TableCell className="px-4 py-3 text-gray-700 text-start text-theme-sm dark:text-gray-300">
-                  {row.description.split(/\n|\r\n?/).map((desc, idx) => (
-                    <span key={idx}>
-                      {desc}
-                      <br />
-                    </span>
-                  ))}
-                </TableCell>
-                <TableCell className="px-4 py-3 text-gray-800 text-theme-sm dark:text-gray-200">
-                  {row.amount}
-                </TableCell>
+                {dataType === "facturas" ? (
+                  <>
+                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                      {row.no_factura}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                      {row.client_name}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                      {row.ncf}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-700 text-start text-theme-sm dark:text-gray-300">
+                      {row.description.split(/\n|\r\n?/).map((desc, idx) => (
+                        <span key={idx}>
+                          {desc}
+                          <br />
+                        </span>
+                      ))}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-800 text-theme-sm dark:text-gray-200">
+                      {row.amount}
+                    </TableCell>
+                  </>
+                ) : (
+                  <>
+                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                      {row.code}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                      {row.client}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-700 text-start text-theme-sm dark:text-gray-300">
+                      {row.description.split(/\n|\r\n?/).map((desc, idx) => (
+                        <span key={idx}>
+                          {desc}
+                          <br />
+                        </span>
+                      ))}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-800 text-theme-sm dark:text-gray-200">
+                      {row.amount}
+                    </TableCell>
+                  </>
+                )}
               </TableRow>
             ))}
           </TableBody>

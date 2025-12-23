@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
 import BasicTableOne from "../components/tables/BasicTables/BasicTableOne";
@@ -9,9 +11,14 @@ import { BoxIcon } from "../icons";
 import { facturasApi, clientesApi } from "../services/api";
 
 export default function Facturas() {
+  const queryClient = useQueryClient();
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [query, setQuery] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [creationType, setCreationType] = useState<"client" | "cotizacion" | null>(null);
+  // Local state for create loading and error
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
   
   type Cliente = {
     id: number;
@@ -51,17 +58,23 @@ export default function Facturas() {
     return Math.floor(Math.random() * 900000000 + 100000000).toString();
   };
   
-  type TableRow = { id: number; date: string; code: string; client: string; description: string; amount: string };
-  const [rows, setRows] = useState<TableRow[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | undefined>(undefined);
+  type TableRow = {
+    id: number;
+    no_factura: string;
+    date: string;
+    client_name: string;
+    total: string;
+    ncf: string;
+    description: string;
+    amount: string;
+  };
+
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
   const debouncedQuery = useDebounce(query, 400);
 
   useEffect(() => {
-    // Reset to first page when query changes
     setPage(1);
   }, [debouncedQuery]);
 
@@ -69,11 +82,23 @@ export default function Facturas() {
     () =>
       (item: Record<string, unknown>, index: number): TableRow => ({
         id: (item.id as number) ?? index + 1,
-        date: (item.date as string) ?? (item.fecha as string) ?? "",
-        code: (item.code as string) ?? (item.codigo as string) ?? "",
-        client: (item.client as string) ?? (item.cliente as string) ?? "",
-        description: (item.description as string) ?? (item.descripcion as string) ?? "",
-        amount: (item.amount as string) ?? (item.monto as string) ?? "",
+        no_factura: (item.no_factura as string) ?? '',
+        date: (item.date as string) ?? '',
+        client_name: (item.client_name as string) ?? '',
+        total: (item.total as string) ?? '',
+        ncf: (item.NCF as string) ?? '',
+        description: (item.description as string) ?? '',
+        amount: (
+          typeof item.amount === "number"
+            ? item.amount.toFixed(2)
+            : typeof item.amount === "string"
+            ? item.amount
+            : typeof item.total === "number"
+            ? item.total.toFixed(2)
+            : typeof item.total === "string"
+            ? item.total
+            : ""
+        ),
       }),
     []
   );
@@ -101,59 +126,47 @@ export default function Facturas() {
     };
   }, [isCreateModalOpen, creationType]);
 
-  useEffect(() => {
-    let ignore = false;
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(undefined);
-        console.log("📥 Fetching facturas with params:", { page, pageSize, query: debouncedQuery });
-        const response = await facturasApi.getFacturas({
-          query: debouncedQuery,
-          page,
-          pageSize,
-        });
-        
-        console.log("📦 API Response:", response);
-        
-        // Backend returns: { status: true, data: { total, page, pageSize, data: [...] } }
-        let items: Array<Record<string, unknown>> = [];
-        let totalCount = 0;
-        
-        if (response.data && typeof response.data === 'object') {
-          console.log("response.data exists:", response.data);
-          // If response.data has the paginated structure
-          const respData = response.data as unknown as Record<string, unknown>;
-          if ('data' in respData && Array.isArray(respData.data)) {
-            items = respData.data as Array<Record<string, unknown>>;
-            totalCount = (respData.total as number) || 0;
-            console.log("✅ Found paginated data:", { items: items.length, total: totalCount });
-          } else if (Array.isArray(response.data)) {
-            // If response.data is directly an array
-            items = response.data as Array<Record<string, unknown>>;
-            totalCount = items.length;
-            console.log("✅ response.data is direct array:", { items: items.length });
-          }
-        }
 
-        const data: TableRow[] = items.map(mapApiToRow);
-        if (!ignore) {
-          setRows(data);
-          setTotal(totalCount);
-          console.log("✅ State updated:", { rows: data.length, total: totalCount });
-        }
-      } catch (e: any) {
-        console.error("❌ Error fetching facturas:", e);
-        if (!ignore) setError(e?.message || "Error al cargar datos");
-      } finally {
-        if (!ignore) setLoading(false);
+  const {
+    data: facturasData,
+    isLoading: loading,
+    error,
+  } = useQuery({
+    queryKey: ['facturas', debouncedQuery, page, pageSize],
+    queryFn: () => facturasApi.getFacturas({ query: debouncedQuery, page, pageSize }),
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (previousData) => previousData,
+  });
+
+  // Parse data and total from API response
+  let rows: TableRow[] = [];
+  useEffect(() => {
+    if (facturasData && facturasData.data) {
+      if (Array.isArray(facturasData.data)) {
+        setTotal(facturasData.data.length);
+      } else if (
+        typeof facturasData.data === 'object' &&
+        'data' in facturasData.data &&
+        Array.isArray((facturasData.data as any).data)
+      ) {
+        setTotal((facturasData.data as any).total || (facturasData.data as any).data.length);
       }
-    };
-    fetchData();
-    return () => {
-      ignore = true;
-    };
-  }, [debouncedQuery, page, pageSize, mapApiToRow]);
+    }
+  }, [facturasData]);
+
+  if (facturasData && facturasData.data) {
+    if (Array.isArray(facturasData.data)) {
+      rows = facturasData.data.map(mapApiToRow);
+    } else if (
+      typeof facturasData.data === 'object' &&
+      'data' in facturasData.data &&
+      Array.isArray((facturasData.data as any).data)
+    ) {
+      rows = (facturasData.data as any).data.map(mapApiToRow);
+    }
+  }
 
   const handleAddItem = () => {
     const description = itemForm.description.trim();
@@ -248,11 +261,34 @@ export default function Facturas() {
         ) : creationType === "client" ? (
           <form
             className="space-y-4"
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
-              // TODO: call create API, then refresh list
-              setIsCreateModalOpen(false);
-              setCreationType(null);
+              setCreateError(null);
+              if (!selectedCliente || !facturaData.date || items.length === 0) return;
+              try {
+                setCreateLoading(true);
+                await facturasApi.createFactura({
+                  date: facturaData.date,
+                  client: facturaData.client,
+                  client_id: selectedCliente?.id ?? undefined,
+                  items: items.map(({ description, amount, quantity }) => ({ description, amount, quantity })),
+                  ncf: facturaData.ncf || undefined,
+                });
+                setIsCreateModalOpen(false);
+                setCreationType(null);
+                setSelectedCliente(null);
+                setFacturaData({ date: getTodayDate(), client: "", ncf: "", rnc: "" });
+                setItems([]);
+                setItemForm({ description: "", amount: "", quantity: "1" });
+                setShowSuccessAlert(true);
+                setTimeout(() => setShowSuccessAlert(false), 3500);
+                // Invalidate and refetch facturas table
+                await queryClient.invalidateQueries({ queryKey: ['facturas'] });
+              } catch (err) {
+                setCreateError("Error al guardar la factura");
+              } finally {
+                setCreateLoading(false);
+              }
             }}
           >
             <div>
@@ -535,22 +571,27 @@ export default function Facturas() {
         )}
       </Modal>
 
-          <BasicTableOne
-            dataType="facturas"
-            query={debouncedQuery}
-            rows={rows}
-            loading={loading}
-            error={error}
-            pagination="server"
-            page={page}
-            pageSize={pageSize}
-            total={total}
-            onPageChange={setPage}
-            onPageSizeChange={(s) => {
-              setPageSize(s);
-              setPage(1);
-            }}
-          />
+      {showSuccessAlert && (
+        <div className="mb-4 p-3 rounded bg-green-100 text-green-800 border border-green-200 text-sm">
+          La factura ha sido creada correctamente.
+        </div>
+      )}
+      <BasicTableOne
+        dataType="facturas"
+        query={debouncedQuery}
+        rows={rows}
+        loading={loading}
+        error={error instanceof Error ? error.message : error as unknown as string}
+        pagination="server"
+        page={page}
+        pageSize={pageSize}
+        total={total}
+        onPageChange={setPage}
+        onPageSizeChange={(s) => {
+          setPageSize(s);
+          setPage(1);
+        }}
+      />
 
     </div>
   );

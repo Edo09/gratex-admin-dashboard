@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
 import BasicTableOne from "../components/tables/BasicTables/BasicTableOne";
@@ -9,9 +11,10 @@ import { BoxIcon } from "../icons";
 import { clientesApi, cotizacionesApi } from "../services/api";
 import Alert from '../components/ui/alert/Alert';
 
-type TableRow = { id: number; date: string; code: string; client: string; description: string; amount: string };
+type TableRow = { id: number; date: string; code: string; client: string; description: string; amount: string; total: string };
 
 export default function Cotizaciones() {
+  const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const todayStr = new Date().toISOString().slice(0, 10);
@@ -31,12 +34,36 @@ export default function Cotizaciones() {
     telefono?: string;
     direccion?: string;
   };
-  const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [loadingClientes, setLoadingClientes] = useState(false);
-  const [errorClientes, setErrorClientes] = useState<string | undefined>(undefined);
   const [clienteQuery, setClienteQuery] = useState("");
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   const [showClienteOptions, setShowClienteOptions] = useState(true);
+
+  // Fetch clients using TanStack Query
+  const {
+    data: clientesData,
+    isLoading: loadingClientes,
+    error: errorClientes,
+  } = useQuery({
+    queryKey: ['clientes', isCreateOpen],
+    queryFn: async () => {
+      if (!isCreateOpen) return [];
+      const response = await clientesApi.getClientes();
+      let items: Cliente[] = [];
+      if (response.data) {
+        if (Array.isArray(response.data)) {
+          items = response.data;
+        } else if (response.data.items && Array.isArray(response.data.items)) {
+          items = response.data.items;
+        }
+      }
+      return items;
+    },
+    enabled: isCreateOpen,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+  // const [clienteQuery, setClienteQuery] = useState("");
+  // const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
+  // const [showClienteOptions, setShowClienteOptions] = useState(true);
   type LineItem = { id: number; description: string; amount: number; quantity: number };
   const [items, setItems] = useState<LineItem[]>([]);
   const [itemForm, setItemForm] = useState({ description: "", amount: "", quantity: "1" });
@@ -46,150 +73,75 @@ export default function Cotizaciones() {
     setNewRow((prev) => ({ ...prev, amount: totalAmount ? totalAmount.toFixed(2) : "" }));
   }, [totalAmount]);
 
-  // Load clients when opening the create modal
-  useEffect(() => {
-    let ignore = false;
-    const fetchClientes = async () => {
-      try {
-        setLoadingClientes(true);
-        setErrorClientes(undefined);
-        console.log("🔄 Fetching clientes...");
-        const response = await clientesApi.getClientes();
-        console.log("📥 API Response:", response);
-        
-        let items: Cliente[] = [];
-        if (response.data) {
-          if (Array.isArray(response.data)) {
-            items = response.data;
-          } else if (response.data.items && Array.isArray(response.data.items)) {
-            items = response.data.items;
-          }
-        }
-        console.log("✅ Parsed items:", items);
+  // Use clientesData from TanStack Query
 
-        if (!ignore) {
-          setClientes(items as Cliente[]);
-          console.log("✅ State updated with", items.length, "clientes");
-        }
-      } catch (e: unknown) {
-        console.error("❌ Error fetching clientes:", e);
-        const msg = e instanceof Error ? e.message : "Error al cargar clientes";
-        if (!ignore) setErrorClientes(msg);
-      } finally {
-        if (!ignore) setLoadingClientes(false);
-      }
-    };
-    
-    if (isCreateOpen) {
-      fetchClientes();
-    }
-    
-    return () => {
-      ignore = true;
-    };
-  }, [isCreateOpen]);
-
-  const [rows, setRows] = useState<TableRow[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | undefined>(undefined);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [total, setTotal] = useState(0);
-
-  console.log("🎯 Current page state:", page, "rows count:", rows.length, "total:", total);
-
   const debouncedQuery = useDebounce(query, 400);
 
   useEffect(() => {
-    // Reset to first page when query changes
     setPage(1);
   }, [debouncedQuery]);
 
   const mapApiToRow = useMemo(
     () =>
       (item: Record<string, unknown>, index: number): TableRow => {
-        // Use top-level description if present, otherwise join item descriptions
         let description = (item.description as string) ?? (item.descripcion as string) ?? "";
         if (!description && Array.isArray(item.items) && item.items.length > 0) {
           description = item.items
             .map((it: any) => it.description || "(Sin descripción)")
             .join("\n");
         }
+        const totalValue = (item.total as string) ?? (item.amount as string) ?? (item.monto as string) ?? "";
         return {
           id: (item.id as number) ?? index + 1,
           date: (item.date as string) ?? (item.fecha as string) ?? "",
           code: (item.code as string) ?? (item.codigo as string) ?? "",
           client: (item.client_name as string) ?? (item.client as string) ?? (item.cliente as string) ?? "",
           description,
-          amount: (item.total as string) ?? (item.amount as string) ?? (item.monto as string) ?? "",
+          amount: totalValue,
+          total: totalValue,
         };
       },
     []
   );
 
-  useEffect(() => {
-    let ignore = false;
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(undefined);
-        console.log("📥 Fetching cotizaciones with params:", { page, pageSize, query: debouncedQuery });
-        const response = await cotizacionesApi.getCotizaciones({
-          query: debouncedQuery,
-          page,
-          pageSize,
-        });
-        
-        console.log("📦 API Response:", response);
-        
-        // Backend returns: { status: true, data: { total, page, pageSize, data: [...] } }
-        // Or: { status: true, data: [...] } (array directly)
-        let items: Array<Record<string, unknown>> = [];
-        let totalCount = 0;
-        
-        if (response.data && typeof response.data === 'object') {
-          console.log("response.data exists:", response.data);
-          console.log("response.data type:", typeof response.data);
-          console.log("Is array?:", Array.isArray(response.data));
-          
-          // If response.data is directly an array
-          if (Array.isArray(response.data)) {
-            items = response.data as Array<Record<string, unknown>>;
-            totalCount = items.length;
-            console.log("✅ response.data is direct array:", { items: items.length });
-          } else {
-            // If response.data has the paginated structure
-            const respData = response.data as unknown as Record<string, unknown>;
-            if ('data' in respData && Array.isArray(respData.data)) {
-              items = respData.data as Array<Record<string, unknown>>;
-              totalCount = (respData.total as number) || items.length;
-              console.log("✅ Found paginated data:", { items: items.length, total: totalCount });
-            }
-          }
-        }
-        
-        console.log("📋 Items before mapping:", items);
-        const data: TableRow[] = items.map(mapApiToRow);
-        console.log("🔄 Mapped rows:", data);
-        if (!ignore) {
-          console.log("💾 Setting rows with data:", data);
-          setRows(data);
-          console.log("💾 Setting total:", totalCount);
-          setTotal(totalCount);
-        }
-      } catch (err: unknown) {
-        console.error("❌ Error:", err);
-        const error_msg = err instanceof Error ? err.message : "Error al cargar datos";
-        if (!ignore) setError(error_msg);
-      } finally {
-        if (!ignore) setLoading(false);
-      }
-    };
-    fetchData();
-    return () => {
-      ignore = true;
-    };
-  }, [debouncedQuery, page, pageSize, mapApiToRow]);
+const {
+  data: cotizacionesData,
+  isLoading: loading,
+  error,
+} = useQuery({
+  queryKey: ['cotizaciones', debouncedQuery ?? '', page, pageSize],
+  queryFn: () =>
+    cotizacionesApi.getCotizaciones({
+      query: debouncedQuery,
+      page,
+      pageSize,
+    }),
+  refetchOnMount: false,
+  refetchOnWindowFocus: false,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+  placeholderData: (previousData) => previousData,
+});
+
+
+
+  // Parse data and total from API response
+  let rows: TableRow[] = [];
+  let total = 0;
+  if (cotizacionesData && cotizacionesData.data) {
+    if (Array.isArray(cotizacionesData.data)) {
+      rows = cotizacionesData.data.map(mapApiToRow);
+      total = rows.length;
+    } else if (
+      typeof cotizacionesData.data === 'object' &&
+      'data' in cotizacionesData.data &&
+      Array.isArray((cotizacionesData.data as any).data)
+    ) {
+      rows = (cotizacionesData.data as any).data.map(mapApiToRow);
+      total = (cotizacionesData.data as any).total || rows.length;
+    }
+  }
 
   const handleAddItem = () => {
     const description = itemForm.description.trim();
@@ -246,7 +198,6 @@ export default function Cotizaciones() {
           className="space-y-4"
           onSubmit={async (e) => {
             e.preventDefault();
-            
             // Build the payload that would be sent to api/cotizaciones
             const payload = {
               client_id: selectedCliente?.id ?? null,
@@ -260,30 +211,24 @@ export default function Cotizaciones() {
               })),
               total: totalAmount,
             };
-            
             try {
-              console.log("📤 Sending to api/cotizaciones:", payload);
               const response = await cotizacionesApi.createCotizacion(payload);
-              console.log("✅ Response:", response);
-              
               const cotizacionId = response.data?.id;
-              // Show success alert
               setShowSuccessAlert(true);
               setTimeout(() => setShowSuccessAlert(false), 3500);
-              // Reset form state
               setNewRow({ date: todayStr, client: "", amount: "" });
               setItems([]);
               setSelectedCliente(null);
               setClienteQuery("");
               setShowClienteOptions(true);
-              // Close modal and refresh list
               setIsCreateOpen(false);
-              setPage(1); // This will trigger a refetch
+              setPage(1);
+              // Invalidate and refetch cotizaciones table
+              await queryClient.invalidateQueries({ queryKey: ['cotizaciones'] });
               // Open PDF in new tab
               if (cotizacionId) {
                 try {
                   const pdfResponse = await cotizacionesApi.getCotizacionPdf(cotizacionId);
-                  // Try to get base64 from content or data.content
                   let base64Data = pdfResponse?.content || pdfResponse?.data?.content || pdfResponse?.data;
                   if (typeof base64Data === "string" && base64Data.length > 0) {
                     const byteCharacters = atob(base64Data);
@@ -324,11 +269,13 @@ export default function Cotizaciones() {
                       <div className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">Cargando clientes...</div>
                     )}
                     {!loadingClientes && errorClientes && (
-                      <div className="px-3 py-2 text-sm text-red-600 dark:text-red-400">{errorClientes}</div>
+                      <div className="px-3 py-2 text-sm text-red-600 dark:text-red-400">
+                        {errorClientes instanceof Error ? errorClientes.message : String(errorClientes)}
+                      </div>
                     )}
                     {!loadingClientes && !errorClientes && (
                       <ul className="divide-y divide-gray-100 dark:divide-white/[0.06]">
-                        {clientes
+                        {(clientesData as Cliente[] ?? [])
                           .filter((c) => {
                             const q = clienteQuery.trim().toLowerCase();
                             if (!q) return true;
@@ -509,6 +456,55 @@ export default function Cotizaciones() {
             <Button
               size="sm"
               variant="primary"
+              type="button"
+              onClick={async () => {
+                // Build the payload as in the submit handler
+                const payload = {
+                  client_id: selectedCliente?.id ?? null,
+                  client_name: selectedCliente?.client_name ?? selectedCliente?.nombre ?? selectedCliente?.name ?? null,
+                  date: newRow.date,
+                  items: items.map((item) => ({
+                    description: item.description,
+                    amount: item.amount,
+                    quantity: item.quantity,
+                    subtotal: item.amount * item.quantity,
+                  })),
+                  total: totalAmount,
+                };
+                try {
+                  // Use a preview endpoint if available, otherwise use the create endpoint but do not persist
+                  const result = await (cotizacionesApi.previewCotizacion
+                    ? cotizacionesApi.previewCotizacion(payload)
+                    : cotizacionesApi.createCotizacion({ ...payload, preview: true }));
+                  // Expect the preview response to be a base64 PDF string (or inside .data)
+                  const base64Data = (result.data && typeof result.data === 'object')
+                    ? ('pdf' in result.data
+                        ? result.data.pdf
+                        : ('content' in result.data ? result.data.content : ''))
+                    : (typeof result.data === 'string' ? result.data : '');
+                  if (base64Data && base64Data.length > 0) {
+                    const byteCharacters = atob(base64Data);
+                    const byteNumbers = new Array(byteCharacters.length);
+                    for (let i = 0; i < byteCharacters.length; i++) {
+                      byteNumbers[i] = byteCharacters.charCodeAt(i);
+                    }
+                    const byteArray = new Uint8Array(byteNumbers);
+                    const blob = new Blob([byteArray], { type: "application/pdf" });
+                    const blobUrl = URL.createObjectURL(blob);
+                    window.open(blobUrl, "_blank");
+                  } else {
+                    console.error("❌ Preview response did not contain a valid PDF base64 string.", result);
+                  }
+                } catch (err) {
+                  console.error("❌ Error previewing cotización:", err);
+                }
+              }}
+            >
+              Ver
+            </Button>
+            <Button
+              size="sm"
+              variant="primary"
               type="submit"
             >
               Guardar
@@ -523,26 +519,24 @@ export default function Cotizaciones() {
           />
         )}
       </Modal>
-          <BasicTableOne
-            dataType="cotizaciones"
-            query={debouncedQuery}
-            rows={rows}
-            loading={loading}
-            error={error}
-            pagination="server"
-            page={page}
-            pageSize={pageSize}
-            total={total}
-            onPageChange={(newPage) => {
-              console.log("📄 Page changed to:", newPage);
-              setPage(newPage);
-            }}
-            onPageSizeChange={(s) => {
-              console.log("📏 Page size changed to:", s);
-              setPageSize(s);
-              setPage(1);
-            }}
-          />
+      <BasicTableOne
+        dataType="cotizaciones"
+        query={debouncedQuery}
+        rows={rows}
+        loading={loading}
+        error={error instanceof Error ? error.message : error as unknown as string}
+        pagination="server"
+        page={page}
+        pageSize={pageSize}
+        total={total}
+        onPageChange={(newPage) => {
+          setPage(newPage);
+        }}
+        onPageSizeChange={(s) => {
+          setPageSize(s);
+          setPage(1);
+        }}
+      />
 
     </div>
   );
