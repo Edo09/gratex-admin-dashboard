@@ -12,6 +12,7 @@ interface ApiResponse<T> {
   data?: T;
   message?: string;
   error?: string;
+  pdf?: any;
 }
 
 // Domain-specific types
@@ -242,8 +243,9 @@ export const facturasApi = {
   createFactura: (data: { 
     date: string; 
     client: string;
+    client_id?: number;
     items: Array<{ description: string; amount: number; quantity: number }>;
-    rnc?: string;
+    ncf?: string;
   }) =>
     apiClient.post<Factura>("/api/facturas", data),
 
@@ -311,6 +313,20 @@ export const cotizacionesApi = {
     }).then(res => res.json());
   },
 
+
+  // Preview a cotizacion (does not persist, just returns a preview id)
+  previewCotizacion: (data: { 
+    client_id: number | null;
+    client_name: string | null;
+    date: string;
+    items: Array<{ description: string; amount: number; quantity: number; subtotal: number }>;
+    total: number;
+  }) =>
+    apiClient.post<{
+      pdf: any;
+      content: any; id: number; code?: string; message?: string 
+}>('/api/cotizaciones/preview', data),
+
   // Create a new cotizacion
   createCotizacion: (data: { 
     client_id: number | null;
@@ -318,8 +334,9 @@ export const cotizacionesApi = {
     date: string;
     items: Array<{ description: string; amount: number; quantity: number; subtotal: number }>;
     total: number;
+    preview?: boolean;
   }) =>
-    apiClient.post<{ id: number; code: string; message: string }>("/api/cotizaciones", data),
+    apiClient.post<{ id: number; code: string; message: string }>('/api/cotizaciones', data),
 
   // Get cotizacion by ID
   getCotizacionById: (id: number) =>
