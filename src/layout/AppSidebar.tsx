@@ -41,6 +41,11 @@ const navItems: NavItem[] = [
     name: "Clientes",
     path: "/clientes",
   },
+      {
+    path:"/rnc",
+    icon: <ListIcon />,
+    name: "RNC",
+  },
 
 
 ];
