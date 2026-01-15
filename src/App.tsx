@@ -20,9 +20,11 @@ import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
 import Cotizaciones from "./pages/Cotizaciones";
 import Facturas from "./pages/Facturas";
-import Rnc from "./pages/Rnc";
+// import Rnc from "./pages/Rnc"; // Removed
+import Ncf from "./pages/Ncf";
 
 import Clientes from "./pages/Clientes";
+import Configuracion from "./pages/Configuracion"; // Changed import
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { PublicRoute } from "./components/auth/PublicRoute";
 
@@ -55,7 +57,8 @@ export default function App() {
             <Route path="/facturas" element={<Facturas />} />
 
             <Route path="/clientes" element={<Clientes />} />
-            <Route path="/rnc" element={<Rnc />} />
+            <Route path="/ncf" element={<Ncf />} />
+            <Route path="/configuracion" element={<Configuracion />} />
 
 
             <Route path="/blank" element={<Blank />} />

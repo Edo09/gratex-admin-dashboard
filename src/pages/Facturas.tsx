@@ -9,8 +9,10 @@ import Button from "../components/ui/button/Button";
 import { Modal } from "../components/ui/modal";
 import { BoxIcon } from "../icons";
 import { facturasApi, clientesApi } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 export default function Facturas() {
+  const { token } = useAuth();
   const queryClient = useQueryClient();
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [query, setQuery] = useState("");
@@ -79,7 +81,7 @@ export default function Facturas() {
       }));
     }
   }, [selectedCotizacion]);
-  
+
   type Cliente = {
     id: number;
     email?: string;
@@ -93,14 +95,14 @@ export default function Facturas() {
     rnc?: string;
   };
   type LineItem = { id: number; description: string; amount: number; quantity: number };
-  
+
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loadingClientes, setLoadingClientes] = useState(false);
   const [errorClientes, setErrorClientes] = useState<string | undefined>(undefined);
   const [clienteQuery, setClienteQuery] = useState("");
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   const [showClienteOptions, setShowClienteOptions] = useState(true);
-  
+
   const [items, setItems] = useState<LineItem[]>([]);
   const [itemForm, setItemForm] = useState({ description: "", amount: "", quantity: "1" });
   useEffect(() => {
@@ -109,21 +111,40 @@ export default function Facturas() {
   useEffect(() => {
     console.log('itemForm state changed:', itemForm);
   }, [itemForm]);
-  
+
   const getTodayDate = () => {
     const today = new Date();
     return today.toISOString().split('T')[0];
   };
-  
+
   const [facturaData, setFacturaData] = useState({ date: getTodayDate(), client: "", ncf: "", rnc: "" });
-  
+
   const totalAmount = useMemo(() => items.reduce((sum, item) => sum + item.amount * item.quantity, 0), [items]);
-  
-  const generateNCF = () => {
-    // Generate random 9-digit NCF (in real app, would come from API)
-    return Math.floor(Math.random() * 900000000 + 100000000).toString();
+
+  // const generateNCF = () => {
+  //   // Generate random 9-digit NCF (in real app, would come from API)
+  //   return Math.floor(Math.random() * 900000000 + 100000000).toString();
+  // };
+
+  // Fetch next NCF from API
+  const fetchNextNCF = async () => {
+    try {
+      // const { token } = JSON.parse(localStorage.getItem('auth_storage') || '{}')?.state || {};
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/ncf/next`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (data.status && data.data) {
+        return data.data; // e.g. B0100000005
+      }
+    } catch (error) {
+      console.error("Error fetching next NCF:", error);
+    }
+    return "";
   };
-  
+
   type TableRow = {
     id: number;
     no_factura: string;
@@ -158,12 +179,12 @@ export default function Facturas() {
           typeof item.amount === "number"
             ? item.amount.toFixed(2)
             : typeof item.amount === "string"
-            ? item.amount
-            : typeof item.total === "number"
-            ? item.total.toFixed(2)
-            : typeof item.total === "string"
-            ? item.total
-            : ""
+              ? item.amount
+              : typeof item.total === "number"
+                ? item.total.toFixed(2)
+                : typeof item.total === "string"
+                  ? item.total
+                  : ""
         ),
       }),
     []
@@ -195,12 +216,12 @@ export default function Facturas() {
         const response = await cotizacionesApi.getCotizaciones();
         const items = response.data
           ? (Array.isArray(response.data)
-              ? response.data
-              : Array.isArray(response.data.items)
-                ? response.data.items
-                : Array.isArray(response.data.data)
-                  ? response.data.data
-                  : [])
+            ? response.data
+            : Array.isArray(response.data.items)
+              ? response.data.items
+              : Array.isArray(response.data.data)
+                ? response.data.data
+                : [])
           : [];
         if (!ignore) setCotizaciones(items);
       } catch (e: any) {
@@ -270,7 +291,7 @@ export default function Facturas() {
   const handleRemoveItem = (id: number) => {
     setItems((prev) => prev.filter((item) => item.id !== id));
   };
-    
+
   return (
     <div>
       <PageMeta
@@ -295,7 +316,7 @@ export default function Facturas() {
           Crear Factura
         </Button>
       </div>
-      
+
       {/* Create Factura Modal */}
       <Modal
         isOpen={isCreateModalOpen}
@@ -306,7 +327,7 @@ export default function Facturas() {
         className="max-w-3xl w-full p-4 sm:p-6 max-h-[90vh] overflow-y-auto no-scrollbar"
       >
         <h2 className="mb-4 text-lg font-semibold text-gray-800 dark:text-white">Crear Nueva Factura</h2>
-        
+
         {!creationType ? (
           <div className="space-y-4">
             <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
@@ -323,7 +344,7 @@ export default function Facturas() {
                 <span className="text-base font-semibold text-gray-900 dark:text-white">Desde Cliente</span>
                 <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">Crear factura seleccionando un cliente</span>
               </button>
-              
+
               <button
                 onClick={() => setCreationType("cotizacion")}
                 className="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors dark:border-white/[0.08] dark:hover:bg-white/[0.04] dark:hover:border-blue-500"
@@ -335,7 +356,7 @@ export default function Facturas() {
                 <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">Convertir una cotización en factura</span>
               </button>
             </div>
-            
+
             <div className="mt-6 flex justify-end">
               <Button
                 size="sm"
@@ -416,16 +437,16 @@ export default function Facturas() {
                               return (
                                 <li
                                   key={c.id}
-                                  className={`cursor-pointer px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-white/[0.06] ${
-                                    isSelected ? "bg-blue-50 ring-1 ring-blue-200 dark:bg-white/[0.08]" : ""
-                                  }`}
-                                  onClick={() => {
+                                  className={`cursor-pointer px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-white/[0.06] ${isSelected ? "bg-blue-50 ring-1 ring-blue-200 dark:bg-white/[0.08]" : ""
+                                    }`}
+                                  onClick={async () => {
+                                    const nextNCF = await fetchNextNCF();
                                     setSelectedCliente(c);
-                                    setFacturaData({ 
-                                      ...facturaData, 
+                                    setFacturaData({
+                                      ...facturaData,
                                       client: name,
                                       rnc: c.rnc || "",
-                                      ncf: generateNCF()
+                                      ncf: nextNCF
                                     });
                                     setShowClienteOptions(false);
                                   }}
@@ -651,7 +672,12 @@ export default function Facturas() {
                         <li
                           key={c.id}
                           className="cursor-pointer px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-white/[0.06]"
-                          onClick={() => setSelectedCotizacion(c)}
+                          onClick={async () => {
+                            const nextNCF = await fetchNextNCF();
+                            setSelectedCotizacion(c);
+                            // Also need to set NCF in facturaData since the useEffect only sets it if it exists in fd.ncf which is empty initially
+                            setFacturaData(fd => ({ ...fd, ncf: nextNCF }));
+                          }}
                         >
                           <div className="flex flex-wrap items-center gap-2 justify-between">
                             <span className="text-xs text-gray-500 dark:text-gray-400 min-w-[80px]">{date}</span>
