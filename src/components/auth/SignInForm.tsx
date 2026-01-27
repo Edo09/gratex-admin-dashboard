@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
-import {  EyeCloseIcon, EyeIcon } from "../../icons";
+import { EyeCloseIcon, EyeIcon } from "../../icons";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
 import Checkbox from "../form/input/Checkbox";
@@ -10,7 +10,7 @@ import { useAuth } from "../../context/AuthContext";
 export default function SignInForm() {
   const navigate = useNavigate();
   const { login, isLoading, error, clearError, successMessage, clearSuccessMessage } = useAuth();
-  
+
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const [formData, setFormData] = useState({
@@ -35,18 +35,18 @@ export default function SignInForm() {
 
     // Validation
     if (!formData.emailOrUsername || !formData.password) {
-      setLocalError("Email/Username and password are required");
+      setLocalError("El correo electrónico/usuario y la contraseña son obligatorios");
       return;
     }
 
     try {
-      console.log("🔐 Attempting login with:", formData.emailOrUsername);
+      console.log("🔐 Intentando iniciar sesión con:", formData.emailOrUsername);
       await login(formData.emailOrUsername, formData.password);
-      console.log("✅ Login successful, redirecting...");
+      console.log("✅ Inicio de sesión exitoso, redirigiendo...");
       navigate("/", { replace: true });
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Login failed";
-      console.error("❌ Login error:", message);
+      const message = err instanceof Error ? err.message : "Error al iniciar sesión";
+      console.error("❌ Error de inicio de sesión:", message);
       setLocalError(message);
     }
   };
@@ -60,10 +60,10 @@ export default function SignInForm() {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Welcome Back
+              Bienvenido de Nuevo
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
-              Sign in to your account to continue
+              Inicia sesión en tu cuenta para continuar
             </p>
           </div>
 
@@ -92,12 +92,12 @@ export default function SignInForm() {
             {/* Email/Username Field */}
             <div>
               <Label className="text-gray-700 dark:text-gray-200">
-                Email or Username <span className="text-red-500">*</span>
+                Correo Electrónico o Usuario <span className="text-red-500">*</span>
               </Label>
               <Input
                 type="text"
                 name="emailOrUsername"
-                placeholder="Enter your email or username"
+                placeholder="Ingresa tu correo electrónico o usuario"
                 value={formData.emailOrUsername}
                 onChange={handleInputChange}
                 disabled={isLoading}
@@ -109,20 +109,20 @@ export default function SignInForm() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <Label className="text-gray-700 dark:text-gray-200">
-                  Password <span className="text-red-500">*</span>
+                  Contraseña <span className="text-red-500">*</span>
                 </Label>
                 <Link
                   to="/reset-password"
                   className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                 >
-                  Forgot?
+                  ¿Olvidaste?
                 </Link>
               </div>
               <div className="relative">
                 <Input
                   type={showPassword ? "text" : "password"}
                   name="password"
-                  placeholder="Enter your password"
+                  placeholder="Ingresa tu contraseña"
                   value={formData.password}
                   onChange={handleInputChange}
                   disabled={isLoading}
@@ -146,7 +146,7 @@ export default function SignInForm() {
             <div className="flex items-center gap-3">
               <Checkbox checked={isChecked} onChange={setIsChecked} />
               <span className="text-sm font-normal text-gray-700 dark:text-gray-300">
-                Keep me logged in
+                Mantener sesión iniciada
               </span>
             </div>
 
@@ -159,10 +159,10 @@ export default function SignInForm() {
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="animate-spin">⟳</span>
-                  Signing in...
+                  Iniciando sesión...
                 </span>
               ) : (
-                "Sign In"
+                "Iniciar Sesión"
               )}
             </Button>
           </form>
@@ -170,25 +170,25 @@ export default function SignInForm() {
           {/* Divider */}
           <div className="my-8 flex items-center gap-4">
             <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700"></div>
-            <span className="text-sm text-gray-500 dark:text-gray-400">or</span>
+            <span className="text-sm text-gray-500 dark:text-gray-400">o</span>
             <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700"></div>
           </div>
 
           {/* Sign Up Link */}
           <p className="text-center text-gray-700 dark:text-gray-300">
-            Don&apos;t have an account?{" "}
+            ¿No tienes una cuenta?{" "}
             <Link
               to="/signup"
               className="font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
             >
-              Sign Up
+              Regístrate
             </Link>
           </p>
         </div>
 
         {/* Footer Text */}
         <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
-          Protected by enterprise-grade security
+          Protegido por seguridad de nivel empresarial
         </p>
       </div>
     </div>

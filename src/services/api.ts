@@ -54,11 +54,11 @@ export interface Cotizacion {
   client_id: number;
   client_name: string;
   total: string;
-  items?: Array<{ 
-    id: number; 
-    description: string; 
-    amount: string; 
-    quantity: number; 
+  items?: Array<{
+    id: number;
+    description: string;
+    amount: string;
+    quantity: number;
     subtotal: string;
   }>;
 }
@@ -240,8 +240,8 @@ export const facturasApi = {
   },
 
   // Create a new factura
-  createFactura: (data: { 
-    date: string; 
+  createFactura: (data: {
+    date: string;
     client: string;
     client_id?: number;
     items: Array<{ description: string; amount: number; quantity: number }>;
@@ -279,7 +279,7 @@ export const clientesApi = {
 
   // Get cliente by ID
   getClienteById: (id: number) =>
-    apiClient.get<Cliente>(`/api/clients/${id}`),
+    apiClient.get<Cliente>(`/api/clients?id=${id}`),
 
   // Update cliente
   updateCliente: (id: number, data: unknown) =>
@@ -315,7 +315,7 @@ export const cotizacionesApi = {
 
 
   // Preview a cotizacion (does not persist, just returns a preview id)
-  previewCotizacion: (data: { 
+  previewCotizacion: (data: {
     client_id: number | null;
     client_name: string | null;
     date: string;
@@ -324,11 +324,11 @@ export const cotizacionesApi = {
   }) =>
     apiClient.post<{
       pdf: any;
-      content: any; id: number; code?: string; message?: string 
-}>('/api/cotizaciones/preview', data),
+      content: any; id: number; code?: string; message?: string
+    }>('/api/cotizaciones/preview', data),
 
   // Create a new cotizacion
-  createCotizacion: (data: { 
+  createCotizacion: (data: {
     client_id: number | null;
     client_name: string | null;
     date: string;
@@ -340,7 +340,7 @@ export const cotizacionesApi = {
 
   // Get cotizacion by ID
   getCotizacionById: (id: number) =>
-    apiClient.get<Cotizacion>(`/api/cotizaciones/${id}`),
+    apiClient.get<Cotizacion>(`/api/cotizaciones?id=${id}`),
 
   // Update cotizacion
   updateCotizacion: (id: number, data: unknown) =>
