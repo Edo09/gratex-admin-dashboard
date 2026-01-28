@@ -54,6 +54,7 @@ export interface Cotizacion {
   client_id: number;
   client_name: string;
   total: string;
+  description?: string;
   items?: Array<{
     id: number;
     description: string;
