@@ -23,6 +23,7 @@ interface BasicTableOneProps {
   total?: number;
   onPageChange?: (page: number) => void;
   onPageSizeChange?: (size: number) => void;
+  onRowClick?: (row: RecordRow) => void;
 }
 interface RecordRow {
   id: number;
@@ -51,12 +52,18 @@ export default function BasicTableOne({
   total,
   onPageChange,
   onPageSizeChange,
+  onRowClick,
 }: BasicTableOneProps) {
 
   const handleRowClick = async (row: RecordRow) => {
+    if (onRowClick) {
+      onRowClick(row);
+      return;
+    }
+
     try {
       let base64String: string;
-      
+
       // Fetch PDF based on data type
       if (dataType === "cotizaciones") {
         const response = await cotizacionesApi.getCotizacionPdf(row.id);
@@ -78,11 +85,11 @@ export default function BasicTableOne({
           bytes[i] = binaryString.charCodeAt(i);
         }
         const blob = new Blob([bytes], { type: 'application/pdf' });
-        
+
         // Create object URL and open in new tab
         const objectUrl = URL.createObjectURL(blob);
         window.open(objectUrl, '_blank');
-        
+
         // Clean up URL reference after a delay
         setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
       } else {
@@ -116,11 +123,11 @@ export default function BasicTableOne({
   const totalPages = Math.max(1, Math.ceil((totalCount || 0) / (effectivePageSize || 10)));
   const startIdx = (effectivePage - 1) * effectivePageSize;
   const endIdx = startIdx + effectivePageSize;
-  
+
   // For server-side pagination, use data as-is (already paginated by backend)
   // For client-side pagination, slice the data
-  const displayRows = pagination === "server" 
-    ? filtered 
+  const displayRows = pagination === "server"
+    ? filtered
     : filtered.slice((effectivePage - 1) * effectivePageSize, effectivePage * effectivePageSize);
 
   const goToPage = (p: number) => {
