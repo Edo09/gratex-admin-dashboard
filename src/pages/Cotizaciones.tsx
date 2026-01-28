@@ -8,10 +8,10 @@ import { useDebounce } from "../hooks/useDebounce";
 import { Modal } from "../components/ui/modal";
 import Button from "../components/ui/button/Button";
 import { BoxIcon } from "../icons";
-import { clientesApi, cotizacionesApi } from "../services/api";
+import { clientesApi, cotizacionesApi, apiClient } from "../services/api";
 import Alert from '../components/ui/alert/Alert';
 
-type TableRow = { id: number; date: string; code: string; client: string; description: string; amount: string; total: string };
+type TableRow = { id: number; date: string; code?: string; client?: string; description: string; amount: string; total: string };
 
 export default function Cotizaciones() {
   const queryClient = useQueryClient();
@@ -23,6 +23,8 @@ export default function Cotizaciones() {
     client: "",
     amount: "",
   });
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   type Cliente = {
     id: number;
     email?: string;
@@ -106,23 +108,23 @@ export default function Cotizaciones() {
     []
   );
 
-const {
-  data: cotizacionesData,
-  isLoading: loading,
-  error,
-} = useQuery({
-  queryKey: ['cotizaciones', debouncedQuery ?? '', page, pageSize],
-  queryFn: () =>
-    cotizacionesApi.getCotizaciones({
-      query: debouncedQuery,
-      page,
-      pageSize,
-    }),
-  refetchOnMount: false,
-  refetchOnWindowFocus: false,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-  placeholderData: (previousData) => previousData,
-});
+  const {
+    data: cotizacionesData,
+    isLoading: loading,
+    error,
+  } = useQuery({
+    queryKey: ['cotizaciones', debouncedQuery ?? '', page, pageSize],
+    queryFn: () =>
+      cotizacionesApi.getCotizaciones({
+        query: debouncedQuery,
+        page,
+        pageSize,
+      }),
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    placeholderData: (previousData) => previousData,
+  });
 
 
 
@@ -143,6 +145,120 @@ const {
     }
   }
 
+  const handleRowClick = async (row: TableRow) => {
+    try {
+      const response = await cotizacionesApi.getCotizacionById(row.id);
+
+      let data = response.data;
+
+      // Handle case where API returns an array directly
+      if (Array.isArray(data)) {
+        const found = data.find((item: any) => item.id == row.id);
+        if (found) {
+          data = found;
+        } else if (data.length > 0) {
+          // If we returned a list but ID not found (unlikely if filtered by ID), use first?
+          // Or maybe it's just a single item list.
+          data = data[0];
+        }
+      }
+      // Handle case where API returns a paginated list wrapper
+      else if (data && typeof data === 'object' && 'data' in data && Array.isArray((data as any).data)) {
+        const list = (data as any).data;
+        const found = list.find((item: any) => item.id == row.id);
+        if (found) {
+          data = found;
+        } else if (list.length > 0) {
+          // Fallback if filtering happened
+          data = list[0];
+        }
+      }
+
+      if (data) {
+        setEditingId(data.id);
+        setIsEditMode(true);
+        setNewRow({
+          date: data.date ? data.date.split(' ')[0] : todayStr,
+          client: data.client_name,
+          amount: data.total,
+        });
+
+        // Set items
+        if (data.items) {
+          setItems(data.items.map((i: any) => ({
+            id: i.id || Date.now() + Math.random(),
+            description: i.description,
+            amount: parseFloat(i.amount as unknown as string),
+            quantity: i.quantity
+          })));
+        } else {
+          setItems([]);
+        }
+
+        // Fetch full client details
+        if (data.client_id) {
+          try {
+            const clientResponse = await clientesApi.getClienteById(data.client_id);
+            let clientData = clientResponse.data;
+
+            // Handle possible array response for client as well
+            if (Array.isArray(clientData)) {
+              const foundClient = clientData.find((c: any) => c.id == data.client_id);
+              if (foundClient) {
+                clientData = foundClient;
+              } else if (clientData.length > 0) {
+                clientData = clientData[0];
+              }
+            } else if (clientData && typeof clientData === 'object' && 'data' in clientData && Array.isArray((clientData as any).data)) {
+              // Check paginated wrapper
+              const list = (clientData as any).data;
+              const foundClient = list.find((c: any) => c.id == data.client_id);
+              if (foundClient) {
+                clientData = foundClient;
+              } else if (list.length > 0) {
+                clientData = list[0];
+              }
+            }
+
+            if (clientData) {
+              setSelectedCliente(clientData);
+            } else {
+              // Fallback to basic info from quotation if fetch fails or returns empty
+              setSelectedCliente({
+                id: data.client_id,
+                client_name: data.client_name,
+              } as Cliente);
+            }
+          } catch (err) {
+            console.error("Error fetching client details:", err);
+            // Fallback
+            setSelectedCliente({
+              id: data.client_id,
+              client_name: data.client_name,
+            } as Cliente);
+          }
+        } else {
+          setSelectedCliente(null);
+        }
+
+        setShowClienteOptions(false);
+        setIsCreateOpen(true);
+      }
+    } catch (e) {
+      console.error("Error fetching cotizacion details", e);
+    }
+  };
+
+  const resetForm = () => {
+    setNewRow({ date: todayStr, client: "", amount: "" });
+    setItems([]);
+    setSelectedCliente(null);
+    setClienteQuery("");
+    setShowClienteOptions(true);
+    setIsEditMode(false);
+    setEditingId(null);
+  };
+
   const handleAddItem = () => {
     const description = itemForm.description.trim();
     const amount = parseFloat(itemForm.amount);
@@ -153,8 +269,8 @@ const {
     setItems((prev) => [...prev, { id: Date.now(), description, amount, quantity }]);
     setItemForm({ description: "", amount: "", quantity: "1" });
 
-  console.log(1,items);
-  console.log(2,itemForm);
+    console.log(1, items);
+    console.log(2, itemForm);
   };
 
   const handleRemoveItem = (id: number) => {
@@ -181,7 +297,10 @@ const {
         <Button
           size="sm"
           variant="primary"
-          onClick={() => setIsCreateOpen(true)}
+          onClick={() => {
+            resetForm();
+            setIsCreateOpen(true);
+          }}
           className="whitespace-nowrap text-base px-5 py-2.5"
         >
           Crear Cotización
@@ -190,12 +309,15 @@ const {
       {/* Create Cotización Modal */}
       <Modal
         isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
+        onClose={() => {
+          setIsCreateOpen(false);
+          resetForm();
+        }}
         className="max-w-5xl w-full p-0 max-h-[92vh] overflow-hidden bg-white dark:bg-gray-900 rounded-2xl shadow-2xl"
       >
         {/* Header Section */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-4 border-b-2 border-blue-800">
-          <h2 className="text-xl font-bold text-white">Nueva Cotización</h2>
+          <h2 className="text-xl font-bold text-white">{isEditMode ? "Editar Cotización" : "Nueva Cotización"}</h2>
           <p className="text-blue-100 text-sm mt-0.5">Complete los detalles para generar la cotización</p>
         </div>
         <div className="overflow-y-auto" style={{ maxHeight: 'calc(92vh - 200px)' }}>
@@ -217,17 +339,30 @@ const {
               total: totalAmount,
             };
             try {
-              const response = await cotizacionesApi.createCotizacion(payload);
-              const cotizacionId = response.data?.id;
-              setShowSuccessAlert(true);
+              let cotizacionId;
+              if (isEditMode && editingId) {
+                // Update - User requested PUT /api/cotizaciones with body
+                const updatePayload = {
+                  ...payload,
+                  id: editingId,
+                };
+                // We use the root endpoint for update as requested
+                // Use apiClient.put directly for the root endpoint
+                await apiClient.put('/api/cotizaciones', updatePayload);
+
+                cotizacionId = editingId;
+                setShowSuccessAlert(true);
+              } else {
+                // Create
+                const response = await cotizacionesApi.createCotizacion(payload);
+                cotizacionId = response.data?.id;
+                setShowSuccessAlert(true);
+              }
+
               setTimeout(() => setShowSuccessAlert(false), 3500);
-              setNewRow({ date: todayStr, client: "", amount: "" });
-              setItems([]);
-              setSelectedCliente(null);
-              setClienteQuery("");
-              setShowClienteOptions(true);
               setIsCreateOpen(false);
               setPage(1);
+              resetForm();
               // Invalidate and refetch cotizaciones table
               await queryClient.invalidateQueries({ queryKey: ['cotizaciones'] });
               // Open PDF in new tab
@@ -489,7 +624,10 @@ const {
               size="sm"
               variant="outline"
               type="button"
-              onClick={() => setIsCreateOpen(false)}
+              onClick={() => {
+                setIsCreateOpen(false);
+                resetForm();
+              }}
               className="px-6 py-3 text-base font-semibold"
             >
               Cancelar
@@ -500,20 +638,39 @@ const {
               type="button"
               className="px-6 py-3 text-base font-semibold bg-gray-600 hover:bg-gray-700"
               onClick={async () => {
-                // Build the payload as in the submit handler
-                const payload = {
-                  client_id: selectedCliente?.id ?? null,
-                  client_name: selectedCliente?.client_name ?? selectedCliente?.nombre ?? selectedCliente?.name ?? null,
-                  date: newRow.date,
-                  items: items.map((item) => ({
-                    description: item.description,
-                    amount: item.amount,
-                    quantity: item.quantity,
-                    subtotal: item.amount * item.quantity,
-                  })),
-                  total: totalAmount,
-                };
                 try {
+                  // If in Edit Mode, allow viewing the original saved PDF (Old Logic)
+                  if (isEditMode && editingId) {
+                    const pdfResponse = await cotizacionesApi.getCotizacionPdf(editingId);
+                    let base64Data = pdfResponse?.content || pdfResponse?.data?.content || pdfResponse?.data;
+                    if (typeof base64Data === "string" && base64Data.length > 0) {
+                      const byteCharacters = atob(base64Data);
+                      const byteNumbers = new Array(byteCharacters.length);
+                      for (let i = 0; i < byteCharacters.length; i++) {
+                        byteNumbers[i] = byteCharacters.charCodeAt(i);
+                      }
+                      const byteArray = new Uint8Array(byteNumbers);
+                      const blob = new Blob([byteArray], { type: "application/pdf" });
+                      const blobUrl = URL.createObjectURL(blob);
+                      window.open(blobUrl, "_blank");
+                      return;
+                    }
+                  }
+
+                  // Build the payload as in the submit handler
+                  const payload = {
+                    client_id: selectedCliente?.id ?? null,
+                    client_name: selectedCliente?.client_name ?? selectedCliente?.nombre ?? selectedCliente?.name ?? null,
+                    date: newRow.date,
+                    items: items.map((item) => ({
+                      description: item.description,
+                      amount: item.amount,
+                      quantity: item.quantity,
+                      subtotal: item.amount * item.quantity,
+                    })),
+                    total: totalAmount,
+                  };
+
                   // Use a preview endpoint if available, otherwise use the create endpoint but do not persist
                   const result = await (cotizacionesApi.previewCotizacion
                     ? cotizacionesApi.previewCotizacion(payload)
@@ -521,8 +678,8 @@ const {
                   // Expect the preview response to be a base64 PDF string (or inside .data)
                   const base64Data = (result.data && typeof result.data === 'object')
                     ? ('pdf' in result.data
-                        ? result.data.pdf
-                        : ('content' in result.data ? result.data.content : ''))
+                      ? result.data.pdf
+                      : ('content' in result.data ? result.data.content : ''))
                     : (typeof result.data === 'string' ? result.data : '');
                   if (base64Data && base64Data.length > 0) {
                     const byteCharacters = atob(base64Data);
@@ -556,8 +713,8 @@ const {
         {showSuccessAlert && (
           <Alert
             variant="success"
-            title="Cotización creada"
-            message="La cotización ha sido creada correctamente."
+            title={isEditMode ? "Cotización actualizada" : "Cotización creada"}
+            message={isEditMode ? "La cotización ha sido actualizada correctamente." : "La cotización ha sido creada correctamente."}
           />
         )}
       </Modal>
@@ -578,6 +735,7 @@ const {
           setPageSize(s);
           setPage(1);
         }}
+        onRowClick={handleRowClick}
       />
 
     </div>
