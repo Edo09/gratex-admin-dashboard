@@ -269,8 +269,6 @@ export default function Cotizaciones() {
     setItems((prev) => [...prev, { id: Date.now(), description, amount, quantity }]);
     setItemForm({ description: "", amount: "", quantity: "1" });
 
-    console.log(1, items);
-    console.log(2, itemForm);
   };
 
   const handleRemoveItem = (id: number) => {
@@ -321,327 +319,55 @@ export default function Cotizaciones() {
           <p className="text-blue-100 text-sm mt-0.5">Complete los detalles para generar la cotización</p>
         </div>
         <div className="overflow-y-auto" style={{ maxHeight: 'calc(92vh - 200px)' }}>
-        <form
-          className="p-8 space-y-6"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            // Build the payload that would be sent to api/cotizaciones
-            const payload = {
-              client_id: selectedCliente?.id ?? null,
-              client_name: selectedCliente?.client_name ?? selectedCliente?.nombre ?? selectedCliente?.name ?? null,
-              date: newRow.date,
-              items: items.map((item) => ({
-                description: item.description,
-                amount: item.amount,
-                quantity: item.quantity,
-                subtotal: item.amount * item.quantity,
-              })),
-              total: totalAmount,
-            };
-            try {
-              let cotizacionId;
-              if (isEditMode && editingId) {
-                // Update - User requested PUT /api/cotizaciones with body
-                const updatePayload = {
-                  ...payload,
-                  id: editingId,
-                };
-                // We use the root endpoint for update as requested
-                // Use apiClient.put directly for the root endpoint
-                await apiClient.put('/api/cotizaciones', updatePayload);
+          <form
+            id="cotizacion-form"
+            className="p-8 space-y-6"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              // Build the payload that would be sent to api/cotizaciones
+              const payload = {
+                client_id: selectedCliente?.id ?? null,
+                client_name: selectedCliente?.client_name ?? selectedCliente?.nombre ?? selectedCliente?.name ?? null,
+                date: newRow.date,
+                items: items.map((item) => ({
+                  description: item.description,
+                  amount: item.amount,
+                  quantity: item.quantity,
+                  subtotal: item.amount * item.quantity,
+                })),
+                total: totalAmount,
+              };
+              try {
+                let cotizacionId;
+                if (isEditMode && editingId) {
+                  // Update - User requested PUT /api/cotizaciones with body
+                  const updatePayload = {
+                    ...payload,
+                    id: editingId,
+                  };
+                  // We use the root endpoint for update as requested
+                  // Use apiClient.put directly for the root endpoint
+                  await apiClient.put('/api/cotizaciones', updatePayload);
 
-                cotizacionId = editingId;
-                setShowSuccessAlert(true);
-              } else {
-                // Create
-                const response = await cotizacionesApi.createCotizacion(payload);
-                cotizacionId = response.data?.id;
-                setShowSuccessAlert(true);
-              }
-
-              setTimeout(() => setShowSuccessAlert(false), 3500);
-              setIsCreateOpen(false);
-              setPage(1);
-              resetForm();
-              // Invalidate and refetch cotizaciones table
-              await queryClient.invalidateQueries({ queryKey: ['cotizaciones'] });
-              // Open PDF in new tab
-              if (cotizacionId) {
-                try {
-                  const pdfResponse = await cotizacionesApi.getCotizacionPdf(cotizacionId);
-                  let base64Data = pdfResponse?.content || pdfResponse?.data?.content || pdfResponse?.data;
-                  if (typeof base64Data === "string" && base64Data.length > 0) {
-                    const byteCharacters = atob(base64Data);
-                    const byteNumbers = new Array(byteCharacters.length);
-                    for (let i = 0; i < byteCharacters.length; i++) {
-                      byteNumbers[i] = byteCharacters.charCodeAt(i);
-                    }
-                    const byteArray = new Uint8Array(byteNumbers);
-                    const blob = new Blob([byteArray], { type: "application/pdf" });
-                    const blobUrl = URL.createObjectURL(blob);
-                    window.open(blobUrl, "_blank");
-                  } else {
-                    console.error("❌ PDF response is not valid base64:", base64Data);
-                  }
-                } catch (pdfErr) {
-                  console.error("❌ Error fetching PDF:", pdfErr);
+                  cotizacionId = editingId;
+                  setShowSuccessAlert(true);
+                } else {
+                  // Create
+                  const response = await cotizacionesApi.createCotizacion(payload);
+                  cotizacionId = response.data?.id;
+                  setShowSuccessAlert(true);
                 }
-              }
-            } catch (err) {
-              console.error("❌ Error creating cotización:", err);
-            }
-          }}
-        >
-          {/* Client Section */}
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 border-2 border-gray-200 dark:border-gray-700">
-            <label className="mb-3 block text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-              <span className="text-blue-600 dark:text-blue-400">👤</span>
-              Información del Cliente
-            </label>
-            {!selectedCliente && (
-              <div className="space-y-3">
-                <input
-                  type="text"
-                  value={clienteQuery}
-                  onChange={(e) => {
-                    setClienteQuery(e.target.value);
-                    setShowClienteOptions(e.target.value.trim().length > 0);
-                  }}
-                  placeholder="🔍 Escriba para buscar cliente por nombre, empresa, email o teléfono..."
-                  className="w-full rounded-lg border-2 border-gray-300 bg-white px-5 py-4 text-lg outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-all"
-                />
-                {showClienteOptions && clienteQuery.trim().length > 0 && (
-                  <div className="max-h-64 overflow-y-auto rounded-xl border-2 border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-700 shadow-lg">
-                    {loadingClientes && (
-                      <div className="px-5 py-4 text-base font-medium text-gray-600 dark:text-gray-400">⏳ Cargando clientes...</div>
-                    )}
-                    {!loadingClientes && errorClientes && (
-                      <div className="px-5 py-4 text-base font-medium text-red-600 dark:text-red-400">
-                        {errorClientes instanceof Error ? errorClientes.message : String(errorClientes)}
-                      </div>
-                    )}
-                    {!loadingClientes && !errorClientes && (
-                      <ul className="divide-y divide-gray-200 dark:divide-gray-600">
-                        {(clientesData as Cliente[] ?? [])
-                          .filter((c) => {
-                            const q = clienteQuery.trim().toLowerCase();
-                            if (!q) return true;
-                            const name = c.client_name ?? c.nombre ?? c.name ?? "";
-                            const company = c.company_name ?? "";
-                            const email = c.email ?? "";
-                            const phone = c.phone_number ?? c.telefono ?? "";
-                            return [name, company, email, phone].join(" ").toLowerCase().includes(q);
-                          })
-                          .map((c) => {
-                            const name = c.client_name ?? c.nombre ?? c.name ?? `Cliente ${c.id}`;
-                            return (
-                              <li
-                                key={c.id}
-                                className="cursor-pointer px-5 py-4 hover:bg-blue-50 dark:hover:bg-gray-600 transition-colors"
-                                onClick={() => {
-                                  setSelectedCliente(c);
-                                  setNewRow({ ...newRow, client: name });
-                                  setShowClienteOptions(false);
-                                }}
-                              >
-                                <div className="font-bold text-base text-gray-900 dark:text-white mb-1">{name}</div>
-                                <div className="text-sm text-gray-600 dark:text-gray-400">
-                                  {c.company_name ?? ""} {c.email ? `• ${c.email}` : ""} {c.phone_number ? `• ${c.phone_number}` : ""}
-                                </div>
-                              </li>
-                            );
-                          })}
-                      </ul>
-                    )}
-                  </div>
-                )}
-                <div className="text-base font-medium text-gray-700 dark:text-gray-300 mt-2">✓ Seleccionado: <span className="font-bold">{newRow.client || "Ninguno"}</span></div>
-              </div>
-            )}
-            {selectedCliente && (
-              <div className="rounded-xl border-2 border-green-300 bg-green-50/80 dark:bg-green-900/20 p-6 shadow-lg dark:border-green-700">
-                <div className="mb-4 flex items-center justify-between">
-                  <div>
-                    <div className="text-xl font-bold text-gray-900 dark:text-white">{selectedCliente.client_name ?? selectedCliente.nombre ?? selectedCliente.name}</div>
-                    <div className="text-base text-gray-600 dark:text-gray-400 mt-1">{selectedCliente.company_name ?? "Sin empresa"}</div>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    type="button"
-                    onClick={() => {
-                      setSelectedCliente(null);
-                      setShowClienteOptions(true);
-                      setNewRow({ ...newRow, client: "" });
-                    }}
-                    className="px-4 py-2 text-base"
-                  >
-                    Cambiar
-                  </Button>
-                </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <div className="text-sm font-bold uppercase tracking-wide text-gray-600 dark:text-gray-400 mb-1">📧 Email</div>
-                    <div className="text-base font-medium text-gray-900 dark:text-white">{selectedCliente.email ?? "—"}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold uppercase tracking-wide text-gray-600 dark:text-gray-400 mb-1">📱 Teléfono</div>
-                    <div className="text-base font-medium text-gray-900 dark:text-white">{selectedCliente.phone_number ?? selectedCliente.telefono ?? "—"}</div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-          {/* Date and Total Section */}
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border-2 border-gray-200 dark:border-gray-700">
-              <label className="mb-2 block text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                <span className="text-blue-600 dark:text-blue-400">📅</span>
-                Fecha
-              </label>
-              <input
-                type="date"
-                value={newRow.date}
-                onChange={(e) => setNewRow({ ...newRow, date: e.target.value })}
-                className="w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2.5 text-base font-medium outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-all"
-              />
-            </div>
-            <div className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/30 dark:to-emerald-800/30 rounded-xl p-4 border-2 border-green-300 dark:border-green-700">
-              <label className="mb-2 block text-sm font-bold text-green-800 dark:text-green-300 flex items-center gap-1">
-                <span>💰</span>
-                Total Estimado
-              </label>
-              <div className="text-2xl font-bold text-green-700 dark:text-green-400">
-                ${totalAmount ? totalAmount.toFixed(2) : "0.00"}
-              </div>
-            </div>
-          </div>
-          {/* Items Section */}
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 border-2 border-gray-200 dark:border-gray-700">
-            <label className="mb-4 block text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-              <span className="text-blue-600 dark:text-blue-400">📦</span>
-              Items de la Cotización
-            </label>
-            
-            {/* Add Item Form */}
-            <div className="bg-white dark:bg-gray-700 rounded-lg p-5 mb-5 border-2 border-gray-300 dark:border-gray-600">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-12">
-                <div className="md:col-span-5">
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Descripción</label>
-                  <textarea
-                    placeholder="Descripción del item..."
-                    value={itemForm.description}
-                    onChange={(e) => setItemForm((prev) => ({ ...prev, description: e.target.value }))}
-                    rows={2}
-                    className="w-full resize-none rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-base outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-600 dark:text-white transition-all"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Monto ($)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    value={itemForm.amount}
-                    onChange={(e) => setItemForm((prev) => ({ ...prev, amount: e.target.value }))}
-                    className="w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-base outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-600 dark:text-white transition-all"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Cantidad</label>
-                  <input
-                    type="number"
-                    step="1"
-                    min="1"
-                    placeholder="1"
-                    value={itemForm.quantity}
-                    onChange={(e) => setItemForm((prev) => ({ ...prev, quantity: e.target.value }))}
-                    className="w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-base outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-600 dark:text-white transition-all"
-                  />
-                </div>
-                <div className="md:col-span-3 flex items-end">
-                  <Button
-                    size="sm"
-                    variant="primary"
-                    startIcon={<BoxIcon className="size-5" />}
-                    className="w-full h-12 text-base font-semibold"
-                    onClick={handleAddItem}
-                    type="button"
-                  >
-                    Agregar
-                  </Button>
-                </div>
-              </div>
-            </div>
-            {/* Items List */}
-            <div className="rounded-lg border-2 border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-700 overflow-hidden">
-              {items.length === 0 ? (
-                <div className="p-8 text-center">
-                  <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-100 dark:bg-gray-600 flex items-center justify-center">
-                    <BoxIcon className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <p className="text-lg font-medium text-gray-500 dark:text-gray-400">No hay items agregados</p>
-                  <p className="text-base text-gray-400 dark:text-gray-500 mt-1">Use el formulario de arriba para agregar items</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-gray-200 dark:divide-gray-600">
-                  {items.map((item, index) => (
-                    <div key={item.id} className="p-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
-                      <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-sm font-bold text-blue-600 dark:text-blue-400 flex-shrink-0">
-                        {index + 1}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-base font-bold text-gray-900 dark:text-white truncate">{item.description}</div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                          {item.quantity} unidad{item.quantity > 1 ? 'es' : ''} × ${item.amount.toFixed(2)}
-                        </div>
-                      </div>
-                      <div className="text-lg font-bold text-gray-900 dark:text-white flex-shrink-0">
-                        ${(item.amount * item.quantity).toFixed(2)}
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        type="button"
-                        onClick={() => handleRemoveItem(item.id)}
-                        className="px-4 py-2 text-base text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/30 flex-shrink-0"
-                      >
-                        Quitar
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </form>
-        </div>
-        
-        {/* Footer Actions */}
-        <div className="border-t-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-8 py-6 flex items-center justify-end gap-4">
-            <Button
-              size="sm"
-              variant="outline"
-              type="button"
-              onClick={() => {
+
+                setTimeout(() => setShowSuccessAlert(false), 3500);
                 setIsCreateOpen(false);
+                setPage(1);
                 resetForm();
-              }}
-              className="px-6 py-3 text-base font-semibold"
-            >
-              Cancelar
-            </Button>
-            <Button
-              size="sm"
-              variant="primary"
-              type="button"
-              className="px-6 py-3 text-base font-semibold bg-gray-600 hover:bg-gray-700"
-              onClick={async () => {
-                try {
-                  // If in Edit Mode, allow viewing the original saved PDF (Old Logic)
-                  if (isEditMode && editingId) {
-                    const pdfResponse = await cotizacionesApi.getCotizacionPdf(editingId);
+                // Invalidate and refetch cotizaciones table
+                await queryClient.invalidateQueries({ queryKey: ['cotizaciones'] });
+                // Open PDF in new tab
+                if (cotizacionId) {
+                  try {
+                    const pdfResponse = await cotizacionesApi.getCotizacionPdf(cotizacionId);
                     let base64Data = pdfResponse?.content || pdfResponse?.data?.content || pdfResponse?.data;
                     if (typeof base64Data === "string" && base64Data.length > 0) {
                       const byteCharacters = atob(base64Data);
@@ -653,35 +379,270 @@ export default function Cotizaciones() {
                       const blob = new Blob([byteArray], { type: "application/pdf" });
                       const blobUrl = URL.createObjectURL(blob);
                       window.open(blobUrl, "_blank");
-                      return;
+                    } else {
+                      console.error("❌ PDF response is not valid base64:", base64Data);
                     }
+                  } catch (pdfErr) {
+                    console.error("❌ Error fetching PDF:", pdfErr);
                   }
+                }
+              } catch (err) {
+                console.error("❌ Error creating cotización:", err);
+              }
+            }}
+          >
+            {/* Client Section */}
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 border-2 border-gray-200 dark:border-gray-700">
+              <label className="mb-3 block text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                <span className="text-blue-600 dark:text-blue-400">👤</span>
+                Información del Cliente
+              </label>
+              {!selectedCliente && (
+                <div className="space-y-3">
+                  <input
+                    type="text"
+                    value={clienteQuery}
+                    onChange={(e) => {
+                      setClienteQuery(e.target.value);
+                      setShowClienteOptions(e.target.value.trim().length > 0);
+                    }}
+                    placeholder="🔍 Escriba para buscar cliente por nombre, empresa, email o teléfono..."
+                    className="w-full rounded-lg border-2 border-gray-300 bg-white px-5 py-4 text-lg outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-all"
+                  />
+                  {showClienteOptions && clienteQuery.trim().length > 0 && (
+                    <div className="max-h-64 overflow-y-auto rounded-xl border-2 border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-700 shadow-lg">
+                      {loadingClientes && (
+                        <div className="px-5 py-4 text-base font-medium text-gray-600 dark:text-gray-400">⏳ Cargando clientes...</div>
+                      )}
+                      {!loadingClientes && errorClientes && (
+                        <div className="px-5 py-4 text-base font-medium text-red-600 dark:text-red-400">
+                          {errorClientes instanceof Error ? errorClientes.message : String(errorClientes)}
+                        </div>
+                      )}
+                      {!loadingClientes && !errorClientes && (
+                        <ul className="divide-y divide-gray-200 dark:divide-gray-600">
+                          {(clientesData as Cliente[] ?? [])
+                            .filter((c) => {
+                              const q = clienteQuery.trim().toLowerCase();
+                              if (!q) return true;
+                              const name = c.client_name ?? c.nombre ?? c.name ?? "";
+                              const company = c.company_name ?? "";
+                              const email = c.email ?? "";
+                              const phone = c.phone_number ?? c.telefono ?? "";
+                              return [name, company, email, phone].join(" ").toLowerCase().includes(q);
+                            })
+                            .map((c) => {
+                              const name = c.client_name ?? c.nombre ?? c.name ?? `Cliente ${c.id}`;
+                              return (
+                                <li
+                                  key={c.id}
+                                  className="cursor-pointer px-5 py-4 hover:bg-blue-50 dark:hover:bg-gray-600 transition-colors"
+                                  onClick={() => {
+                                    setSelectedCliente(c);
+                                    setNewRow({ ...newRow, client: name });
+                                    setShowClienteOptions(false);
+                                  }}
+                                >
+                                  <div className="font-bold text-base text-gray-900 dark:text-white mb-1">{name}</div>
+                                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                                    {c.company_name ?? ""} {c.email ? `• ${c.email}` : ""} {c.phone_number ? `• ${c.phone_number}` : ""}
+                                  </div>
+                                </li>
+                              );
+                            })}
+                        </ul>
+                      )}
+                    </div>
+                  )}
+                  <div className="text-base font-medium text-gray-700 dark:text-gray-300 mt-2">✓ Seleccionado: <span className="font-bold">{newRow.client || "Ninguno"}</span></div>
+                </div>
+              )}
+              {selectedCliente && (
+                <div className="rounded-xl border-2 border-green-300 bg-green-50/80 dark:bg-green-900/20 p-6 shadow-lg dark:border-green-700">
+                  <div className="mb-4 flex items-center justify-between">
+                    <div>
+                      <div className="text-xl font-bold text-gray-900 dark:text-white">{selectedCliente.client_name ?? selectedCliente.nombre ?? selectedCliente.name}</div>
+                      <div className="text-base text-gray-600 dark:text-gray-400 mt-1">{selectedCliente.company_name ?? "Sin empresa"}</div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      type="button"
+                      onClick={() => {
+                        setSelectedCliente(null);
+                        setShowClienteOptions(true);
+                        setNewRow({ ...newRow, client: "" });
+                      }}
+                      className="px-4 py-2 text-base"
+                    >
+                      Cambiar
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                      <div className="text-sm font-bold uppercase tracking-wide text-gray-600 dark:text-gray-400 mb-1">📧 Email</div>
+                      <div className="text-base font-medium text-gray-900 dark:text-white">{selectedCliente.email ?? "—"}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold uppercase tracking-wide text-gray-600 dark:text-gray-400 mb-1">📱 Teléfono</div>
+                      <div className="text-base font-medium text-gray-900 dark:text-white">{selectedCliente.phone_number ?? selectedCliente.telefono ?? "—"}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            {/* Date and Total Section */}
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border-2 border-gray-200 dark:border-gray-700">
+                <label className="mb-2 block text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                  <span className="text-blue-600 dark:text-blue-400">📅</span>
+                  Fecha
+                </label>
+                <input
+                  type="date"
+                  value={newRow.date}
+                  onChange={(e) => setNewRow({ ...newRow, date: e.target.value })}
+                  className="w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2.5 text-base font-medium outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-all"
+                />
+              </div>
+              <div className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/30 dark:to-emerald-800/30 rounded-xl p-4 border-2 border-green-300 dark:border-green-700">
+                <label className="mb-2 block text-sm font-bold text-green-800 dark:text-green-300 flex items-center gap-1">
+                  <span>💰</span>
+                  Total Estimado
+                </label>
+                <div className="text-2xl font-bold text-green-700 dark:text-green-400">
+                  ${totalAmount ? totalAmount.toFixed(2) : "0.00"}
+                </div>
+              </div>
+            </div>
+            {/* Items Section */}
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 border-2 border-gray-200 dark:border-gray-700">
+              <label className="mb-4 block text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                <span className="text-blue-600 dark:text-blue-400">📦</span>
+                Items de la Cotización
+              </label>
 
-                  // Build the payload as in the submit handler
-                  const payload = {
-                    client_id: selectedCliente?.id ?? null,
-                    client_name: selectedCliente?.client_name ?? selectedCliente?.nombre ?? selectedCliente?.name ?? null,
-                    date: newRow.date,
-                    items: items.map((item) => ({
-                      description: item.description,
-                      amount: item.amount,
-                      quantity: item.quantity,
-                      subtotal: item.amount * item.quantity,
-                    })),
-                    total: totalAmount,
-                  };
+              {/* Add Item Form */}
+              <div className="bg-white dark:bg-gray-700 rounded-lg p-5 mb-5 border-2 border-gray-300 dark:border-gray-600">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-12">
+                  <div className="md:col-span-5">
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Descripción</label>
+                    <textarea
+                      placeholder="Descripción del item..."
+                      value={itemForm.description}
+                      onChange={(e) => setItemForm((prev) => ({ ...prev, description: e.target.value }))}
+                      rows={2}
+                      className="w-full resize-none rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-base outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-600 dark:text-white transition-all"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Monto ($)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      value={itemForm.amount}
+                      onChange={(e) => setItemForm((prev) => ({ ...prev, amount: e.target.value }))}
+                      className="w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-base outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-600 dark:text-white transition-all"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Cantidad</label>
+                    <input
+                      type="number"
+                      step="1"
+                      min="1"
+                      placeholder="1"
+                      value={itemForm.quantity}
+                      onChange={(e) => setItemForm((prev) => ({ ...prev, quantity: e.target.value }))}
+                      className="w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-base outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-600 dark:text-white transition-all"
+                    />
+                  </div>
+                  <div className="md:col-span-3 flex items-end">
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      startIcon={<BoxIcon className="size-5" />}
+                      className="w-full h-12 text-base font-semibold"
+                      onClick={handleAddItem}
+                      type="button"
+                    >
+                      Agregar
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              {/* Items List */}
+              <div className="rounded-lg border-2 border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-700 overflow-hidden">
+                {items.length === 0 ? (
+                  <div className="p-8 text-center">
+                    <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-100 dark:bg-gray-600 flex items-center justify-center">
+                      <BoxIcon className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <p className="text-lg font-medium text-gray-500 dark:text-gray-400">No hay items agregados</p>
+                    <p className="text-base text-gray-400 dark:text-gray-500 mt-1">Use el formulario de arriba para agregar items</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-gray-200 dark:divide-gray-600">
+                    {items.map((item, index) => (
+                      <div key={item.id} className="p-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-sm font-bold text-blue-600 dark:text-blue-400 flex-shrink-0">
+                          {index + 1}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-base font-bold text-gray-900 dark:text-white truncate">{item.description}</div>
+                          <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            {item.quantity} unidad{item.quantity > 1 ? 'es' : ''} × ${item.amount.toFixed(2)}
+                          </div>
+                        </div>
+                        <div className="text-lg font-bold text-gray-900 dark:text-white flex-shrink-0">
+                          ${(item.amount * item.quantity).toFixed(2)}
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          type="button"
+                          onClick={() => handleRemoveItem(item.id)}
+                          className="px-4 py-2 text-base text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/30 flex-shrink-0"
+                        >
+                          Quitar
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </form>
+        </div>
 
-                  // Use a preview endpoint if available, otherwise use the create endpoint but do not persist
-                  const result = await (cotizacionesApi.previewCotizacion
-                    ? cotizacionesApi.previewCotizacion(payload)
-                    : cotizacionesApi.createCotizacion({ ...payload, preview: true }));
-                  // Expect the preview response to be a base64 PDF string (or inside .data)
-                  const base64Data = (result.data && typeof result.data === 'object')
-                    ? ('pdf' in result.data
-                      ? result.data.pdf
-                      : ('content' in result.data ? result.data.content : ''))
-                    : (typeof result.data === 'string' ? result.data : '');
-                  if (base64Data && base64Data.length > 0) {
+        {/* Footer Actions */}
+        <div className="border-t-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-8 py-6 flex items-center justify-end gap-4">
+          <Button
+            size="sm"
+            variant="outline"
+            type="button"
+            onClick={() => {
+              setIsCreateOpen(false);
+              resetForm();
+            }}
+            className="px-6 py-3 text-base font-semibold"
+          >
+            Cancelar
+          </Button>
+          <Button
+            size="sm"
+            variant="primary"
+            type="button"
+            className="px-6 py-3 text-base font-semibold bg-gray-600 hover:bg-gray-700"
+            onClick={async () => {
+              try {
+                // If in Edit Mode, allow viewing the original saved PDF (Old Logic)
+                if (isEditMode && editingId) {
+                  const pdfResponse = await cotizacionesApi.getCotizacionPdf(editingId);
+                  let base64Data = pdfResponse?.content || pdfResponse?.data?.content || pdfResponse?.data;
+                  if (typeof base64Data === "string" && base64Data.length > 0) {
                     const byteCharacters = atob(base64Data);
                     const byteNumbers = new Array(byteCharacters.length);
                     for (let i = 0; i < byteCharacters.length; i++) {
@@ -691,25 +652,64 @@ export default function Cotizaciones() {
                     const blob = new Blob([byteArray], { type: "application/pdf" });
                     const blobUrl = URL.createObjectURL(blob);
                     window.open(blobUrl, "_blank");
-                  } else {
-                    console.error("❌ Preview response did not contain a valid PDF base64 string.", result);
+                    return;
                   }
-                } catch (err) {
-                  console.error("❌ Error previewing cotización:", err);
                 }
-              }}
-            >
-              👁️ Ver Preview
-            </Button>
-            <Button
-              size="sm"
-              variant="primary"
-              type="submit"
-              className="px-6 py-3 text-base font-semibold bg-green-600 hover:bg-green-700"
-            >
-              💾 Guardar Cotización
-            </Button>
-          </div>
+
+                // Build the payload as in the submit handler
+                const payload = {
+                  client_id: selectedCliente?.id ?? null,
+                  client_name: selectedCliente?.client_name ?? selectedCliente?.nombre ?? selectedCliente?.name ?? null,
+                  date: newRow.date,
+                  items: items.map((item) => ({
+                    description: item.description,
+                    amount: item.amount,
+                    quantity: item.quantity,
+                    subtotal: item.amount * item.quantity,
+                  })),
+                  total: totalAmount,
+                };
+
+                // Use a preview endpoint if available, otherwise use the create endpoint but do not persist
+                const result = await (cotizacionesApi.previewCotizacion
+                  ? cotizacionesApi.previewCotizacion(payload)
+                  : cotizacionesApi.createCotizacion({ ...payload, preview: true }));
+                // Expect the preview response to be a base64 PDF string (or inside .data)
+                const base64Data = (result.data && typeof result.data === 'object')
+                  ? ('pdf' in result.data
+                    ? result.data.pdf
+                    : ('content' in result.data ? result.data.content : ''))
+                  : (typeof result.data === 'string' ? result.data : '');
+                if (base64Data && base64Data.length > 0) {
+                  const byteCharacters = atob(base64Data);
+                  const byteNumbers = new Array(byteCharacters.length);
+                  for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                  }
+                  const byteArray = new Uint8Array(byteNumbers);
+                  const blob = new Blob([byteArray], { type: "application/pdf" });
+                  const blobUrl = URL.createObjectURL(blob);
+                  window.open(blobUrl, "_blank");
+                } else {
+                  console.error("❌ Preview response did not contain a valid PDF base64 string.", result);
+                }
+              } catch (err) {
+                console.error("❌ Error previewing cotización:", err);
+              }
+            }}
+          >
+            👁️ Ver Preview
+          </Button>
+          <Button
+            size="sm"
+            variant="primary"
+            type="submit"
+            form="cotizacion-form"
+            className="px-6 py-3 text-base font-semibold bg-green-600 hover:bg-green-700"
+          >
+            💾 Guardar Cotización
+          </Button>
+        </div>
         {showSuccessAlert && (
           <Alert
             variant="success"

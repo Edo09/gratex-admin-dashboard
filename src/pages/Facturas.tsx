@@ -18,9 +18,9 @@ export default function Facturas() {
   const [query, setQuery] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [creationType, setCreationType] = useState<"client" | "cotizacion" | null>(null);
-  // Local state for create loading and error
-  const [createLoading, setCreateLoading] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
+  const [, setCreateLoading] = useState(false);
+  const [, setCreateError] = useState<string | null>(null);
+
 
   // Cotizaciones state for 'crear desde cotización'
   const [cotizaciones, setCotizaciones] = useState<any[]>([]);
@@ -32,7 +32,6 @@ export default function Facturas() {
   // When a cotización is selected, set items and facturaData
   useEffect(() => {
     if (selectedCotizacion) {
-      console.log('selectedCotizacion changed:', selectedCotizacion);
       // Defensive: handle missing or malformed items array
       let cotItems = [];
       if (Array.isArray(selectedCotizacion.items)) {
@@ -46,10 +45,6 @@ export default function Facturas() {
         amount: Number(item.amount),
         quantity: Number(item.quantity),
       }));
-      if (mappedItems.length === 0) {
-        console.warn('No items found for selected cotización:', selectedCotizacion);
-      }
-      console.log('Setting items:', mappedItems);
       setItems(mappedItems);
       setItemForm({ description: '', amount: '', quantity: '1' });
       setSelectedCliente({
@@ -101,16 +96,12 @@ export default function Facturas() {
   const [errorClientes, setErrorClientes] = useState<string | undefined>(undefined);
   const [clienteQuery, setClienteQuery] = useState("");
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
-  const [showClienteOptions, setShowClienteOptions] = useState(false);
+
 
   const [items, setItems] = useState<LineItem[]>([]);
+  const [, setShowClienteOptions] = useState(false);
   const [itemForm, setItemForm] = useState({ description: "", amount: "", quantity: "1" });
-  useEffect(() => {
-    console.log('items state changed:', items);
-  }, [items]);
-  useEffect(() => {
-    console.log('itemForm state changed:', itemForm);
-  }, [itemForm]);
+
 
   const getTodayDate = () => {
     const today = new Date();
@@ -426,12 +417,9 @@ export default function Facturas() {
                   />
                   {clienteQuery.trim().length > 0 && (
                     <div className="max-h-64 overflow-y-auto rounded-xl border-2 border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-700 shadow-lg">
-                      {loadingClientes && (
-                        <div className="px-5 py-4 text-base font-medium text-gray-600 dark:text-gray-400">⏳ Cargando clientes...</div>
-                      )}
                       {!loadingClientes && errorClientes && (
                         <div className="px-5 py-4 text-base font-medium text-red-600 dark:text-red-400">
-                          {errorClientes instanceof Error ? errorClientes.message : String(errorClientes)}
+                          {String(errorClientes)}
                         </div>
                       )}
                       {!loadingClientes && !errorClientes && (
@@ -556,7 +544,7 @@ export default function Facturas() {
                 <span className="text-blue-600 dark:text-blue-400">📦</span>
                 Items de la Factura
               </label>
-              
+
               {/* Add Item Form */}
               <div className="bg-white dark:bg-gray-700 rounded-lg p-5 mb-5 border-2 border-gray-300 dark:border-gray-600">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-12">
@@ -620,7 +608,7 @@ export default function Facturas() {
                   </div>
                 ) : (
                   <div className="divide-y divide-gray-200 dark:divide-gray-600">
-                    {items.map((item, index) => (
+                    {items.map((item) => (
                       <div key={item.id} className="p-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
                         <div className="flex-1">
                           <div className="font-semibold text-gray-900 dark:text-white text-base">{item.description}</div>
@@ -801,7 +789,7 @@ export default function Facturas() {
                     <span className="text-blue-600 dark:text-blue-400">📦</span>
                     Items de la Factura
                   </label>
-                  
+
                   {/* Add Item Form */}
                   <div className="bg-white dark:bg-gray-700 rounded-lg p-5 mb-5 border-2 border-gray-300 dark:border-gray-600">
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-12">
@@ -865,7 +853,7 @@ export default function Facturas() {
                       </div>
                     ) : (
                       <div className="divide-y divide-gray-200 dark:divide-gray-600">
-                        {items.map((item, index) => (
+                        {items.map((item) => (
                           <div key={item.id} className="p-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
                             <div className="flex-1">
                               <div className="font-semibold text-gray-900 dark:text-white text-base">{item.description}</div>
@@ -931,11 +919,13 @@ export default function Facturas() {
         ) : null}
       </Modal>
 
-      {showSuccessAlert && (
-        <div className="mb-4 p-3 rounded bg-green-100 text-green-800 border border-green-200 text-sm">
-          La factura ha sido creada correctamente.
-        </div>
-      )}
+      {
+        showSuccessAlert && (
+          <div className="mb-4 p-3 rounded bg-green-100 text-green-800 border border-green-200 text-sm">
+            La factura ha sido creada correctamente.
+          </div>
+        )
+      }
       <BasicTableOne
         dataType="facturas"
         query={debouncedQuery}
@@ -953,6 +943,6 @@ export default function Facturas() {
         }}
       />
 
-    </div>
+    </div >
   );
 }
