@@ -152,9 +152,6 @@ export default function Facturas() {
   const [total, setTotal] = useState(0);
   const debouncedQuery = useDebounce(query, 400);
 
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedQuery]);
 
   const mapApiToRow = useMemo(
     () =>

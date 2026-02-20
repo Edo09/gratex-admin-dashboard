@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router";
 import { EyeCloseIcon, EyeIcon } from "../../icons";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
-import Checkbox from "../form/input/Checkbox";
+
 import Button from "../ui/button/Button";
 import { useAuth } from "../../context/AuthContext";
 
@@ -12,7 +12,7 @@ export default function SignInForm() {
   const { login, isLoading, error, clearError, successMessage, clearSuccessMessage } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
-  const [isChecked, setIsChecked] = useState(false);
+
   const [formData, setFormData] = useState({
     emailOrUsername: "",
     password: "",
@@ -142,13 +142,7 @@ export default function SignInForm() {
               </div>
             </div>
 
-            {/* Remember Me */}
-            <div className="flex items-center gap-3">
-              <Checkbox checked={isChecked} onChange={setIsChecked} />
-              <span className="text-sm font-normal text-gray-700 dark:text-gray-300">
-                Mantener sesión iniciada
-              </span>
-            </div>
+
 
             {/* Sign In Button */}
             <Button

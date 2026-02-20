@@ -9,6 +9,14 @@ const Backdrop: React.FC = () => {
     <div
       className="fixed inset-0 z-40 bg-gray-900/50 lg:hidden"
       onClick={toggleMobileSidebar}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          toggleMobileSidebar();
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label="Close sidebar"
     />
   );
 };

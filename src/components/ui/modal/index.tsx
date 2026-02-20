@@ -59,6 +59,14 @@ export const Modal: React.FC<ModalProps> = ({
         <div
           className="fixed inset-0 h-full w-full bg-gray-400/50 backdrop-blur-[2px]"
           onClick={onClose}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              onClose();
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          aria-label="Close modal"
         ></div>
       )}
       <div

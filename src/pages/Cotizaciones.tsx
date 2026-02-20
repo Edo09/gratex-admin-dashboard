@@ -81,9 +81,6 @@ export default function Cotizaciones() {
   const [pageSize, setPageSize] = useState(10);
   const debouncedQuery = useDebounce(query, 400);
 
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedQuery]);
 
   const mapApiToRow = useMemo(
     () =>
