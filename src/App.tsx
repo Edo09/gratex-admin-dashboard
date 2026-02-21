@@ -3,24 +3,15 @@ import SignIn from "./pages/AuthPages/SignIn";
 import SignUp from "./pages/AuthPages/SignUp";
 import ExternalCallback from "./pages/AuthPages/ExternalCallback";
 import NotFound from "./pages/OtherPage/NotFound";
-import UserProfiles from "./pages/UserProfiles";
-import Videos from "./pages/UiElements/Videos";
-import Images from "./pages/UiElements/Images";
-import Alerts from "./pages/UiElements/Alerts";
-import Badges from "./pages/UiElements/Badges";
-import Avatars from "./pages/UiElements/Avatars";
-import Buttons from "./pages/UiElements/Buttons";
-import LineChart from "./pages/Charts/LineChart";
-import BarChart from "./pages/Charts/BarChart";
-import Calendar from "./pages/Calendar";
-import BasicTables from "./pages/Tables/BasicTables";
-import Blank from "./pages/Blank";
+
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
 import Cotizaciones from "./pages/Cotizaciones";
 import Facturas from "./pages/Facturas";
+import Ncf from "./pages/Ncf";
 import Clientes from "./pages/Clientes";
+import Configuracion from "./pages/Configuracion";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { PublicRoute } from "./components/auth/PublicRoute";
 
@@ -45,34 +36,13 @@ export default function App() {
             }
           >
             <Route index path="/" element={<Home />} />
-
-            {/* Others Page */}
-            <Route path="/profile" element={<UserProfiles />} />
-            <Route path="/calendar" element={<Calendar />} />
             <Route path="/cotizaciones" element={<Cotizaciones />} />
             <Route path="/facturas" element={<Facturas />} />
+
             <Route path="/clientes" element={<Clientes />} />
+            <Route path="/ncf" element={<Ncf />} />
+            <Route path="/configuracion" element={<Configuracion />} />
 
-
-            <Route path="/blank" element={<Blank />} />
-
-
-
-
-            {/* Tables */}
-            <Route path="/basic-tables" element={<BasicTables />} />
-
-            {/* Ui Elements */}
-            <Route path="/alerts" element={<Alerts />} />
-            <Route path="/avatars" element={<Avatars />} />
-            <Route path="/badge" element={<Badges />} />
-            <Route path="/buttons" element={<Buttons />} />
-            <Route path="/images" element={<Images />} />
-            <Route path="/videos" element={<Videos />} />
-
-            {/* Charts */}
-            <Route path="/line-chart" element={<LineChart />} />
-            <Route path="/bar-chart" element={<BarChart />} />
           </Route>
 
           {/* Fallback Route */}

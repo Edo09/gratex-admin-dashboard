@@ -23,6 +23,7 @@ interface BasicTableOneProps {
   total?: number;
   onPageChange?: (page: number) => void;
   onPageSizeChange?: (size: number) => void;
+  onRowClick?: (row: RecordRow) => void;
 }
 interface RecordRow {
   id: number;
@@ -51,12 +52,18 @@ export default function BasicTableOne({
   total,
   onPageChange,
   onPageSizeChange,
+  onRowClick,
 }: BasicTableOneProps) {
 
   const handleRowClick = async (row: RecordRow) => {
+    if (onRowClick) {
+      onRowClick(row);
+      return;
+    }
+
     try {
       let base64String: string;
-      
+
       // Fetch PDF based on data type
       if (dataType === "cotizaciones") {
         const response = await cotizacionesApi.getCotizacionPdf(row.id);
@@ -78,11 +85,11 @@ export default function BasicTableOne({
           bytes[i] = binaryString.charCodeAt(i);
         }
         const blob = new Blob([bytes], { type: 'application/pdf' });
-        
+
         // Create object URL and open in new tab
         const objectUrl = URL.createObjectURL(blob);
         window.open(objectUrl, '_blank');
-        
+
         // Clean up URL reference after a delay
         setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
       } else {
@@ -116,11 +123,11 @@ export default function BasicTableOne({
   const totalPages = Math.max(1, Math.ceil((totalCount || 0) / (effectivePageSize || 10)));
   const startIdx = (effectivePage - 1) * effectivePageSize;
   const endIdx = startIdx + effectivePageSize;
-  
+
   // For server-side pagination, use data as-is (already paginated by backend)
   // For client-side pagination, slice the data
-  const displayRows = pagination === "server" 
-    ? filtered 
+  const displayRows = pagination === "server"
+    ? filtered
     : filtered.slice((effectivePage - 1) * effectivePageSize, effectivePage * effectivePageSize);
 
   const goToPage = (p: number) => {
@@ -150,7 +157,7 @@ export default function BasicTableOne({
             <TableRow>
               <TableCell
                 isHeader
-                className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                className="px-5 py-4 font-bold text-gray-700 text-start text-base dark:text-gray-300"
               >
                 Fecha
               </TableCell>
@@ -158,31 +165,31 @@ export default function BasicTableOne({
                 <>
                   <TableCell
                     isHeader
-                    className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                    className="px-5 py-4 font-bold text-gray-700 text-start text-base dark:text-gray-300"
                   >
                     No. Factura
                   </TableCell>
                   <TableCell
                     isHeader
-                    className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                    className="px-5 py-4 font-bold text-gray-700 text-start text-base dark:text-gray-300"
                   >
                     Cliente
                   </TableCell>
                   <TableCell
                     isHeader
-                    className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                    className="px-5 py-4 font-bold text-gray-700 text-start text-base dark:text-gray-300"
                   >
                     NCF
                   </TableCell>
                   <TableCell
                     isHeader
-                    className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                    className="px-5 py-4 font-bold text-gray-700 text-start text-base dark:text-gray-300"
                   >
                     Descripcion
                   </TableCell>
                   <TableCell
                     isHeader
-                    className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                    className="px-5 py-4 font-bold text-gray-700 text-start text-base dark:text-gray-300"
                   >
                     Monto
                   </TableCell>
@@ -191,25 +198,25 @@ export default function BasicTableOne({
                 <>
                   <TableCell
                     isHeader
-                    className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                    className="px-5 py-4 font-bold text-gray-700 text-start text-base dark:text-gray-300"
                   >
                     Codigo
                   </TableCell>
                   <TableCell
                     isHeader
-                    className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                    className="px-5 py-4 font-bold text-gray-700 text-start text-base dark:text-gray-300"
                   >
                     Cliente
                   </TableCell>
                   <TableCell
                     isHeader
-                    className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                    className="px-5 py-4 font-bold text-gray-700 text-start text-base dark:text-gray-300"
                   >
                     Descripcion
                   </TableCell>
                   <TableCell
                     isHeader
-                    className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                    className="px-5 py-4 font-bold text-gray-700 text-start text-base dark:text-gray-300"
                   >
                     Monto
                   </TableCell>
@@ -222,22 +229,22 @@ export default function BasicTableOne({
           <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
             {loading && (
               <TableRow>
-                <TableCell className="px-5 py-4 sm:px-6 text-start" colSpan={5}>
-                  <span className="text-gray-500 dark:text-gray-400">Cargando...</span>
+                <TableCell className="px-5 py-5 sm:px-6 text-start text-base" colSpan={5}>
+                  <span className="text-gray-600 dark:text-gray-400 font-medium">Cargando...</span>
                 </TableCell>
               </TableRow>
             )}
             {!loading && error && (
               <TableRow>
-                <TableCell className="px-5 py-4 sm:px-6 text-start" colSpan={5}>
-                  <span className="text-red-600 dark:text-red-400">{error}</span>
+                <TableCell className="px-5 py-5 sm:px-6 text-start text-base" colSpan={5}>
+                  <span className="text-red-600 dark:text-red-400 font-medium">{error}</span>
                 </TableCell>
               </TableRow>
             )}
             {!loading && !error && filtered.length === 0 && (
               <TableRow>
-                <TableCell className="px-5 py-4 sm:px-6 text-start" colSpan={5}>
-                  <span className="text-gray-500 dark:text-gray-400">Sin resultados</span>
+                <TableCell className="px-5 py-5 sm:px-6 text-start text-base" colSpan={5}>
+                  <span className="text-gray-600 dark:text-gray-400 font-medium">Sin resultados</span>
                 </TableCell>
               </TableRow>
             )}
@@ -249,8 +256,8 @@ export default function BasicTableOne({
                 tabIndex={0}
                 className="cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.06]"
               >
-                <TableCell className="px-5 py-4 sm:px-6 text-start">
-                  <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
+                <TableCell className="px-5 py-5 sm:px-6 text-start">
+                  <span className="block font-bold text-gray-900 text-base dark:text-white">
                     {(() => {
                       // Format date to dd/mm/yyyy
                       if (!row.date) return "";
@@ -262,16 +269,16 @@ export default function BasicTableOne({
                 </TableCell>
                 {dataType === "facturas" ? (
                   <>
-                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                    <TableCell className="px-5 py-5 text-gray-700 text-start text-base font-medium dark:text-gray-300">
                       {row.no_factura}
                     </TableCell>
-                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                    <TableCell className="px-5 py-5 text-gray-700 text-start text-base font-medium dark:text-gray-300">
                       {row.client_name}
                     </TableCell>
-                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                    <TableCell className="px-5 py-5 text-gray-700 text-start text-base font-medium dark:text-gray-300">
                       {row.ncf}
                     </TableCell>
-                    <TableCell className="px-4 py-3 text-gray-700 text-start text-theme-sm dark:text-gray-300">
+                    <TableCell className="px-5 py-5 text-gray-800 text-start text-base font-medium dark:text-gray-200">
                       {row.description.split(/\n|\r\n?/).map((desc, idx) => (
                         <span key={idx}>
                           {desc}
@@ -279,19 +286,19 @@ export default function BasicTableOne({
                         </span>
                       ))}
                     </TableCell>
-                    <TableCell className="px-4 py-3 text-gray-800 text-theme-sm dark:text-gray-200">
+                    <TableCell className="px-5 py-5 text-gray-900 text-base font-bold dark:text-white">
                       {row.amount}
                     </TableCell>
                   </>
                 ) : (
                   <>
-                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                    <TableCell className="px-5 py-5 text-gray-700 text-start text-base font-medium dark:text-gray-300">
                       {row.code}
                     </TableCell>
-                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                    <TableCell className="px-5 py-5 text-gray-700 text-start text-base font-medium dark:text-gray-300">
                       {row.client}
                     </TableCell>
-                    <TableCell className="px-4 py-3 text-gray-700 text-start text-theme-sm dark:text-gray-300">
+                    <TableCell className="px-5 py-5 text-gray-800 text-start text-base font-medium dark:text-gray-200">
                       {row.description.split(/\n|\r\n?/).map((desc, idx) => (
                         <span key={idx}>
                           {desc}
@@ -299,7 +306,7 @@ export default function BasicTableOne({
                         </span>
                       ))}
                     </TableCell>
-                    <TableCell className="px-4 py-3 text-gray-800 text-theme-sm dark:text-gray-200">
+                    <TableCell className="px-5 py-5 text-gray-900 text-base font-bold dark:text-white">
                       {row.amount}
                     </TableCell>
                   </>
@@ -310,13 +317,13 @@ export default function BasicTableOne({
         </Table>
         {/* Pagination Controls */}
         {!loading && !error && totalCount > 0 && (
-          <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-sm text-gray-600 dark:text-gray-400">
+          <div className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between border-t-2 border-gray-200 dark:border-gray-700">
+            <div className="text-base font-medium text-gray-700 dark:text-gray-300">
               Mostrando {Math.min(startIdx + 1, totalCount)}–{Math.min(endIdx, totalCount)} de {totalCount}
             </div>
             <div className="flex items-center gap-3">
               <select
-                className="rounded-md border border-gray-200 bg-white px-2 py-1 text-sm dark:border-white/[0.08] dark:bg-gray-800 dark:text-white dark:[color-scheme:dark]"
+                className="rounded-lg border-2 border-gray-300 bg-white px-3 py-2 text-base font-medium dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:[color-scheme:dark]"
                 value={effectivePageSize}
                 onChange={(e) => changePageSize(Number(e.target.value))}
               >
@@ -326,21 +333,21 @@ export default function BasicTableOne({
                   </option>
                 ))}
               </select>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-2">
                 <button
                   disabled={effectivePage <= 1}
                   onClick={() => goToPage(effectivePage - 1)}
-                  className="rounded-md border border-gray-200 px-2 py-1 text-sm text-gray-700 disabled:opacity-50 dark:border-white/[0.08] dark:text-white"
+                  className="rounded-lg border-2 border-gray-300 px-4 py-2 text-base font-medium text-gray-700 disabled:opacity-50 hover:bg-gray-50 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700 transition-colors"
                 >
                   Anterior
                 </button>
-                <span className="px-2 text-sm text-gray-700 dark:text-white">
+                <span className="px-3 text-base font-bold text-gray-800 dark:text-white">
                   {effectivePage} / {totalPages}
                 </span>
                 <button
                   disabled={effectivePage >= totalPages}
                   onClick={() => goToPage(effectivePage + 1)}
-                  className="rounded-md border border-gray-200 px-2 py-1 text-sm text-gray-700 disabled:opacity-50 dark:border-white/[0.08] dark:text-white"
+                  className="rounded-lg border-2 border-gray-300 px-4 py-2 text-base font-medium text-gray-700 disabled:opacity-50 hover:bg-gray-50 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700 transition-colors"
                 >
                   Siguiente
                 </button>
