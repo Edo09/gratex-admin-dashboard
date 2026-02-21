@@ -280,7 +280,7 @@ export default function FacturaCreateModal({ isOpen, onClose, onSuccess }: Factu
               />
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                 <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border-2 border-gray-200 dark:border-gray-700">
-                  <label className="mb-2 block text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                  <label className="mb-2 text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1">
                     <span className="text-blue-600 dark:text-blue-400">📅</span> Fecha
                   </label>
                   <input
@@ -291,7 +291,7 @@ export default function FacturaCreateModal({ isOpen, onClose, onSuccess }: Factu
                   />
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border-2 border-gray-200 dark:border-gray-700">
-                  <label className="mb-2 block text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                  <label className="mb-2 text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1">
                     <span className="text-blue-600 dark:text-blue-400">🆔</span> NCF
                   </label>
                   <input
@@ -382,7 +382,7 @@ function DateTotalSection({
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border-2 border-gray-200 dark:border-gray-700">
-        <label className="mb-2 block text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1">
+        <label className="mb-2 text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1">
           <span className="text-blue-600 dark:text-blue-400">📅</span> Fecha
         </label>
         <input
@@ -400,7 +400,7 @@ function DateTotalSection({
 function TotalDisplay({ totalAmount }: { totalAmount: number }) {
   return (
     <div className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/30 dark:to-emerald-800/30 rounded-xl p-4 border-2 border-green-300 dark:border-green-700">
-      <label className="mb-2 block text-sm font-bold text-green-800 dark:text-green-300 flex items-center gap-1">
+      <label className="mb-2 text-sm font-bold text-green-800 dark:text-green-300 flex items-center gap-1">
         <span>💰</span> Total Estimado
       </label>
       <div className="text-2xl font-bold text-green-700 dark:text-green-400">
@@ -436,7 +436,7 @@ function CotizacionSearch({
 
   return (
     <div className="mb-4">
-      <label className="mb-3 block text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+      <label className="mb-3 text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
         <span className="text-blue-600 dark:text-blue-400">🔍</span> Buscar Cotización
       </label>
       <input

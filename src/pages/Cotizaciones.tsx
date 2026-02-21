@@ -391,7 +391,7 @@ export default function Cotizaciones() {
           >
             {/* Client Section */}
             <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 border-2 border-gray-200 dark:border-gray-700">
-              <label className="mb-3 block text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+              <label className="mb-3 text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
                 <span className="text-blue-600 dark:text-blue-400">👤</span>
                 Información del Cliente
               </label>
@@ -492,7 +492,7 @@ export default function Cotizaciones() {
             {/* Date and Total Section */}
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border-2 border-gray-200 dark:border-gray-700">
-                <label className="mb-2 block text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                <label className="mb-2 text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1">
                   <span className="text-blue-600 dark:text-blue-400">📅</span>
                   Fecha
                 </label>
@@ -504,7 +504,7 @@ export default function Cotizaciones() {
                 />
               </div>
               <div className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/30 dark:to-emerald-800/30 rounded-xl p-4 border-2 border-green-300 dark:border-green-700">
-                <label className="mb-2 block text-sm font-bold text-green-800 dark:text-green-300 flex items-center gap-1">
+                <label className="mb-2 text-sm font-bold text-green-800 dark:text-green-300 flex items-center gap-1">
                   <span>💰</span>
                   Total Estimado
                 </label>
@@ -515,7 +515,7 @@ export default function Cotizaciones() {
             </div>
             {/* Items Section */}
             <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 border-2 border-gray-200 dark:border-gray-700">
-              <label className="mb-4 block text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+              <label className="mb-4 text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
                 <span className="text-blue-600 dark:text-blue-400">📦</span>
                 Items de la Cotización
               </label>
