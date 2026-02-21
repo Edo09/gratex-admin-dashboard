@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
-import BasicTableOne from "../components/tables/BasicTables/BasicTableOne";
+import BasicTableOne from "../components/tables/BasicTableOne";
 import { useDebounce } from "../hooks/useDebounce";
 import Button from "../components/ui/button/Button";
 import FacturaCreateModal from "../components/facturas/FacturaCreateModal";

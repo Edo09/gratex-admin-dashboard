@@ -6,7 +6,7 @@ import { clientesApi, facturasApi, cotizacionesApi } from "../services/api";
 import { useDebounce } from "../hooks/useDebounce";
 import { Modal } from "../components/ui/modal";
 import Button from "../components/ui/button/Button";
-import BasicTableOne from "../components/tables/BasicTables/BasicTableOne";
+import BasicTableOne from "../components/tables/BasicTableOne";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "../components/ui/table";
 import type { Cliente } from "../types";
 

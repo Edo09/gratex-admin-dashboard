@@ -22,7 +22,6 @@ export default function ExternalCallback() {
 
         // Store token (works with JWT, bearer tokens, or any token format)
         localStorage.setItem("authToken", token);
-        console.log("✅ Token stored:", token.substring(0, 20) + "...");
 
         // Decode and store user if provided
         if (userEncoded) {
@@ -30,9 +29,8 @@ export default function ExternalCallback() {
             const userJson = atob(userEncoded); // Decode base64
             const user = JSON.parse(userJson);
             localStorage.setItem("authUser", JSON.stringify(user));
-            console.log("✅ User data stored:", user.email);
-          } catch (err) {
-            console.warn("Could not decode user data:", err);
+          } catch {
+            // Could not decode user data
           }
         }
 
@@ -40,7 +38,6 @@ export default function ExternalCallback() {
         setToken(token);
 
         // Redirect to dashboard
-        console.log("✅ Redirecting to dashboard...");
         navigate("/", { replace: true });
       } catch (error) {
         console.error("❌ Callback processing error:", error);

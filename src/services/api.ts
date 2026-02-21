@@ -104,10 +104,6 @@ class ApiService {
       // Handle 401 Unauthorized - token might be expired
       if (response.status === 401 && !skipAuth) {
         console.error(`❌ 401 Unauthorized on ${endpoint} - Token expired or invalid`);
-        // Clear auth data and redirect to login
-        // localStorage.removeItem("authToken");
-        // localStorage.removeItem("authUser");
-        // window.location.href = "/auth/signin";
         throw new Error("Unauthorized. Please login again.");
       }
 
@@ -351,5 +347,3 @@ export const cotizacionesApi = {
   deleteCotizacion: (id: number) =>
     apiClient.delete<void>(`/api/cotizaciones/${id}`),
 };
-
-export default apiClient;

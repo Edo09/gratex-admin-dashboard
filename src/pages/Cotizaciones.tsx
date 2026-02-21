@@ -3,13 +3,14 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
-import BasicTableOne from "../components/tables/BasicTables/BasicTableOne";
+import BasicTableOne from "../components/tables/BasicTableOne";
 import { useDebounce } from "../hooks/useDebounce";
 import { Modal } from "../components/ui/modal";
 import Button from "../components/ui/button/Button";
 import { BoxIcon } from "../icons";
 import { clientesApi, cotizacionesApi, apiClient } from "../services/api";
 import type { Cotizacion } from "../services/api";
+import type { Cliente, LineItem } from "../types";
 import Alert from '../components/ui/alert/Alert';
 
 type TableRow = { id: number; date: string; code?: string; client?: string; description: string; amount: string; total: string };
@@ -26,17 +27,6 @@ export default function Cotizaciones() {
   });
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  type Cliente = {
-    id: number;
-    email?: string;
-    client_name?: string;
-    company_name?: string;
-    phone_number?: string;
-    nombre?: string;
-    name?: string;
-    telefono?: string;
-    direccion?: string;
-  };
   const [clienteQuery, setClienteQuery] = useState("");
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   const [showClienteOptions, setShowClienteOptions] = useState(false);
@@ -64,10 +54,6 @@ export default function Cotizaciones() {
     enabled: isCreateOpen,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
-  // const [clienteQuery, setClienteQuery] = useState("");
-  // const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
-  // const [showClienteOptions, setShowClienteOptions] = useState(true);
-  type LineItem = { id: number; description: string; amount: number; quantity: number };
   const [items, setItems] = useState<LineItem[]>([]);
   const [itemForm, setItemForm] = useState({ description: "", amount: "", quantity: "1" });
   const totalAmount = useMemo(() => items.reduce((sum, item) => sum + item.amount * item.quantity, 0), [items]);

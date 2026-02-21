@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import PageMeta from "../components/common/PageMeta";
 import Button from "../components/ui/button/Button";
-import Input from "../components/form/input/InputField";
+import Input from "../components/form/InputField";
 import Label from "../components/form/Label";
-// import { useAuth } from "../context/AuthContext";
 
 // Interfaces
 interface CarouselItem {
@@ -28,7 +27,6 @@ export default function Configuracion() {
     const [services, setServices] = useState<ServiceItem[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
-    // const { token } = useAuth(); // If needed for authenticated requests
 
     // Form states
     const [carouselForm, setCarouselForm] = useState({ title: "", subtitle: "", image: null as File | null });

@@ -141,9 +141,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       // Call backend to sign out session
       await authApi.logout();
-      console.log("✅ Logout successful");
-    } catch (err) {
-      console.error("❌ Logout error:", err);
+    } catch {
       // Continue with logout even if API call fails
     } finally {
       // Clear local auth state

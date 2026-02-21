@@ -73,16 +73,6 @@ export interface FacturaTableRow {
   amount: string;
 }
 
-export interface CotizacionTableRow {
-  id: number;
-  date: string;
-  code?: string;
-  client?: string;
-  description: string;
-  amount: string;
-  total: string;
-}
-
 /** Helper to get display name from a Cliente record */
 export function getClientDisplayName(c: Cliente): string {
   return c.client_name ?? c.nombre ?? c.name ?? `Cliente ${c.id}`;

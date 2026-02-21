@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
 import Button from "../components/ui/button/Button";
-import Input from "../components/form/input/InputField";
+import Input from "../components/form/InputField";
 import Label from "../components/form/Label";
 import { useAuth } from "../context/AuthContext";
 
