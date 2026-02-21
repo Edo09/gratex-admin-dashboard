@@ -15,4 +15,16 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    chunkSizeWarningLimit: 600, // apexcharts is ~578 kB minified, unavoidable
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ["react", "react-dom", "react-router"],
+          query: ["@tanstack/react-query"],
+          charts: ["apexcharts", "react-apexcharts"],
+        },
+      },
+    },
+  },
 });

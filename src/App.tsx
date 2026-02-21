@@ -1,26 +1,34 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router";
-import SignIn from "./pages/AuthPages/SignIn";
-import SignUp from "./pages/AuthPages/SignUp";
-import ExternalCallback from "./pages/AuthPages/ExternalCallback";
-import NotFound from "./pages/OtherPage/NotFound";
-
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
-import Home from "./pages/Dashboard/Home";
-import Cotizaciones from "./pages/Cotizaciones";
-import Facturas from "./pages/Facturas";
-import Ncf from "./pages/Ncf";
-import Clientes from "./pages/Clientes";
-import Configuracion from "./pages/Configuracion";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { PublicRoute } from "./components/auth/PublicRoute";
 
+// Lazy-loaded pages
+const SignIn = lazy(() => import("./pages/AuthPages/SignIn"));
+const SignUp = lazy(() => import("./pages/AuthPages/SignUp"));
+const ExternalCallback = lazy(() => import("./pages/AuthPages/ExternalCallback"));
+const NotFound = lazy(() => import("./pages/OtherPage/NotFound"));
+const Home = lazy(() => import("./pages/Dashboard/Home"));
+const Cotizaciones = lazy(() => import("./pages/Cotizaciones"));
+const Facturas = lazy(() => import("./pages/Facturas"));
+const Clientes = lazy(() => import("./pages/Clientes"));
+const Ncf = lazy(() => import("./pages/Ncf"));
+const Configuracion = lazy(() => import("./pages/Configuracion"));
+
+const Loading = () => (
+  <div className="flex h-screen items-center justify-center">
+    <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-blue-500" />
+  </div>
+);
 
 export default function App() {
   return (
     <>
       <Router>
         <ScrollToTop />
+        <Suspense fallback={<Loading />}>
         <Routes>
           {/* Auth Routes (Public - Only for unauthenticated users) */}
           <Route path="/signin" element={<PublicRoute><SignIn /></PublicRoute>} />
@@ -48,6 +56,7 @@ export default function App() {
           {/* Fallback Route */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </Suspense>
       </Router>
     </>
   );

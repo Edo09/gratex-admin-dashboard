@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
 import Button from "../components/ui/button/Button";
@@ -16,7 +16,7 @@ export default function Ncf() {
     const [isUpdating, setIsUpdating] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
-    const fetchSequence = async () => {
+    const fetchSequence = useCallback(async () => {
         try {
             setIsLoading(true);
             const res = await fetch(`${import.meta.env.VITE_API_URL}/api/ncf/sequence`, {
@@ -31,17 +31,17 @@ export default function Ncf() {
                 setDescription(data.data.description);
                 setNewValue(data.data.current_value.toString());
             }
-        } catch (err) {
-            console.error(err);
+        } catch (_err) {
+            console.error(_err);
             setMessage({ type: 'error', text: 'Failed to fetch NCF sequence' });
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [token]);
 
     useEffect(() => {
         fetchSequence();
-    }, [token]);
+    }, [fetchSequence]);
 
     const handleUpdate = async () => {
         try {
@@ -62,7 +62,7 @@ export default function Ncf() {
             } else {
                 setMessage({ type: 'error', text: data.error || 'Failed to update' });
             }
-        } catch (err) {
+        } catch {
             setMessage({ type: 'error', text: 'Network error occurred' });
         } finally {
             setIsUpdating(false);

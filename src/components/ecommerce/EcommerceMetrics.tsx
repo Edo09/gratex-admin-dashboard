@@ -6,6 +6,7 @@ import {
   BoxIconLine,
 } from "../../icons";
 import { clientesApi, cotizacionesApi, facturasApi } from "../../services/api";
+import type { Factura } from "../../services/api";
 
 export default function EcommerceMetrics() {
   // Fetch total Clientes
@@ -33,9 +34,9 @@ export default function EcommerceMetrics() {
 
   const allFacturas = facturasData?.data?.data || [];
 
-  // Helper to safely parse any amount field
-  const parseAmount = (item: any) => {
-    const rawVal = item.amount ?? item.total ?? item.monto ?? 0;
+  // Helper to safely parse amount fields
+  const parseAmount = (item: Factura) => {
+    const rawVal = (item.amount ?? 0) as string | number;
     const val = typeof rawVal === 'string' ? parseFloat(rawVal) : rawVal;
     return isNaN(val) ? 0 : val;
   };

@@ -9,6 +9,7 @@ import { Modal } from "../components/ui/modal";
 import Button from "../components/ui/button/Button";
 import { BoxIcon } from "../icons";
 import { clientesApi, cotizacionesApi, apiClient } from "../services/api";
+import type { Cotizacion } from "../services/api";
 import Alert from '../components/ui/alert/Alert';
 
 type TableRow = { id: number; date: string; code?: string; client?: string; description: string; amount: string; total: string };
@@ -87,8 +88,8 @@ export default function Cotizaciones() {
       (item: Record<string, unknown>, index: number): TableRow => {
         let description = (item.description as string) ?? (item.descripcion as string) ?? "";
         if (!description && Array.isArray(item.items) && item.items.length > 0) {
-          description = item.items
-            .map((it: any) => it.description || "(Sin descripción)")
+          description = (item.items as Record<string, unknown>[])
+            .map((it) => (it.description as string) || "(Sin descripción)")
             .join("\n");
         }
         const totalValue = (item.total as string) ?? (item.amount as string) ?? (item.monto as string) ?? "";
@@ -135,10 +136,10 @@ export default function Cotizaciones() {
     } else if (
       typeof cotizacionesData.data === 'object' &&
       'data' in cotizacionesData.data &&
-      Array.isArray((cotizacionesData.data as any).data)
+      Array.isArray((cotizacionesData.data as unknown as Record<string, unknown>).data)
     ) {
-      rows = (cotizacionesData.data as any).data.map(mapApiToRow);
-      total = (cotizacionesData.data as any).total || rows.length;
+      rows = ((cotizacionesData.data as unknown as Record<string, unknown>).data as Record<string, unknown>[]).map(mapApiToRow);
+      total = ((cotizacionesData.data as unknown as Record<string, unknown>).total as number) || rows.length;
     }
   }
 
@@ -150,9 +151,9 @@ export default function Cotizaciones() {
 
       // Handle case where API returns an array directly
       if (Array.isArray(data)) {
-        const found = data.find((item: any) => item.id == row.id);
+        const found = (data as unknown as Record<string, unknown>[]).find((item) => item.id == row.id);
         if (found) {
-          data = found;
+          data = found as unknown as Cotizacion;
         } else if (data.length > 0) {
           // If we returned a list but ID not found (unlikely if filtered by ID), use first?
           // Or maybe it's just a single item list.
@@ -160,14 +161,14 @@ export default function Cotizaciones() {
         }
       }
       // Handle case where API returns a paginated list wrapper
-      else if (data && typeof data === 'object' && 'data' in data && Array.isArray((data as any).data)) {
-        const list = (data as any).data;
-        const found = list.find((item: any) => item.id == row.id);
+      else if (data && typeof data === 'object' && 'data' in data && Array.isArray((data as unknown as Record<string, unknown>).data)) {
+        const list = (data as unknown as Record<string, unknown>).data as Record<string, unknown>[];
+        const found = list.find((item) => item.id == row.id);
         if (found) {
-          data = found;
+          data = found as unknown as Cotizacion;
         } else if (list.length > 0) {
           // Fallback if filtering happened
-          data = list[0];
+          data = list[0] as unknown as Cotizacion;
         }
       }
 
@@ -182,11 +183,11 @@ export default function Cotizaciones() {
 
         // Set items
         if (data.items) {
-          setItems(data.items.map((i: any) => ({
-            id: i.id || Date.now() + Math.random(),
-            description: i.description,
+          setItems((data.items as Record<string, unknown>[]).map((i) => ({
+            id: (i.id as number) || Date.now() + Math.random(),
+            description: i.description as string,
             amount: parseFloat(i.amount as unknown as string),
-            quantity: i.quantity
+            quantity: i.quantity as number
           })));
         } else {
           setItems([]);
@@ -200,20 +201,20 @@ export default function Cotizaciones() {
 
             // Handle possible array response for client as well
             if (Array.isArray(clientData)) {
-              const foundClient = clientData.find((c: any) => c.id == data.client_id);
+              const foundClient = (clientData as unknown as Record<string, unknown>[]).find((c) => c.id == data.client_id);
               if (foundClient) {
-                clientData = foundClient;
+                clientData = foundClient as unknown as Cliente;
               } else if (clientData.length > 0) {
                 clientData = clientData[0];
               }
-            } else if (clientData && typeof clientData === 'object' && 'data' in clientData && Array.isArray((clientData as any).data)) {
+            } else if (clientData && typeof clientData === 'object' && 'data' in clientData && Array.isArray((clientData as unknown as Record<string, unknown>).data)) {
               // Check paginated wrapper
-              const list = (clientData as any).data;
-              const foundClient = list.find((c: any) => c.id == data.client_id);
+              const list = (clientData as unknown as Record<string, unknown>).data as Record<string, unknown>[];
+              const foundClient = list.find((c) => c.id == data.client_id);
               if (foundClient) {
-                clientData = foundClient;
+                clientData = foundClient as unknown as Cliente;
               } else if (list.length > 0) {
-                clientData = list[0];
+                clientData = list[0] as unknown as Cliente;
               }
             }
 
@@ -365,7 +366,7 @@ export default function Cotizaciones() {
                 if (cotizacionId) {
                   try {
                     const pdfResponse = await cotizacionesApi.getCotizacionPdf(cotizacionId);
-                    let base64Data = pdfResponse?.content || pdfResponse?.data?.content || pdfResponse?.data;
+                    const base64Data = pdfResponse?.content || pdfResponse?.data?.content || pdfResponse?.data;
                     if (typeof base64Data === "string" && base64Data.length > 0) {
                       const byteCharacters = atob(base64Data);
                       const byteNumbers = new Array(byteCharacters.length);
@@ -638,7 +639,7 @@ export default function Cotizaciones() {
                 // If in Edit Mode, allow viewing the original saved PDF (Old Logic)
                 if (isEditMode && editingId) {
                   const pdfResponse = await cotizacionesApi.getCotizacionPdf(editingId);
-                  let base64Data = pdfResponse?.content || pdfResponse?.data?.content || pdfResponse?.data;
+                  const base64Data = pdfResponse?.content || pdfResponse?.data?.content || pdfResponse?.data;
                   if (typeof base64Data === "string" && base64Data.length > 0) {
                     const byteCharacters = atob(base64Data);
                     const byteNumbers = new Array(byteCharacters.length);
@@ -672,10 +673,10 @@ export default function Cotizaciones() {
                   ? cotizacionesApi.previewCotizacion(payload)
                   : cotizacionesApi.createCotizacion({ ...payload, preview: true }));
                 // Expect the preview response to be a base64 PDF string (or inside .data)
-                const base64Data = (result.data && typeof result.data === 'object')
+                const base64Data: string = (result.data && typeof result.data === 'object')
                   ? ('pdf' in result.data
-                    ? result.data.pdf
-                    : ('content' in result.data ? result.data.content : ''))
+                    ? String(result.data.pdf)
+                    : ('content' in result.data ? String(result.data.content) : ''))
                   : (typeof result.data === 'string' ? result.data : '');
                 if (base64Data && base64Data.length > 0) {
                   const byteCharacters = atob(base64Data);

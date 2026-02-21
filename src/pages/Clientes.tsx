@@ -8,6 +8,11 @@ import { Modal } from "../components/ui/modal";
 import Button from "../components/ui/button/Button";
 import BasicTableOne from "../components/tables/BasicTables/BasicTableOne";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "../components/ui/table";
+import type { Cliente } from "../types";
+
+interface ClienteRow extends Cliente {
+  [key: string]: unknown;
+}
 
 export default function Clientes() {
   const [query, setQuery] = useState("");
@@ -17,7 +22,7 @@ export default function Clientes() {
   const [total, setTotal] = useState(0);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedClient, setSelectedClient] = useState<any>(null);
+  const [selectedClient, setSelectedClient] = useState<ClienteRow | null>(null);
 
   // Data tabs in Modal
   const [activeTab, setActiveTab] = useState<"facturas" | "cotizaciones">("facturas");
@@ -40,28 +45,32 @@ export default function Clientes() {
         setTotal(clientesData.data.length);
       } else if (
         typeof clientesData.data === 'object' &&
-        'data' in clientesData.data &&
-        Array.isArray((clientesData.data as any).data)
+        'data' in clientesData.data
       ) {
-        setTotal((clientesData.data as any).total || (clientesData.data as any).data.length);
+        const nested = clientesData.data as unknown as Record<string, unknown>;
+        if (Array.isArray(nested.data)) {
+          setTotal((nested.total as number) || (nested.data as unknown[]).length);
+        }
       }
     }
   }, [clientesData]);
 
-  let rows: any[] = [];
+  let rows: ClienteRow[] = [];
   if (clientesData && clientesData.data) {
     if (Array.isArray(clientesData.data)) {
-      rows = clientesData.data;
+      rows = clientesData.data as ClienteRow[];
     } else if (
       typeof clientesData.data === 'object' &&
-      'data' in clientesData.data &&
-      Array.isArray((clientesData.data as any).data)
+      'data' in clientesData.data
     ) {
-      rows = (clientesData.data as any).data;
+      const nested = clientesData.data as unknown as Record<string, unknown>;
+      if (Array.isArray(nested.data)) {
+        rows = nested.data as ClienteRow[];
+      }
     }
   }
 
-  const handleRowClick = (client: any) => {
+  const handleRowClick = (client: ClienteRow) => {
     setSelectedClient(client);
     setIsModalOpen(true);
     setActiveTab("facturas");
@@ -97,31 +106,37 @@ export default function Clientes() {
   });
 
   // Extract Modal Factura Rows
-  let facturaRows: any[] = [];
+  type RowShape = { id: number; date: string; code?: string; client?: string; description: string; amount: string; no_factura?: string; client_name?: string; total: string; ncf?: string };
+  let facturaRows: RowShape[] = [];
   if (clientFacturasData && clientFacturasData.data) {
-    const rawData = Array.isArray(clientFacturasData.data) ? clientFacturasData.data : (clientFacturasData.data as any).data || [];
-    facturaRows = rawData.map((item: any, index: number) => ({
-      id: item.id ?? index + 1,
-      no_factura: item.no_factura ?? '',
-      date: item.date ?? '',
-      client_name: item.client_name ?? '',
-      total: item.total ?? '',
-      ncf: item.NCF ?? '',
-      description: item.description ?? '',
+    const rawData = Array.isArray(clientFacturasData.data)
+      ? clientFacturasData.data
+      : ((clientFacturasData.data as unknown as Record<string, unknown>).data as Record<string, unknown>[]) || [];
+    facturaRows = (rawData as Record<string, unknown>[]).map((item: Record<string, unknown>, index: number) => ({
+      id: (item.id as number) ?? index + 1,
+      no_factura: (item.no_factura as string) ?? '',
+      date: (item.date as string) ?? '',
+      client_name: (item.client_name as string) ?? '',
+      total: (item.total as string) ?? '',
+      ncf: (item.NCF as string) ?? '',
+      description: (item.description as string) ?? '',
       amount: typeof item.amount === "number" ? item.amount.toFixed(2) : typeof item.amount === "string" ? item.amount : typeof item.total === "number" ? item.total.toFixed(2) : typeof item.total === "string" ? item.total : "",
     }));
   }
 
   // Extract Modal Cotizacion Rows
-  let cotizacionRows: any[] = [];
+  let cotizacionRows: RowShape[] = [];
   if (clientCotizacionesData && clientCotizacionesData.data) {
-    const rawData = Array.isArray(clientCotizacionesData.data) ? clientCotizacionesData.data : (clientCotizacionesData.data as any).data || [];
-    cotizacionRows = rawData.map((item: any, index: number) => ({
-      id: item.id ?? index + 1,
-      code: item.code ?? item.codigo ?? '',
-      date: item.date ?? '',
-      client: item.client_name ?? item.cliente ?? '',
-      description: item.description ?? item.descripcion ?? '',
+    const rawData = Array.isArray(clientCotizacionesData.data)
+      ? clientCotizacionesData.data
+      : ((clientCotizacionesData.data as unknown as Record<string, unknown>).data as Record<string, unknown>[]) || [];
+    cotizacionRows = (rawData as Record<string, unknown>[]).map((item: Record<string, unknown>, index: number) => ({
+      id: (item.id as number) ?? index + 1,
+      code: (item.code as string) ?? (item.codigo as string) ?? '',
+      date: (item.date as string) ?? '',
+      client: (item.client_name as string) ?? (item.cliente as string) ?? '',
+      description: (item.description as string) ?? (item.descripcion as string) ?? '',
+      total: typeof item.total === "string" ? item.total : typeof item.total === "number" ? item.total.toFixed(2) : "",
       amount: typeof item.amount === "number" ? item.amount.toFixed(2) : typeof item.amount === "string" ? item.amount : typeof item.total === "number" ? item.total.toFixed(2) : typeof item.total === "string" ? item.total : "",
     }));
   }

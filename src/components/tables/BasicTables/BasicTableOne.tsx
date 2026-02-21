@@ -101,7 +101,7 @@ export default function BasicTableOne({
       alert("Error al abrir el PDF");
     }
   };
-  const source = rows && rows.length ? rows : [];
+  const source = useMemo(() => (rows && rows.length ? rows : []), [rows]);
   const filtered = useMemo(() => {
     if (pagination === "server") return source;
     const q = query.trim().toLowerCase();

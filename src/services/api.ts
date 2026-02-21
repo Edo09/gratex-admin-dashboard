@@ -12,7 +12,7 @@ interface ApiResponse<T> {
   data?: T;
   message?: string;
   error?: string;
-  pdf?: any;
+  pdf?: string;
 }
 
 // Domain-specific types
@@ -324,8 +324,8 @@ export const cotizacionesApi = {
     total: number;
   }) =>
     apiClient.post<{
-      pdf: any;
-      content: any; id: number; code?: string; message?: string
+      pdf: string;
+      content: string; id: number; code?: string; message?: string
     }>('/api/cotizaciones/preview', data),
 
   // Create a new cotizacion

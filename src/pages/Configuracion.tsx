@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import PageMeta from "../components/common/PageMeta";
 import Button from "../components/ui/button/Button";
 import Input from "../components/form/input/InputField";
@@ -34,11 +34,7 @@ export default function Configuracion() {
     const [carouselForm, setCarouselForm] = useState({ title: "", subtitle: "", image: null as File | null });
     const [serviceForm, setServiceForm] = useState({ title: "", description: "", image: null as File | null });
 
-    useEffect(() => {
-        fetchData();
-    }, [activeTab]);
-
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         setIsLoading(true);
         try {
             const endpoint = activeTab === "carousel" ? "/api/landing/carousel" : "/api/landing/services";
@@ -57,7 +53,11 @@ export default function Configuracion() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [activeTab]);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: "carousel" | "service") => {
         if (e.target.files && e.target.files[0]) {
