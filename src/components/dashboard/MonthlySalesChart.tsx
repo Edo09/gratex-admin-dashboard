@@ -19,13 +19,14 @@ export default function MonthlySalesChart() {
     const currentYear = new Date().getFullYear();
     const facturasByMonth = new Array(12).fill(0);
 
-    const facturas = facturasData?.data?.data || [];
+    const facturas = Array.isArray(facturasData?.data) ? facturasData.data : facturasData?.data?.data || [];
 
     facturas.forEach(f => {
       const date = new Date(f.date);
       if (date.getFullYear() === currentYear) {
         const month = date.getMonth();
-        const amount = typeof f.amount === 'string' ? parseFloat(f.amount) : f.amount;
+        const rawAmount = f.total ?? f.amount ?? 0;
+        const amount = typeof rawAmount === 'string' ? parseFloat(rawAmount) : rawAmount;
         if (!isNaN(amount)) facturasByMonth[month] += amount;
       }
     });

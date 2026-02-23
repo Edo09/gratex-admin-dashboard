@@ -17,10 +17,10 @@ interface ApiResponse<T> {
 
 // Domain-specific types
 export interface PaginatedResponse<T> {
-  items: boolean;
-  total: number;
   page: number;
   pageSize: number;
+  total: number;
+  totalPages: number;
   data: T[];
 }
 
@@ -40,10 +40,15 @@ export interface Cliente {
 export interface Factura {
   id: number;
   date: string;
+  no_factura?: string;
   code?: string;
-  client: string;
+  client?: string;
+  client_id?: number | null;
+  client_name?: string;
+  total?: string | number;
+  amount?: string | number;
+  NCF?: string;
   description?: string;
-  amount: string | number;
   items?: Array<{ description: string; amount: number; quantity: number }>;
 }
 
@@ -104,7 +109,16 @@ class ApiService {
       // Handle 401 Unauthorized - token might be expired
       if (response.status === 401 && !skipAuth) {
         console.error(`❌ 401 Unauthorized on ${endpoint} - Token expired or invalid`);
-        throw new Error("Unauthorized. Please login again.");
+
+        try {
+          authApi.refreshToken(localStorage.getItem("refreshToken") || "");
+        } catch (error) {
+
+          console.error("Token refresh failed:", error);
+
+          authApi.logout();
+
+        }
       }
 
       if (!response.ok) {

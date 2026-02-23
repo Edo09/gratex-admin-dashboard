@@ -193,9 +193,49 @@ export default function FacturaCreateModal({ isOpen, onClose, onSuccess }: Factu
 
   const handleCotizacionSelect = useCallback(
     async (cot: CotizacionRecord) => {
-      const nextNCF = await fetchNextNCF();
-      setSelectedCotizacion(cot);
-      setFacturaData((fd) => ({ ...fd, ncf: nextNCF }));
+      try {
+        // Fetch full cotización data with items
+        const response = await cotizacionesApi.getCotizacionById(cot.id);
+        let fullCotizacion: CotizacionRecord | null = null;
+
+        // Handle case where API returns an array directly
+        if (Array.isArray(response.data)) {
+          const found = (response.data as unknown as Record<string, unknown>[]).find((item) => {
+            const itemData = item as unknown as { id?: number };
+            return itemData.id == cot.id;
+          });
+          fullCotizacion = found as unknown as CotizacionRecord || null;
+          if (!fullCotizacion && response.data.length > 0) {
+            fullCotizacion = response.data[0] as unknown as CotizacionRecord;
+          }
+        }
+        // Handle case where API returns a paginated list wrapper
+        else if (response.data && typeof response.data === 'object' && 'data' in response.data && Array.isArray((response.data as unknown as Record<string, unknown>).data)) {
+          const list = (response.data as unknown as Record<string, unknown>).data as Record<string, unknown>[];
+          const found = list.find((item) => {
+            const itemData = item as unknown as { id?: number };
+            return itemData.id == cot.id;
+          });
+          fullCotizacion = found as unknown as CotizacionRecord || null;
+          if (!fullCotizacion && list.length > 0) {
+            fullCotizacion = list[0] as unknown as CotizacionRecord;
+          }
+        }
+
+        const nextNCF = await fetchNextNCF();
+        if (fullCotizacion) {
+          setSelectedCotizacion(fullCotizacion);
+        } else {
+          setSelectedCotizacion(cot);
+        }
+        setFacturaData((fd) => ({ ...fd, ncf: nextNCF }));
+      } catch (err) {
+        console.error("Error fetching cotización details:", err);
+        // Fallback: use the search result if API call fails
+        const nextNCF = await fetchNextNCF();
+        setSelectedCotizacion(cot);
+        setFacturaData((fd) => ({ ...fd, ncf: nextNCF }));
+      }
     },
     [fetchNextNCF],
   );
@@ -212,18 +252,19 @@ export default function FacturaCreateModal({ isOpen, onClose, onSuccess }: Factu
         <p className="text-blue-100 text-sm mt-0.5">Complete los detalles para generar la factura</p>
       </div>
 
-      {/* Step 1: Choose creation type */}
-      {!creationType && <CreationTypeSelector onSelect={setCreationType} onCancel={handleClose} />}
+      <div className="overflow-y-auto" style={{ maxHeight: 'calc(92vh - 200px)' }}>
+        {/* Step 1: Choose creation type */}
+        {!creationType && <CreationTypeSelector onSelect={setCreationType} onCancel={handleClose} />}
 
-      {/* Step 2a: Client flow */}
-      {creationType === "client" && (
-        <form
-          className="p-8 space-y-6"
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSave();
-          }}
-        >
+        {/* Step 2a: Client flow */}
+        {creationType === "client" && (
+          <form
+            className="p-8 space-y-6"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSave();
+            }}
+          >
           <ClienteSelector
             clientes={clientes}
             loading={loadingClientes}
@@ -321,6 +362,7 @@ export default function FacturaCreateModal({ isOpen, onClose, onSuccess }: Factu
           />
         </div>
       )}
+      </div>
     </Modal>
   );
 }

@@ -1,4 +1,4 @@
-import EcommerceMetrics from "../../components/dashboard/EcommerceMetrics";
+import DashboardMetrics from "../../components/dashboard/DashboardMetrics";
 import RecentOrders from "../../components/dashboard/RecentOrders";
 import PageMeta from "../../components/common/PageMeta";
 import StatisticsChart from "../../components/dashboard/StatisticsChart";
@@ -12,7 +12,7 @@ export default function Home() {
         description="Gratex Admin Dashboard"
       />
       <div className="space-y-6">
-        <EcommerceMetrics />
+        <DashboardMetrics />
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
           <div className="xl:col-span-2">

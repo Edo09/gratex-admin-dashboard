@@ -287,7 +287,7 @@ export default function BasicTableOne({
                       ))}
                     </TableCell>
                     <TableCell className="px-5 py-5 text-gray-900 text-base font-bold dark:text-white">
-                      {row.amount}
+                      ${typeof row.amount === 'string' ? parseFloat(row.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : row.amount}
                     </TableCell>
                   </>
                 ) : (
@@ -307,7 +307,7 @@ export default function BasicTableOne({
                       ))}
                     </TableCell>
                     <TableCell className="px-5 py-5 text-gray-900 text-base font-bold dark:text-white">
-                      {row.amount}
+                      ${typeof row.amount === 'string' ? parseFloat(row.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : row.amount}
                     </TableCell>
                   </>
                 )}

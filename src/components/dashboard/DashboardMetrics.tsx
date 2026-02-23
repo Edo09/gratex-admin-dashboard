@@ -8,7 +8,7 @@ import {
 import { clientesApi, cotizacionesApi, facturasApi } from "../../services/api";
 import type { Factura } from "../../services/api";
 
-export default function EcommerceMetrics() {
+export default function DashboardMetrics() {
   // Fetch total Clientes
   const { data: clientesData } = useQuery({
     queryKey: ["dashboard-clientes"],
@@ -32,17 +32,22 @@ export default function EcommerceMetrics() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const allFacturas = facturasData?.data?.data || [];
+  const allFacturas = Array.isArray(facturasData?.data)
+    ? facturasData.data
+    : facturasData?.data?.data || [];
 
   // Helper to safely parse amount fields
   const parseAmount = (item: Factura) => {
-    const rawVal = (item.amount ?? 0) as string | number;
+    console.log("Parsing amount for factura:", item);
+    const rawVal = ((item.amount || item.total) ?? 0) as string | number;
     const val = typeof rawVal === 'string' ? parseFloat(rawVal) : rawVal;
     return isNaN(val) ? 0 : val;
   };
 
   // Calculate Lifetime Sales
   const lifetimeSales = allFacturas.reduce((sum, f) => sum + parseAmount(f), 0);
+
+  console.log("All Facturas:", lifetimeSales);
 
   // Calculate Monthly Sales
   const currentMonth = new Date().getMonth();

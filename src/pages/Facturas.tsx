@@ -61,7 +61,20 @@ export default function Facturas() {
 
   // Parse total from API response
   useEffect(() => {
-    if (!facturasData?.data) return;
+    if (!facturasData) return;
+
+    // Check for pagination object at root level (status, data, pagination structure)
+    const paginationInfo = (facturasData as unknown as Record<string, unknown>).pagination;
+    if (paginationInfo && typeof paginationInfo === "object") {
+      const paginationTotal = (paginationInfo as Record<string, unknown>).total as number | undefined;
+      if (typeof paginationTotal === "number") {
+        setTotal(paginationTotal);
+        return;
+      }
+    }
+
+    // Fallback: check nested structure
+    if (!facturasData.data) return;
     const data = facturasData.data;
     if (Array.isArray(data)) {
       setTotal(data.length);

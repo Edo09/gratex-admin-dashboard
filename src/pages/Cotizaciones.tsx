@@ -45,8 +45,11 @@ export default function Cotizaciones() {
       if (response.data) {
         if (Array.isArray(response.data)) {
           items = response.data;
-        } else if (response.data.items && Array.isArray(response.data.items)) {
-          items = response.data.items;
+        } else {
+          const paginatedData = response.data as unknown as { data?: unknown };
+          if (Array.isArray(paginatedData.data)) {
+            items = paginatedData.data as Cliente[];
+          }
         }
       }
       return items;
