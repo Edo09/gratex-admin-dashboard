@@ -12,7 +12,7 @@ import { useMemo } from "react";
 export default function RecentOrders() {
   const { data: cotizacionesData, isLoading: loadingCotizaciones } = useQuery({
     queryKey: ["dashboard-recent-cotizaciones"],
-    queryFn: () => cotizacionesApi.getCotizaciones({ pageSize: 5 }),
+    queryFn: () => cotizacionesApi.getCotizaciones({ pageSize: 6 }),
     staleTime: 5 * 60 * 1000,
   });
 

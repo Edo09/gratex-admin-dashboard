@@ -235,7 +235,9 @@ export const facturasApi = {
     if (params?.query) queryParams.append('query', params.query);
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.pageSize) queryParams.append('pageSize', params.pageSize.toString());
-    return apiClient.get<PaginatedResponse<Factura>>(`/facturas?${queryParams.toString()}`);
+    const qp = queryParams.toString();
+    const endpoint = qp ? `/facturas?${qp}` : '/facturas';
+    return apiClient.get<PaginatedResponse<Factura>>(endpoint);
   },
 
   // Get factura PDF
@@ -309,7 +311,9 @@ export const cotizacionesApi = {
     if (params?.query) queryParams.append('query', params.query);
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.pageSize) queryParams.append('pageSize', params.pageSize.toString());
-    return apiClient.get<PaginatedResponse<Cotizacion>>(`/cotizaciones?${queryParams.toString()}`);
+    const qp = queryParams.toString();
+    const endpoint = qp ? `/cotizaciones?${qp}` : '/cotizaciones';
+    return apiClient.get<PaginatedResponse<Cotizacion>>(endpoint);
   },
 
   // Get cotizacion PDF
