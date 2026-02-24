@@ -335,7 +335,7 @@ export default function Cotizaciones() {
                   };
                   // We use the root endpoint for update as requested
                   // Use apiClient.put directly for the root endpoint
-                  await apiClient.put('/api/cotizaciones', updatePayload);
+                  await apiClient.put('/cotizaciones', updatePayload);
 
                   cotizacionId = editingId;
                   setShowSuccessAlert(true);

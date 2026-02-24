@@ -19,7 +19,7 @@ export default function Ncf() {
     const fetchSequence = useCallback(async () => {
         try {
             setIsLoading(true);
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/ncf/sequence`, {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/ncf/sequence`, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
@@ -47,7 +47,7 @@ export default function Ncf() {
         try {
             setIsUpdating(true);
             setMessage(null);
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/ncf/sequence`, {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/ncf/sequence`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

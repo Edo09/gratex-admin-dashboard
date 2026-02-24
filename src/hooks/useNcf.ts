@@ -10,7 +10,7 @@ export function useNcf() {
 
   const fetchNextNCF = useCallback(async (): Promise<string> => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/ncf/next`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/ncf/next`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data: { status: boolean; data?: string } = await res.json();

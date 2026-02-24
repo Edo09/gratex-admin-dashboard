@@ -201,30 +201,30 @@ export type { RequestOptions };
 // Auth-specific API calls
 export const authApi = {
   login: (emailOrUsername: string, password: string) =>
-    apiClient.post("/api/auth/login", { emailOrUsername, password }, { skipAuth: true }),
+    apiClient.post("/auth/login", { emailOrUsername, password }, { skipAuth: true }),
 
   register: (email: string, password: string, name: string, username: string, phoneNumber: string) =>
     apiClient.post(
-      "/api/auth/register",
+      "/auth/register",
       { email, password, name, username, phoneNumber },
       { skipAuth: true }
     ),
 
   exchangeToken: (tempToken: string) =>
     apiClient.post(
-      "/api/auth/exchange-token",
+      "/auth/exchange-token",
       { tempToken },
       { skipAuth: true }
     ),
 
   refreshToken: (refreshToken: string) =>
     apiClient.post(
-      "/api/auth/refresh",
+      "/auth/refresh",
       { refreshToken },
       { skipAuth: true }
     ),
 
-  logout: () => apiClient.post("/api/auth/signout", {}),
+  logout: () => apiClient.post("/auth/signout", {}),
 };
 
 // Facturas-specific API calls
@@ -235,13 +235,13 @@ export const facturasApi = {
     if (params?.query) queryParams.append('query', params.query);
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.pageSize) queryParams.append('pageSize', params.pageSize.toString());
-    return apiClient.get<PaginatedResponse<Factura>>(`/api/facturas?${queryParams.toString()}`);
+    return apiClient.get<PaginatedResponse<Factura>>(`/facturas?${queryParams.toString()}`);
   },
 
   // Get factura PDF
   getFacturaPdf: (id: number) => {
     const token = localStorage.getItem("authToken");
-    const url = `${apiClient['baseUrl']}/api/facturas/${id}/pdf?format=base64`;
+    const url = `${apiClient['baseUrl']}/facturas/${id}/pdf?format=base64`;
     return fetch(url, {
       method: 'GET',
       headers: {
@@ -258,19 +258,19 @@ export const facturasApi = {
     items: Array<{ description: string; amount: number; quantity: number }>;
     ncf?: string;
   }) =>
-    apiClient.post<Factura>("/api/facturas", data),
+    apiClient.post<Factura>("/facturas", data),
 
   // Get factura by ID
   getFacturaById: (id: number) =>
-    apiClient.get<Factura>(`/api/facturas/${id}`),
+    apiClient.get<Factura>(`/facturas/${id}`),
 
   // Update factura
   updateFactura: (id: number, data: unknown) =>
-    apiClient.put<Factura>(`/api/facturas/${id}`, data),
+    apiClient.put<Factura>(`/facturas/${id}`, data),
 
   // Delete factura
   deleteFactura: (id: number) =>
-    apiClient.delete<void>(`/api/facturas/${id}`),
+    apiClient.delete<void>(`/facturas/${id}`),
 };
 
 // Clientes-specific API calls
@@ -281,24 +281,24 @@ export const clientesApi = {
     if (params?.query) queryParams.append('query', params.query);
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.pageSize) queryParams.append('pageSize', params.pageSize.toString());
-    return apiClient.get<PaginatedResponse<Cliente>>(`/api/clients?${queryParams.toString()}`);
+    return apiClient.get<PaginatedResponse<Cliente>>(`/clients?${queryParams.toString()}`);
   },
 
   // Create a new cliente
   createCliente: (data: unknown) =>
-    apiClient.post<Cliente>("/api/clients", data),
+    apiClient.post<Cliente>("/clients", data),
 
   // Get cliente by ID
   getClienteById: (id: number) =>
-    apiClient.get<Cliente>(`/api/clients?id=${id}`),
+    apiClient.get<Cliente>(`/clients?id=${id}`),
 
   // Update cliente
   updateCliente: (id: number, data: unknown) =>
-    apiClient.put<Cliente>(`/api/clients/${id}`, data),
+    apiClient.put<Cliente>(`/clients/${id}`, data),
 
   // Delete cliente
   deleteCliente: (id: number) =>
-    apiClient.delete<void>(`/api/clients/${id}`),
+    apiClient.delete<void>(`/clients/${id}`),
 };
 
 // Cotizaciones-specific API calls
@@ -309,13 +309,13 @@ export const cotizacionesApi = {
     if (params?.query) queryParams.append('query', params.query);
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.pageSize) queryParams.append('pageSize', params.pageSize.toString());
-    return apiClient.get<PaginatedResponse<Cotizacion>>(`/api/cotizaciones?${queryParams.toString()}`);
+    return apiClient.get<PaginatedResponse<Cotizacion>>(`/cotizaciones?${queryParams.toString()}`);
   },
 
   // Get cotizacion PDF
   getCotizacionPdf: (id: number) => {
     const token = localStorage.getItem("authToken");
-    const url = `${apiClient['baseUrl']}/api/cotizaciones/${id}/pdf?format=base64`;
+    const url = `${apiClient['baseUrl']}/cotizaciones/${id}/pdf?format=base64`;
     return fetch(url, {
       method: 'GET',
       headers: {
@@ -336,7 +336,7 @@ export const cotizacionesApi = {
     apiClient.post<{
       pdf: string;
       content: string; id: number; code?: string; message?: string
-    }>('/api/cotizaciones/preview', data),
+    }>('/cotizaciones/preview', data),
 
   // Create a new cotizacion
   createCotizacion: (data: {
@@ -347,17 +347,17 @@ export const cotizacionesApi = {
     total: number;
     preview?: boolean;
   }) =>
-    apiClient.post<{ id: number; code: string; message: string }>('/api/cotizaciones', data),
+    apiClient.post<{ id: number; code: string; message: string }>('/cotizaciones', data),
 
   // Get cotizacion by ID
   getCotizacionById: (id: number) =>
-    apiClient.get<Cotizacion>(`/api/cotizaciones?id=${id}`),
+    apiClient.get<Cotizacion>(`/cotizaciones?id=${id}`),
 
   // Update cotizacion
   updateCotizacion: (id: number, data: unknown) =>
-    apiClient.put<Cotizacion>(`/api/cotizaciones/${id}`, data),
+    apiClient.put<Cotizacion>(`/cotizaciones/${id}`, data),
 
   // Delete cotizacion
   deleteCotizacion: (id: number) =>
-    apiClient.delete<void>(`/api/cotizaciones/${id}`),
+    apiClient.delete<void>(`/cotizaciones/${id}`),
 };

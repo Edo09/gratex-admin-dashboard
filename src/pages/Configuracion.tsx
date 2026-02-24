@@ -195,7 +195,7 @@ export default function Configuracion() {
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         try {
-            const endpoint = activeTab === "carousel" ? "/api/landing/carousel" : "/api/landing/services";
+            const endpoint = activeTab === "carousel" ? "/landing/carousel" : "/landing/services";
             const response = await fetch(`${API_Base}${endpoint}`);
             const data = await response.json();
 
@@ -222,7 +222,7 @@ export default function Configuracion() {
         setUploading(true);
 
         const formData = new FormData();
-        const endpoint = type === "carousel" ? "/api/landing/carousel" : "/api/landing/services";
+        const endpoint = type === "carousel" ? "/landing/carousel" : "/landing/services";
 
         if (type === "carousel") {
             formData.append("title", carouselForm.title);
@@ -261,7 +261,7 @@ export default function Configuracion() {
         if (!confirm("¿Estás seguro de eliminar este item?")) return;
 
         try {
-            const endpoint = type === "carousel" ? "/api/landing/carousel" : "/api/landing/services";
+            const endpoint = type === "carousel" ? "/landing/carousel" : "/landing/services";
             const response = await fetch(`${API_Base}${endpoint}`, {
                 method: "DELETE",
                 headers: { "Content-Type": "application/json" },
