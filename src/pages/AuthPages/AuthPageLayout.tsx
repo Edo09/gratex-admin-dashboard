@@ -21,7 +21,7 @@ export default function AuthLayout({
                 <img
                   width={231}
                   height={48}
-                  src="/images/logo/auth-logo-gratex.svg"
+                  src="/admin/images/logo/auth-logo-gratex.svg"
                   alt="Logo"
                 />
               </Link>

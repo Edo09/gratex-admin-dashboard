@@ -26,7 +26,7 @@ const Loading = () => (
 export default function App() {
   return (
     <>
-      <Router>
+      <Router basename="/admin">
         <ScrollToTop />
         <Suspense fallback={<Loading />}>
         <Routes>
