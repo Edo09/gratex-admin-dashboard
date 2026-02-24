@@ -32,15 +32,16 @@ export default function Cotizaciones() {
   const [showClienteOptions, setShowClienteOptions] = useState(false);
 
   // Fetch clients using TanStack Query
+  const debouncedClienteQuery = useDebounce(clienteQuery, 400);
+
   const {
     data: clientesData,
     isLoading: loadingClientes,
     error: errorClientes,
   } = useQuery({
-    queryKey: ['clientes', isCreateOpen],
+    queryKey: ['clientes', debouncedClienteQuery],
     queryFn: async () => {
-      if (!isCreateOpen) return [];
-      const response = await clientesApi.getClientes();
+      const response = await clientesApi.getClientes({ query: debouncedClienteQuery });
       let items: Cliente[] = [];
       if (response.data) {
         if (Array.isArray(response.data)) {
@@ -54,8 +55,8 @@ export default function Cotizaciones() {
       }
       return items;
     },
-    enabled: isCreateOpen,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: isCreateOpen && debouncedClienteQuery.trim().length > 0,
+    staleTime: 5 * 60 * 1000,
   });
   const [items, setItems] = useState<LineItem[]>([]);
   const [itemForm, setItemForm] = useState({ description: "", amount: "", quantity: "1" });
@@ -409,15 +410,6 @@ export default function Cotizaciones() {
                       {!loadingClientes && !errorClientes && (
                         <ul className="divide-y divide-gray-200 dark:divide-gray-600">
                           {(clientesData as Cliente[] ?? [])
-                            .filter((c) => {
-                              const q = clienteQuery.trim().toLowerCase();
-                              if (!q) return true;
-                              const name = c.client_name ?? c.nombre ?? c.name ?? "";
-                              const company = c.company_name ?? "";
-                              const email = c.email ?? "";
-                              const phone = c.phone_number ?? c.telefono ?? "";
-                              return [name, company, email, phone].join(" ").toLowerCase().includes(q);
-                            })
                             .map((c) => {
                               const name = c.client_name ?? c.nombre ?? c.name ?? `Cliente ${c.id}`;
                               return (

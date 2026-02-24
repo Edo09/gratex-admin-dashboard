@@ -6,11 +6,35 @@ import { MoreDotIcon } from "../../icons";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { facturasApi } from "../../services/api";
+import type { Factura, PaginatedResponse } from "../../services/api";
+
+/** Fetch all facturas, handling both flat array and paginated responses. */
+async function fetchAllFacturas(): Promise<Factura[]> {
+  const response = await facturasApi.getFacturas({ page: 1, pageSize: 100 });
+  const payload = response.data;
+  if (Array.isArray(payload)) return payload;
+  const paginated = payload as PaginatedResponse<Factura> | undefined;
+  if (!paginated?.data) return [];
+  const allItems = [...paginated.data];
+  const totalPages = paginated.totalPages ?? 1;
+  if (totalPages > 1) {
+    const remaining = await Promise.all(
+      Array.from({ length: totalPages - 1 }, (_, i) =>
+        facturasApi.getFacturas({ page: i + 2, pageSize: 100 })
+      )
+    );
+    for (const res of remaining) {
+      const p = res.data as PaginatedResponse<Factura> | undefined;
+      if (p?.data && Array.isArray(p.data)) allItems.push(...p.data);
+    }
+  }
+  return allItems;
+}
 
 export default function MonthlySalesChart() {
-  const { data: facturasData } = useQuery({
+  const { data: allFacturas = [] } = useQuery({
     queryKey: ["dashboard-sales"],
-    queryFn: () => facturasApi.getFacturas({ pageSize: 1000 }),
+    queryFn: fetchAllFacturas,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -19,9 +43,7 @@ export default function MonthlySalesChart() {
     const currentYear = new Date().getFullYear();
     const facturasByMonth = new Array(12).fill(0);
 
-    const facturas = Array.isArray(facturasData?.data) ? facturasData.data : facturasData?.data?.data || [];
-
-    facturas.forEach(f => {
+    allFacturas.forEach(f => {
       const date = new Date(f.date);
       if (date.getFullYear() === currentYear) {
         const month = date.getMonth();
@@ -40,7 +62,7 @@ export default function MonthlySalesChart() {
       ],
       categories: months,
     };
-  }, [facturasData]);
+  }, [allFacturas]);
 
   const options: ApexOptions = {
     colors: ["#465fff"],

@@ -6,18 +6,52 @@ import {
   BoxIconLine,
 } from "../../icons";
 import { clientesApi, cotizacionesApi, facturasApi } from "../../services/api";
-import type { Factura } from "../../services/api";
+import type { Factura, PaginatedResponse } from "../../services/api";
+
+/** Fetch all facturas, handling both flat array and paginated responses. */
+async function fetchAllFacturas(): Promise<Factura[]> {
+  const response = await facturasApi.getFacturas({ page: 1, pageSize: 100 });
+  const payload = response.data;
+
+  // If the API returns a flat array directly
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  // If paginated: { page, pageSize, total, totalPages, data: [...] }
+  const paginated = payload as PaginatedResponse<Factura> | undefined;
+  if (!paginated?.data) return [];
+
+  const allItems = [...paginated.data];
+  const totalPages = paginated.totalPages ?? 1;
+
+  if (totalPages > 1) {
+    const remaining = await Promise.all(
+      Array.from({ length: totalPages - 1 }, (_, i) =>
+        facturasApi.getFacturas({ page: i + 2, pageSize: 100 })
+      )
+    );
+    for (const res of remaining) {
+      const p = res.data as PaginatedResponse<Factura> | undefined;
+      if (p?.data && Array.isArray(p.data)) allItems.push(...p.data);
+    }
+  }
+
+  return allItems;
+}
 
 export default function DashboardMetrics() {
-  // Fetch total Clientes
+  // Fetch total Clientes (API returns a flat array, not paginated)
   const { data: clientesData } = useQuery({
     queryKey: ["dashboard-clientes"],
-    queryFn: () => clientesApi.getClientes({ pageSize: 1 }),
+    queryFn: () => clientesApi.getClientes(),
     staleTime: 5 * 60 * 1000,
   });
-  const totalClientes = clientesData?.data?.total || 0;
+  const totalClientes = Array.isArray(clientesData?.data)
+    ? clientesData.data.length
+    : 0;
 
-  // Fetch total Cotizaciones
+  // Fetch total Cotizaciones (only need the count)
   const { data: cotizacionesData } = useQuery({
     queryKey: ["dashboard-cotizaciones"],
     queryFn: () => cotizacionesApi.getCotizaciones({ pageSize: 1 }),
@@ -25,20 +59,17 @@ export default function DashboardMetrics() {
   });
   const totalCotizaciones = cotizacionesData?.data?.total || 0;
 
-  // Fetch Facturas for Sales calculations
-  const { data: facturasData } = useQuery({
+  // Fetch ALL facturas (paginated) for accurate sales totals
+  const { data: allFacturas = [] } = useQuery({
     queryKey: ["dashboard-sales"],
-    queryFn: () => facturasApi.getFacturas({ pageSize: 1000 }),
+    queryFn: fetchAllFacturas,
     staleTime: 5 * 60 * 1000,
   });
 
-  const allFacturas = Array.isArray(facturasData?.data)
-    ? facturasData.data
-    : facturasData?.data?.data || [];
+  const totalFacturas = allFacturas.length;
 
   // Helper to safely parse amount fields
   const parseAmount = (item: Factura) => {
-    console.log("Parsing amount for factura:", item);
     const rawVal = ((item.amount || item.total) ?? 0) as string | number;
     const val = typeof rawVal === 'string' ? parseFloat(rawVal) : rawVal;
     return isNaN(val) ? 0 : val;
@@ -46,8 +77,6 @@ export default function DashboardMetrics() {
 
   // Calculate Lifetime Sales
   const lifetimeSales = allFacturas.reduce((sum, f) => sum + parseAmount(f), 0);
-
-  console.log("All Facturas:", lifetimeSales);
 
   // Calculate Monthly Sales
   const currentMonth = new Date().getMonth();
@@ -68,16 +97,15 @@ export default function DashboardMetrics() {
       icon: <GroupIcon className="size-6" />,
       color: "bg-blue-500",
       accent: "text-blue-600 dark:text-blue-400",
-      change: "+12%",
       isCurrency: false,
     },
     {
-      title: "Cotizaciones",
+      title: "Cotizaciones | Facturas",
       value: totalCotizaciones,
+      secondaryValue: totalFacturas,
       icon: <PageIcon className="size-6" />,
       color: "bg-purple-500",
       accent: "text-purple-600 dark:text-purple-400",
-      change: "+5%",
       isCurrency: false,
     },
     {
@@ -86,7 +114,6 @@ export default function DashboardMetrics() {
       icon: <BoxIconLine className="size-6" />,
       color: "bg-emerald-500",
       accent: "text-emerald-600 dark:text-emerald-400",
-      change: "+18%",
       isCurrency: true,
     },
     {
@@ -95,7 +122,6 @@ export default function DashboardMetrics() {
       icon: <ListIcon className="size-6" />,
       color: "bg-orange-500",
       accent: "text-orange-600 dark:text-orange-400",
-      change: "+24%",
       isCurrency: true,
     },
   ];
@@ -112,18 +138,19 @@ export default function DashboardMetrics() {
               <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
                 {metric.title}
               </span>
-              <div className="flex items-baseline gap-2">
-                <h4 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-                  {metric.isCurrency && "$"}
-                  {metric.value.toLocaleString('en-US', {
-                    minimumFractionDigits: metric.isCurrency ? 2 : 0,
-                    maximumFractionDigits: metric.isCurrency ? 2 : 0
-                  })}
-                </h4>
-                <span className={`text-xs font-bold ${metric.change.startsWith('+') ? 'text-emerald-500' : 'text-rose-500'}`}>
-                  {metric.change}
-                </span>
-              </div>
+              <h4 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+                {metric.isCurrency && "$"}
+                {metric.value.toLocaleString('en-US', {
+                  minimumFractionDigits: metric.isCurrency ? 2 : 0,
+                  maximumFractionDigits: metric.isCurrency ? 2 : 0
+                })}
+                {metric.secondaryValue != null && (
+                  <>
+                    <span className="mx-1.5 text-base font-normal text-gray-300 dark:text-gray-600">|</span>
+                    {metric.secondaryValue.toLocaleString('en-US')}
+                  </>
+                )}
+              </h4>
             </div>
 
             <div className={`flex size-12 items-center justify-center rounded-xl bg-opacity-10 dark:bg-opacity-20 ${metric.accent} ${metric.color.replace('bg-', 'bg-opacity-10 ')}`}>

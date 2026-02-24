@@ -70,10 +70,10 @@ export default function SignUpForm() {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Create Account
+              Crear Cuenta
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
-              Sign up to get started
+              Regístrate para comenzar
             </p>
           </div>
 
@@ -95,13 +95,13 @@ export default function SignUpForm() {
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <div>
                 <Label className="text-gray-700 dark:text-gray-200">
-                  First Name <span className="text-red-500">*</span>
+                  Nombre <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   type="text"
                   id="fname"
                   name="fname"
-                  placeholder="Enter your first name"
+                  placeholder="Ingresa tu nombre"
                   value={formData.fname}
                   onChange={handleInputChange}
                   disabled={isLoading}
@@ -110,13 +110,13 @@ export default function SignUpForm() {
               </div>
               <div>
                 <Label className="text-gray-700 dark:text-gray-200">
-                  Last Name <span className="text-red-500">*</span>
+                  Apellido <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   type="text"
                   id="lname"
                   name="lname"
-                  placeholder="Enter your last name"
+                  placeholder="Ingresa tu apellido"
                   value={formData.lname}
                   onChange={handleInputChange}
                   disabled={isLoading}
@@ -128,13 +128,13 @@ export default function SignUpForm() {
             {/* Username Field */}
             <div>
               <Label className="text-gray-700 dark:text-gray-200">
-                Username <span className="text-red-500">*</span>
+                Usuario <span className="text-red-500">*</span>
               </Label>
               <Input
                 type="text"
                 id="username"
                 name="username"
-                placeholder="Enter your username"
+                placeholder="Ingresa tu usuario"
                 value={formData.username}
                 onChange={handleInputChange}
                 disabled={isLoading}
@@ -145,13 +145,13 @@ export default function SignUpForm() {
             {/* Email Field */}
             <div>
               <Label className="text-gray-700 dark:text-gray-200">
-                Email <span className="text-red-500">*</span>
+                Correo electrónico <span className="text-red-500">*</span>
               </Label>
               <Input
                 type="email"
                 id="email"
                 name="email"
-                placeholder="Enter your email"
+                placeholder="Ingresa tu correo electrónico"
                 value={formData.email}
                 onChange={handleInputChange}
                 disabled={isLoading}
@@ -162,13 +162,13 @@ export default function SignUpForm() {
             {/* Phone Number Field */}
             <div>
               <Label className="text-gray-700 dark:text-gray-200">
-                Phone Number <span className="text-red-500">*</span>
+                Teléfono <span className="text-red-500">*</span>
               </Label>
               <Input
                 type="tel"
                 id="phoneNumber"
                 name="phoneNumber"
-                placeholder="Enter your phone number"
+                placeholder="Ingresa tu número de teléfono"
                 value={formData.phoneNumber}
                 onChange={handleInputChange}
                 disabled={isLoading}
@@ -179,13 +179,13 @@ export default function SignUpForm() {
             {/* Password Field */}
             <div>
               <Label className="text-gray-700 dark:text-gray-200">
-                Password <span className="text-red-500">*</span>
+                Contraseña <span className="text-red-500">*</span>
               </Label>
               <div className="relative">
                 <Input
                   type={showPassword ? "text" : "password"}
                   name="password"
-                  placeholder="Enter your password"
+                  placeholder="Ingresa tu contraseña"
                   value={formData.password}
                   onChange={handleInputChange}
                   disabled={isLoading}
@@ -216,10 +216,10 @@ export default function SignUpForm() {
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="animate-spin">⟳</span>
-                  Signing up...
+                  Registrando...
                 </span>
               ) : (
-                "Sign Up"
+                "Registrarse"
               )}
             </Button>
           </form>
@@ -227,12 +227,12 @@ export default function SignUpForm() {
           {/* Sign In Link */}
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Already have an account?{" "}
+              ¿Ya tienes una cuenta?{" "}
               <Link
                 to="/signin"
                 className="font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
               >
-                Sign In
+                Iniciar sesión
               </Link>
             </p>
           </div>

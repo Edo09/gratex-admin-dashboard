@@ -2,18 +2,65 @@ import Chart from "react-apexcharts";
 import { ApexOptions } from "apexcharts";
 import { useQuery } from "@tanstack/react-query";
 import { facturasApi, cotizacionesApi } from "../../services/api";
+import type { Factura, PaginatedResponse, Cotizacion } from "../../services/api";
 import { useMemo } from "react";
 
+/** Fetch all facturas, handling both flat array and paginated responses. */
+async function fetchAllFacturas(): Promise<Factura[]> {
+  const response = await facturasApi.getFacturas({ page: 1, pageSize: 100 });
+  const payload = response.data;
+  if (Array.isArray(payload)) return payload;
+  const paginated = payload as PaginatedResponse<Factura> | undefined;
+  if (!paginated?.data) return [];
+  const allItems = [...paginated.data];
+  const totalPages = paginated.totalPages ?? 1;
+  if (totalPages > 1) {
+    const remaining = await Promise.all(
+      Array.from({ length: totalPages - 1 }, (_, i) =>
+        facturasApi.getFacturas({ page: i + 2, pageSize: 100 })
+      )
+    );
+    for (const res of remaining) {
+      const p = res.data as PaginatedResponse<Factura> | undefined;
+      if (p?.data && Array.isArray(p.data)) allItems.push(...p.data);
+    }
+  }
+  return allItems;
+}
+
+/** Fetch all cotizaciones, handling both flat array and paginated responses. */
+async function fetchAllCotizaciones(): Promise<Cotizacion[]> {
+  const response = await cotizacionesApi.getCotizaciones({ page: 1, pageSize: 100 });
+  const payload = response.data;
+  if (Array.isArray(payload)) return payload;
+  const paginated = payload as PaginatedResponse<Cotizacion> | undefined;
+  if (!paginated?.data) return [];
+  const allItems = [...paginated.data];
+  const totalPages = paginated.totalPages ?? 1;
+  if (totalPages > 1) {
+    const remaining = await Promise.all(
+      Array.from({ length: totalPages - 1 }, (_, i) =>
+        cotizacionesApi.getCotizaciones({ page: i + 2, pageSize: 100 })
+      )
+    );
+    for (const res of remaining) {
+      const p = res.data as PaginatedResponse<Cotizacion> | undefined;
+      if (p?.data && Array.isArray(p.data)) allItems.push(...p.data);
+    }
+  }
+  return allItems;
+}
+
 export default function StatisticsChart() {
-  const { data: facturasData } = useQuery({
+  const { data: allFacturas = [] } = useQuery({
     queryKey: ["dashboard-sales"],
-    queryFn: () => facturasApi.getFacturas({ pageSize: 1000 }),
+    queryFn: fetchAllFacturas,
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: cotizacionesData } = useQuery({
+  const { data: allCotizaciones = [] } = useQuery({
     queryKey: ["dashboard-cotizaciones-all"],
-    queryFn: () => cotizacionesApi.getCotizaciones({ pageSize: 1000 }),
+    queryFn: fetchAllCotizaciones,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -24,10 +71,7 @@ export default function StatisticsChart() {
     const facturasByMonth = new Array(12).fill(0);
     const cotizacionesByMonth = new Array(12).fill(0);
 
-    const facturas = Array.isArray(facturasData?.data) ? facturasData.data : facturasData?.data?.data || [];
-    const cotizaciones = Array.isArray(cotizacionesData?.data) ? cotizacionesData.data : cotizacionesData?.data?.data || [];
-
-    facturas.forEach(f => {
+    allFacturas.forEach(f => {
       const date = new Date(f.date);
       if (date.getFullYear() === currentYear) {
         const month = date.getMonth();
@@ -37,7 +81,7 @@ export default function StatisticsChart() {
       }
     });
 
-    cotizaciones.forEach(c => {
+    allCotizaciones.forEach(c => {
       const date = new Date(c.date);
       if (date.getFullYear() === currentYear) {
         const month = date.getMonth();
@@ -53,7 +97,7 @@ export default function StatisticsChart() {
       ],
       categories: months
     };
-  }, [facturasData, cotizacionesData]);
+  }, [allFacturas, allCotizaciones]);
 
   const options: ApexOptions = {
     legend: {
