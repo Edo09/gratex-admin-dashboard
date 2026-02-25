@@ -7,7 +7,6 @@ import BasicTableOne from "../components/tables/BasicTableOne";
 import { useDebounce } from "../hooks/useDebounce";
 import { Modal } from "../components/ui/modal";
 import Button from "../components/ui/button/Button";
-import { BoxIcon } from "../icons";
 import { clientesApi, cotizacionesApi, apiClient } from "../services/api";
 import type { Cotizacion } from "../services/api";
 import type { Cliente, LineItem } from "../types";
@@ -293,23 +292,27 @@ export default function Cotizaciones() {
         </Button>
       </div>
       {/* Create Cotización Modal */}
+
       <Modal
         isOpen={isCreateOpen}
         onClose={() => {
           setIsCreateOpen(false);
           resetForm();
         }}
-        className="max-w-5xl w-full p-0 max-h-[92vh] overflow-hidden bg-white dark:bg-gray-900 rounded-2xl shadow-2xl"
+        className="max-w-5xl w-full p-0 max-h-[92vh] overflow-hidden bg-white dark:bg-gray-900 rounded-lg shadow-xl"
       >
         {/* Header Section */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-4 border-b-2 border-blue-800">
-          <h2 className="text-xl font-bold text-white">{isEditMode ? "Editar Cotización" : "Nueva Cotización"}</h2>
-          <p className="text-blue-100 text-sm mt-0.5">Complete los detalles para generar la cotización</p>
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-4 py-3 border-b border-blue-800 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-white">{isEditMode ? "Editar Cotización" : "Nueva Cotización"}</h2>
+            <p className="text-blue-100 text-xs mt-0.5">Complete los detalles para generar la cotización</p>
+          </div>
+
         </div>
-        <div className="overflow-y-auto" style={{ maxHeight: 'calc(92vh - 200px)' }}>
+        <div className="overflow-y-auto p-4 space-y-4" style={{ maxHeight: 'calc(92vh - 140px)' }}>
           <form
             id="cotizacion-form"
-            className="p-8 space-y-6"
+            className="space-y-4"
             onSubmit={async (e) => {
               e.preventDefault();
               // Build the payload that would be sent to api/cotizaciones
@@ -380,13 +383,10 @@ export default function Cotizaciones() {
             }}
           >
             {/* Client Section */}
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 border-2 border-gray-200 dark:border-gray-700">
-              <label className="mb-3 text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                <span className="text-blue-600 dark:text-blue-400">👤</span>
-                Información del Cliente
-              </label>
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-md p-4 border border-gray-200 dark:border-gray-700">
+              <label className="mb-2 text-base font-semibold text-gray-800 dark:text-gray-100">Información del Cliente</label>
               {!selectedCliente && (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <input
                     type="text"
                     value={clienteQuery}
@@ -394,16 +394,16 @@ export default function Cotizaciones() {
                       setClienteQuery(e.target.value);
                       setShowClienteOptions(e.target.value.trim().length > 0);
                     }}
-                    placeholder="🔍 Escriba para buscar cliente por nombre, empresa, email o teléfono..."
-                    className="w-full rounded-lg border-2 border-gray-300 bg-white px-5 py-4 text-lg outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-all"
+                    placeholder="Buscar cliente por nombre, empresa, email o teléfono..."
+                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-base outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-all"
                   />
                   {showClienteOptions && clienteQuery.trim().length > 0 && (
-                    <div className="max-h-64 overflow-y-auto rounded-xl border-2 border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-700 shadow-lg">
+                    <div className="max-h-48 overflow-y-auto rounded-md border border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-700 shadow-md">
                       {loadingClientes && (
-                        <div className="px-5 py-4 text-base font-medium text-gray-600 dark:text-gray-400">⏳ Cargando clientes...</div>
+                        <div className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">Cargando clientes...</div>
                       )}
                       {!loadingClientes && errorClientes && (
-                        <div className="px-5 py-4 text-base font-medium text-red-600 dark:text-red-400">
+                        <div className="px-3 py-2 text-sm text-red-600 dark:text-red-400">
                           {errorClientes instanceof Error ? errorClientes.message : String(errorClientes)}
                         </div>
                       )}
@@ -415,15 +415,15 @@ export default function Cotizaciones() {
                               return (
                                 <li
                                   key={c.id}
-                                  className="cursor-pointer px-5 py-4 hover:bg-blue-50 dark:hover:bg-gray-600 transition-colors"
+                                  className="cursor-pointer px-3 py-2 hover:bg-blue-50 dark:hover:bg-gray-600 transition-colors"
                                   onClick={() => {
                                     setSelectedCliente(c);
                                     setNewRow({ ...newRow, client: name });
                                     setShowClienteOptions(false);
                                   }}
                                 >
-                                  <div className="font-bold text-base text-gray-900 dark:text-white mb-1">{name}</div>
-                                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                                  <div className="font-medium text-sm text-gray-900 dark:text-white">{name}</div>
+                                  <div className="text-xs text-gray-600 dark:text-gray-400">
                                     {c.company_name ?? ""} {c.email ? `• ${c.email}` : ""} {c.phone_number ? `• ${c.phone_number}` : ""}
                                   </div>
                                 </li>
@@ -433,15 +433,15 @@ export default function Cotizaciones() {
                       )}
                     </div>
                   )}
-                  <div className="text-base font-medium text-gray-700 dark:text-gray-300 mt-2">✓ Seleccionado: <span className="font-bold">{newRow.client || "Ninguno"}</span></div>
+                  <div className="text-sm text-gray-700 dark:text-gray-300">Seleccionado: <span className="font-medium">{newRow.client || "Ninguno"}</span></div>
                 </div>
               )}
               {selectedCliente && (
-                <div className="rounded-xl border-2 border-green-300 bg-green-50/80 dark:bg-green-900/20 p-6 shadow-lg dark:border-green-700">
-                  <div className="mb-4 flex items-center justify-between">
+                <div className="rounded-md border border-green-300 bg-green-50 dark:bg-green-900/20 p-4 dark:border-green-700">
+                  <div className="mb-2 flex items-center justify-between">
                     <div>
-                      <div className="text-xl font-bold text-gray-900 dark:text-white">{selectedCliente.client_name ?? selectedCliente.nombre ?? selectedCliente.name}</div>
-                      <div className="text-base text-gray-600 dark:text-gray-400 mt-1">{selectedCliente.company_name ?? "Sin empresa"}</div>
+                      <div className="text-base font-medium text-gray-900 dark:text-white">{selectedCliente.client_name ?? selectedCliente.nombre ?? selectedCliente.name}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">{selectedCliente.company_name ?? "Sin empresa"}</div>
                     </div>
                     <Button
                       size="sm"
@@ -452,70 +452,61 @@ export default function Cotizaciones() {
                         setShowClienteOptions(true);
                         setNewRow({ ...newRow, client: "" });
                       }}
-                      className="px-4 py-2 text-base"
+                      className="px-3 py-1 text-sm"
                     >
                       Cambiar
                     </Button>
                   </div>
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     <div>
-                      <div className="text-sm font-bold uppercase tracking-wide text-gray-600 dark:text-gray-400 mb-1">📧 Email</div>
-                      <div className="text-base font-medium text-gray-900 dark:text-white">{selectedCliente.email ?? "—"}</div>
+                      <div className="text-xs font-medium text-gray-600 dark:text-gray-400">Email</div>
+                      <div className="text-sm text-gray-900 dark:text-white">{selectedCliente.email ?? "—"}</div>
                     </div>
                     <div>
-                      <div className="text-sm font-bold uppercase tracking-wide text-gray-600 dark:text-gray-400 mb-1">📱 Teléfono</div>
-                      <div className="text-base font-medium text-gray-900 dark:text-white">{selectedCliente.phone_number ?? selectedCliente.telefono ?? "—"}</div>
+                      <div className="text-xs font-medium text-gray-600 dark:text-gray-400">Teléfono</div>
+                      <div className="text-sm text-gray-900 dark:text-white">{selectedCliente.phone_number ?? selectedCliente.telefono ?? "—"}</div>
                     </div>
                   </div>
                 </div>
               )}
             </div>
             {/* Date and Total Section */}
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border-2 border-gray-200 dark:border-gray-700">
-                <label className="mb-2 text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                  <span className="text-blue-600 dark:text-blue-400">📅</span>
-                  Fecha
-                </label>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-md p-4 border border-gray-200 dark:border-gray-700">
+                <label className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Fecha</label>
                 <input
                   type="date"
                   value={newRow.date}
                   onChange={(e) => setNewRow({ ...newRow, date: e.target.value })}
-                  className="w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2.5 text-base font-medium outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-all"
+                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-all"
                 />
               </div>
-              <div className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/30 dark:to-emerald-800/30 rounded-xl p-4 border-2 border-green-300 dark:border-green-700">
-                <label className="mb-2 text-sm font-bold text-green-800 dark:text-green-300 flex items-center gap-1">
-                  <span>💰</span>
-                  Total Estimado
-                </label>
-                <div className="text-2xl font-bold text-green-700 dark:text-green-400">
+              <div className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/30 dark:to-emerald-800/30 rounded-md p-4 border border-green-300 dark:border-green-700">
+                <label className="mb-2 text-sm font-medium text-green-800 dark:text-green-300">Total Estimado</label>
+                <div className="text-xl font-medium text-green-700 dark:text-green-400">
                   ${totalAmount ? totalAmount.toFixed(2) : "0.00"}
                 </div>
               </div>
             </div>
             {/* Items Section */}
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 border-2 border-gray-200 dark:border-gray-700">
-              <label className="mb-4 text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                <span className="text-blue-600 dark:text-blue-400">📦</span>
-                Items de la Cotización
-              </label>
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-md p-4 border border-gray-200 dark:border-gray-700">
+              <label className="mb-3 text-base font-semibold text-gray-800 dark:text-gray-100">Items de la Cotización</label>
 
               {/* Add Item Form */}
-              <div className="bg-white dark:bg-gray-700 rounded-lg p-5 mb-5 border-2 border-gray-300 dark:border-gray-600">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-12">
+              <div className="bg-white dark:bg-gray-700 rounded-md p-3 mb-3 border border-gray-300 dark:border-gray-600">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-12">
                   <div className="md:col-span-5">
-                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Descripción</label>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Descripción</label>
                     <textarea
                       placeholder="Descripción del item..."
                       value={itemForm.description}
                       onChange={(e) => setItemForm((prev) => ({ ...prev, description: e.target.value }))}
                       rows={2}
-                      className="w-full resize-none rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-base outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-600 dark:text-white transition-all"
+                      className="w-full resize-none rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-600 dark:text-white transition-all"
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Monto ($)</label>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Monto ($)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -523,11 +514,11 @@ export default function Cotizaciones() {
                       placeholder="0.00"
                       value={itemForm.amount}
                       onChange={(e) => setItemForm((prev) => ({ ...prev, amount: e.target.value }))}
-                      className="w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-base outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-600 dark:text-white transition-all"
+                      className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-600 dark:text-white transition-all"
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Cantidad</label>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Cantidad</label>
                     <input
                       type="number"
                       step="1"
@@ -535,15 +526,14 @@ export default function Cotizaciones() {
                       placeholder="1"
                       value={itemForm.quantity}
                       onChange={(e) => setItemForm((prev) => ({ ...prev, quantity: e.target.value }))}
-                      className="w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-base outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-600 dark:text-white transition-all"
+                      className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-600 dark:text-white transition-all"
                     />
                   </div>
                   <div className="md:col-span-3 flex items-end">
                     <Button
                       size="sm"
                       variant="primary"
-                      startIcon={<BoxIcon className="size-5" />}
-                      className="w-full h-12 text-base font-semibold"
+                      className="w-full py-2 text-sm font-medium"
                       onClick={handleAddItem}
                       type="button"
                     >
@@ -553,43 +543,49 @@ export default function Cotizaciones() {
                 </div>
               </div>
               {/* Items List */}
-              <div className="rounded-lg border-2 border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-700 overflow-hidden">
+              <div className="rounded-md border border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-700 overflow-hidden">
                 {items.length === 0 ? (
-                  <div className="p-8 text-center">
-                    <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-100 dark:bg-gray-600 flex items-center justify-center">
-                      <BoxIcon className="w-8 h-8 text-gray-400" />
-                    </div>
-                    <p className="text-lg font-medium text-gray-500 dark:text-gray-400">No hay items agregados</p>
-                    <p className="text-base text-gray-400 dark:text-gray-500 mt-1">Use el formulario de arriba para agregar items</p>
+                  <div className="p-4 text-center">
+                    <p className="text-base font-medium text-gray-500 dark:text-gray-400">No hay items agregados</p>
+                    <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Use el formulario de arriba para agregar items</p>
                   </div>
                 ) : (
-                  <div className="divide-y divide-gray-200 dark:divide-gray-600">
-                    {items.map((item, index) => (
-                      <div key={item.id} className="p-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
-                        <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-sm font-bold text-blue-600 dark:text-blue-400 flex-shrink-0">
-                          {index + 1}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-base font-bold text-gray-900 dark:text-white truncate">{item.description}</div>
-                          <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                            {item.quantity} unidad{item.quantity > 1 ? 'es' : ''} × ${item.amount.toFixed(2)}
-                          </div>
-                        </div>
-                        <div className="text-lg font-bold text-gray-900 dark:text-white flex-shrink-0">
-                          ${(item.amount * item.quantity).toFixed(2)}
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          type="button"
-                          onClick={() => handleRemoveItem(item.id)}
-                          className="px-4 py-2 text-base text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/30 flex-shrink-0"
-                        >
-                          Quitar
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
+                  <table className="w-full divide-y divide-gray-200 dark:divide-gray-600">
+                    <thead className="bg-gray-100 dark:bg-gray-800">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">#</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Descripción</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Cantidad x Monto</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Subtotal</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
+                      {items.map((item, index) => (
+                        <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+                          <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">{index + 1}</td>
+                          <td className="px-4 py-2 text-sm text-gray-900 dark:text-white truncate">{item.description}</td>
+                          <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">
+                            {item.quantity} x ${item.amount.toFixed(2)}
+                          </td>
+                          <td className="px-4 py-2 text-sm font-medium text-gray-900 dark:text-white">
+                            ${(item.amount * item.quantity).toFixed(2)}
+                          </td>
+                          <td className="px-4 py-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              type="button"
+                              onClick={() => handleRemoveItem(item.id)}
+                              className="px-3 py-1 text-sm text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/30"
+                            >
+                              Quitar
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 )}
               </div>
             </div>
@@ -597,7 +593,7 @@ export default function Cotizaciones() {
         </div>
 
         {/* Footer Actions */}
-        <div className="border-t-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-8 py-6 flex items-center justify-end gap-4">
+        <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 flex items-center justify-end gap-3">
           <Button
             size="sm"
             variant="outline"
@@ -606,7 +602,7 @@ export default function Cotizaciones() {
               setIsCreateOpen(false);
               resetForm();
             }}
-            className="px-6 py-3 text-base font-semibold"
+            className="px-4 py-2 text-sm font-medium"
           >
             Cancelar
           </Button>
@@ -614,7 +610,7 @@ export default function Cotizaciones() {
             size="sm"
             variant="primary"
             type="button"
-            className="px-6 py-3 text-base font-semibold bg-gray-600 hover:bg-gray-700"
+            className="px-4 py-2 text-sm font-medium bg-gray-600 hover:bg-gray-700"
             onClick={async () => {
               try {
                 // If in Edit Mode, allow viewing the original saved PDF (Old Logic)
@@ -677,16 +673,16 @@ export default function Cotizaciones() {
               }
             }}
           >
-            👁️ Ver Preview
+            Ver Preview
           </Button>
           <Button
             size="sm"
             variant="primary"
             type="submit"
             form="cotizacion-form"
-            className="px-6 py-3 text-base font-semibold bg-green-600 hover:bg-green-700"
+            className="px-4 py-2 text-sm font-medium bg-green-600 hover:bg-green-700"
           >
-            💾 Guardar Cotización
+            Guardar Cotización
           </Button>
         </div>
         {showSuccessAlert && (
@@ -697,6 +693,7 @@ export default function Cotizaciones() {
           />
         )}
       </Modal>
+
       <BasicTableOne
         dataType="cotizaciones"
         query={debouncedQuery}
