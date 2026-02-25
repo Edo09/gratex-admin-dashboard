@@ -23,6 +23,7 @@ export interface AuthContextType {
   login: (emailOrUsername: string, password: string) => Promise<void>;
   logout: () => void;
   register: (email: string, password: string, name: string, username: string, phoneNumber: string) => Promise<void>;
+  setUser: (user: User | null) => void;
   setToken: (token: string) => void;
   clearError: () => void;
   clearSuccessMessage: () => void;
@@ -176,6 +177,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         logout,
         register,
         setToken,
+        setUser,
         clearError,
         clearSuccessMessage,
       }}

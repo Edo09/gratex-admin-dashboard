@@ -5,7 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 export default function ExternalCallback() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { setToken } = useAuth();
+  const { setUser, setToken, isAuthenticated } = useAuth();
 
   useEffect(() => {
     const handleCallback = async () => {
@@ -36,9 +36,9 @@ export default function ExternalCallback() {
 
         // Update auth context
         setToken(token);
+        setUser(userEncoded ? JSON.parse(atob(userEncoded)) : null);
+        // Redirect will be handled in a separate useEffect when isAuthenticated updates
 
-        // Redirect to dashboard
-        navigate("/", { replace: true });
       } catch (error) {
         console.error("❌ Callback processing error:", error);
         navigate("/signin", { replace: true });
@@ -46,7 +46,15 @@ export default function ExternalCallback() {
     };
 
     handleCallback();
-  }, [searchParams, navigate, setToken]);
+  }, [searchParams, navigate, setToken, setUser]);
+
+  // Redirect after authentication state updates
+  useEffect(() => {
+    console.log("Auth state updated. isAuthenticated:", isAuthenticated);
+    if (isAuthenticated) {
+      navigate("/", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
