@@ -261,14 +261,14 @@ const AppSidebar: React.FC = () => {
             <>
               <img
                 className="dark:hidden"
-                src="/admin/images/logo/logo-gratex.svg"
+                src="/admin/images/logo/logo-gratex-gray.svg"
                 alt="Logo"
                 width={150}
                 height={40}
               />
               <img
                 className="hidden dark:block"
-                src="/admin/images/logo/logo-dark.svg"
+                src="/admin/images/logo/logo-gratex-white.svg"
                 alt="Logo"
                 width={150}
                 height={40}
@@ -276,7 +276,7 @@ const AppSidebar: React.FC = () => {
             </>
           ) : (
             <img
-              src="/admin/images/logo/logo-icon.svg"
+              src="/admin/images/logo/logo-icon.png"
               alt="Logo"
               width={32}
               height={32}

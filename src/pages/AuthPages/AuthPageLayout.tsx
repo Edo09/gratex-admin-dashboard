@@ -21,12 +21,14 @@ export default function AuthLayout({
                 <img
                   width={231}
                   height={48}
-                  src="/admin/images/logo/auth-logo-gratex.svg"
+                  src="/admin/images/logo/logo-gratex-gray.svg"
                   alt="Logo"
                 />
               </Link>
               <p className="text-center text-gray-400 dark:text-white/60">
-                Free and Open-Source Tailwind CSS Admin Dashboard Template
+                Welcome to Gratex Admin Dashboard, the ultimate solution for
+                managing your projects with ease and efficiency. Our dashboard
+                provides a comprehensive overview of your project’s progress,
               </p>
             </div>
           </div>
