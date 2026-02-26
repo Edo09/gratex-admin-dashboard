@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { EyeCloseIcon, EyeIcon } from "../../icons";
 import Label from "../form/Label";
@@ -9,7 +9,7 @@ import { useAuth } from "../../context/AuthContext";
 
 export default function SignInForm() {
   const navigate = useNavigate();
-  const { login, isLoading, error, clearError, successMessage, clearSuccessMessage } = useAuth();
+  const { login, isLoading, error, clearError, successMessage, clearSuccessMessage, isAuthenticated } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
 
@@ -41,13 +41,19 @@ export default function SignInForm() {
 
     try {
       await login(formData.emailOrUsername, formData.password);
-      navigate("/", { replace: true });
+      // login in AuthContext doesn't throw anymore for API errors, 
+      // but if we were to navigate, we should check if there's no error
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Error al iniciar sesión";
-      console.error("❌ Error de inicio de sesión:", message);
-      setLocalError(message);
+      console.error("❌ Error inesperado:", err);
     }
   };
+
+  // Effect to navigate on success
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const displayError = localError || error;
   return (

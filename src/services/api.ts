@@ -111,13 +111,10 @@ class ApiService {
         console.error(`❌ 401 Unauthorized on ${endpoint} - Token expired or invalid`);
 
         try {
-          authApi.refreshToken(localStorage.getItem("refreshToken") || "");
+          await authApi.refreshToken(localStorage.getItem("refreshToken") || "");
         } catch (error) {
-
           console.error("Token refresh failed:", error);
-
-          authApi.logout();
-
+          await authApi.logout();
         }
       }
 

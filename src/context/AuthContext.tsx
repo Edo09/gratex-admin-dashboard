@@ -18,6 +18,7 @@ export interface AuthContextType {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isInitializing: boolean;
   error: string | null;
   successMessage: string | null;
   login: (emailOrUsername: string, password: string) => Promise<void>;
@@ -36,7 +37,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setTokenState] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -56,7 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         localStorage.removeItem("authToken");
         localStorage.removeItem("authUser");
       } finally {
-        setIsLoading(false);
+        setIsInitializing(false);
       }
     };
 
@@ -79,7 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           user: User;
         }>;
 
-        if (!response.success) {
+        if (!response.success && !response.status) {
           throw new Error(
             response.message || response.error || "Login failed"
           );
@@ -94,7 +96,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         const message =
           err instanceof Error ? err.message : "An error occurred during login";
         setError(message);
-        throw err;
+        // We set the context error, so we don't necessarily need to re-throw here
+        // to avoid double error handling in SignInForm
       } finally {
         setIsLoading(false);
       }
@@ -171,6 +174,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         token,
         isAuthenticated,
         isLoading,
+        isInitializing,
         error,
         successMessage,
         login,
