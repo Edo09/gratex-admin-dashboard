@@ -31,4 +31,4 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./dist/  # Or ./dist/ depending on your build output
-          server-dir: /public_html/admin  # Path on cPanel (e.g., /public_html/myapp/)
+          server-dir: /public_html/admin/  # Path on cPanel (e.g., /public_html/myapp/)
