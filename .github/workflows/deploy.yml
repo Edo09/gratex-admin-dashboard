@@ -1,0 +1,34 @@
+name: Deploy React App to cPanel
+
+on:
+  push:
+    branches:
+      - main  # Or your default branch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'  # Match your local Node version
+
+      - name: Install dependencies
+        run: npm install  # Or yarn install if you use Yarn
+
+      - name: Build app
+        run: npm run build  # Builds to /build or /dist folder
+
+      - name: Deploy to cPanel via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/  # Or ./dist/ depending on your build output
+          server-dir: /public_html/admin  # Path on cPanel (e.g., /public_html/myapp/)
