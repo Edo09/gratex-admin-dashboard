@@ -244,124 +244,127 @@ export default function FacturaCreateModal({ isOpen, onClose, onSuccess }: Factu
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      className="max-w-5xl w-full p-0 max-h-[92vh] overflow-hidden bg-white dark:bg-gray-900 rounded-2xl shadow-2xl"
+      className="max-w-5xl w-full p-0 max-h-[92vh] overflow-hidden bg-white dark:bg-gray-900 rounded-lg shadow-xl"
     >
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-4 border-b-2 border-blue-800">
-        <h2 className="text-xl font-bold text-white">Nueva Factura</h2>
-        <p className="text-blue-100 text-sm mt-0.5">Complete los detalles para generar la factura</p>
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-4 py-3 border-b border-blue-800 flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-white">Nueva Factura</h2>
+          <p className="text-blue-100 text-xs mt-0.5">Complete los detalles para generar la factura</p>
+        </div>
+
       </div>
 
-      <div className="overflow-y-auto" style={{ maxHeight: 'calc(92vh - 200px)' }}>
+      <div className="overflow-y-auto p-4 space-y-4" style={{ maxHeight: 'calc(92vh - 140px)' }}>
         {/* Step 1: Choose creation type */}
         {!creationType && <CreationTypeSelector onSelect={setCreationType} onCancel={handleClose} />}
 
         {/* Step 2a: Client flow */}
         {creationType === "client" && (
           <form
-            className="p-8 space-y-6"
+            className="space-y-4"
             onSubmit={(e) => {
               e.preventDefault();
               handleSave();
             }}
           >
-          <ClienteSelector
-            clientes={clientes}
-            loading={loadingClientes}
-            error={errorClientes}
-            selectedCliente={selectedCliente}
-            onSelect={handleClientSelect}
-            onClear={handleClientClear}
-          />
-          <DateTotalSection
-            date={facturaData.date}
-            onDateChange={(date) => setFacturaData((fd) => ({ ...fd, date }))}
-            totalAmount={totalAmount}
-          />
-          <LineItemsEditor
-            items={items}
-            itemForm={itemForm}
-            onItemFormChange={setItemForm}
-            onAddItem={addItem}
-            onRemoveItem={removeItem}
-          />
-          <FormFooter
-            onBack={() => setCreationType(null)}
-            onCancel={handleClose}
-            onSave={() => {}}
-            saving={saving}
-            isSubmit
-          />
-        </form>
-      )}
-
-      {/* Step 2b: Cotización flow */}
-      {creationType === "cotizacion" && (
-        <div className="p-8 space-y-6">
-          {!selectedCotizacion && (
-            <CotizacionSearch
-              cotizaciones={cotizaciones}
-              loading={loadingCotizaciones}
-              error={errorCotizaciones}
-              query={cotizacionQuery}
-              onQueryChange={setCotizacionQuery}
-              onSelect={handleCotizacionSelect}
+            <ClienteSelector
+              clientes={clientes}
+              loading={loadingClientes}
+              error={errorClientes}
+              selectedCliente={selectedCliente}
+              onSelect={handleClientSelect}
+              onClear={handleClientClear}
             />
-          )}
-          {selectedCotizacion && (
-            <>
-              <SelectedCotizacionBanner
-                cotizacion={selectedCotizacion}
-                onClear={() => {
-                  setSelectedCotizacion(null);
-                  setSelectedCliente(null);
-                  resetItems();
-                  setFacturaData((fd) => ({ ...fd, client: "" }));
-                }}
+            <DateTotalSection
+              date={facturaData.date}
+              onDateChange={(date) => setFacturaData((fd) => ({ ...fd, date }))}
+              totalAmount={totalAmount}
+            />
+            <LineItemsEditor
+              items={items}
+              itemForm={itemForm}
+              onItemFormChange={setItemForm}
+              onAddItem={addItem}
+              onRemoveItem={removeItem}
+            />
+            <FormFooter
+              onBack={() => setCreationType(null)}
+              onCancel={handleClose}
+              onSave={() => { }}
+              saving={saving}
+              isSubmit
+            />
+          </form>
+        )}
+
+        {/* Step 2b: Cotización flow */}
+        {creationType === "cotizacion" && (
+          <div className="space-y-4">
+            {!selectedCotizacion && (
+              <CotizacionSearch
+                cotizaciones={cotizaciones}
+                loading={loadingCotizaciones}
+                error={errorCotizaciones}
+                query={cotizacionQuery}
+                onQueryChange={setCotizacionQuery}
+                onSelect={handleCotizacionSelect}
               />
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border-2 border-gray-200 dark:border-gray-700">
-                  <label className="mb-2 text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                    <span className="text-blue-600 dark:text-blue-400">📅</span> Fecha
-                  </label>
-                  <input
-                    type="date"
-                    value={facturaData.date}
-                    onChange={(e) => setFacturaData((fd) => ({ ...fd, date: e.target.value }))}
-                    className="w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2.5 text-base font-medium outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-all"
-                  />
+            )}
+            {selectedCotizacion && (
+              <>
+                <SelectedCotizacionBanner
+                  cotizacion={selectedCotizacion}
+                  onClear={() => {
+                    setSelectedCotizacion(null);
+                    setSelectedCliente(null);
+                    resetItems();
+                    setFacturaData((fd) => ({ ...fd, client: "" }));
+                  }}
+                />
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-md p-4 border border-gray-200 dark:border-gray-700">
+                    <label className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                      <span className="text-blue-600 dark:text-blue-400">📅</span> Fecha
+                    </label>
+                    <input
+                      type="date"
+                      value={facturaData.date}
+                      onChange={(e) => setFacturaData((fd) => ({ ...fd, date: e.target.value }))}
+                      className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-all"
+                    />
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-md p-4 border border-gray-200 dark:border-gray-700">
+                    <label className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                      <span className="text-blue-600 dark:text-blue-400">🆔</span> NCF
+                    </label>
+                    <input
+                      type="text"
+                      value={facturaData.ncf}
+                      onChange={(e) => setFacturaData((fd) => ({ ...fd, ncf: e.target.value }))}
+                      placeholder="—"
+                      className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-all"
+                    />
+                  </div>
+                  <TotalDisplay totalAmount={totalAmount} />
                 </div>
-                <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border-2 border-gray-200 dark:border-gray-700">
-                  <label className="mb-2 text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                    <span className="text-blue-600 dark:text-blue-400">🆔</span> NCF
-                  </label>
-                  <input
-                    type="text"
-                    value={facturaData.ncf}
-                    onChange={(e) => setFacturaData((fd) => ({ ...fd, ncf: e.target.value }))}
-                    placeholder="—"
-                    className="w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2.5 text-base font-medium outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-all"
-                  />
-                </div>
-                <TotalDisplay totalAmount={totalAmount} />
-              </div>
-              <LineItemsEditor
-                items={items}
-                itemForm={itemForm}
-                onItemFormChange={setItemForm}
-                onAddItem={addItem}
-                onRemoveItem={removeItem}
-              />
-            </>
-          )}
-          <FormFooter
-            onBack={() => setCreationType(null)}
-            onCancel={handleClose}
-            onSave={handleSave}
-            saving={saving}
-          />
-        </div>
-      )}
+                <LineItemsEditor
+                  items={items}
+                  itemForm={itemForm}
+                  onItemFormChange={setItemForm}
+                  onAddItem={addItem}
+                  onRemoveItem={removeItem}
+                />
+              </>
+            )}
+            <FormFooter
+              onBack={() => setCreationType(null)}
+              onCancel={handleClose}
+              onSave={handleSave}
+              saving={saving}
+            />
+          </div>
+        )}
       </div>
     </Modal>
   );
@@ -377,34 +380,28 @@ function CreationTypeSelector({
   onCancel: () => void;
 }) {
   return (
-    <div className="p-8 space-y-6">
-      <p className="text-base text-gray-600 dark:text-gray-300 mb-6">
+    <div className="space-y-4">
+      <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
         Selecciona cómo deseas crear la factura:
       </p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <button
           onClick={() => onSelect("client")}
-          className="flex flex-col items-center justify-center p-8 border-2 border-gray-300 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all dark:border-gray-600 dark:hover:bg-white/[0.04] dark:hover:border-blue-500 bg-white dark:bg-gray-800"
+          className="flex flex-col items-center justify-center p-4 border border-gray-300 rounded-md hover:border-blue-500 hover:bg-blue-50 transition-all dark:border-gray-600 dark:hover:bg-white/[0.04] dark:hover:border-blue-500 bg-white dark:bg-gray-800"
         >
-          <svg className="w-16 h-16 mb-4 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
-          <span className="text-lg font-bold text-gray-900 dark:text-white">Desde Cliente</span>
-          <span className="text-sm text-gray-500 dark:text-gray-400 mt-2">Crear factura seleccionando un cliente</span>
+          <span className="text-base font-medium text-gray-900 dark:text-white">Desde Cliente</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">Crear factura seleccionando un cliente</span>
         </button>
         <button
           onClick={() => onSelect("cotizacion")}
-          className="flex flex-col items-center justify-center p-8 border-2 border-gray-300 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all dark:border-gray-600 dark:hover:bg-white/[0.04] dark:hover:border-blue-500 bg-white dark:bg-gray-800"
+          className="flex flex-col items-center justify-center p-4 border border-gray-300 rounded-md hover:border-blue-500 hover:bg-blue-50 transition-all dark:border-gray-600 dark:hover:bg-white/[0.04] dark:hover:border-blue-500 bg-white dark:bg-gray-800"
         >
-          <svg className="w-16 h-16 mb-4 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          <span className="text-lg font-bold text-gray-900 dark:text-white">Desde Cotización</span>
-          <span className="text-sm text-gray-500 dark:text-gray-400 mt-2">Convertir una cotización en factura</span>
+          <span className="text-base font-medium text-gray-900 dark:text-white">Desde Cotización</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">Convertir una cotización en factura</span>
         </button>
       </div>
-      <div className="mt-8 flex justify-end">
-        <Button size="sm" variant="outline" onClick={onCancel} className="px-6 py-3 text-base font-semibold">
+      <div className="mt-4 flex justify-end">
+        <Button size="sm" variant="outline" onClick={onCancel} className="px-4 py-2 text-sm font-medium">
           Cancelar
         </Button>
       </div>
@@ -422,16 +419,16 @@ function DateTotalSection({
   totalAmount: number;
 }) {
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-      <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border-2 border-gray-200 dark:border-gray-700">
-        <label className="mb-2 text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1">
-          <span className="text-blue-600 dark:text-blue-400">📅</span> Fecha
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="bg-gray-50 dark:bg-gray-800 rounded-md p-4 border border-gray-200 dark:border-gray-700">
+        <label className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
+          <span className="text-red-500">📅</span> Fecha
         </label>
         <input
           type="date"
           value={date}
           onChange={(e) => onDateChange(e.target.value)}
-          className="w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2.5 text-base font-medium outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-all"
+          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-all"
         />
       </div>
       <TotalDisplay totalAmount={totalAmount} />
@@ -441,11 +438,11 @@ function DateTotalSection({
 
 function TotalDisplay({ totalAmount }: { totalAmount: number }) {
   return (
-    <div className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/30 dark:to-emerald-800/30 rounded-xl p-4 border-2 border-green-300 dark:border-green-700">
-      <label className="mb-2 text-sm font-bold text-green-800 dark:text-green-300 flex items-center gap-1">
-        <span>💰</span> Total Estimado
+    <div className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/30 dark:to-emerald-800/30 rounded-md p-4 border border-green-300 dark:border-green-700 flex flex-col justify-between">
+      <label className="text-sm font-medium text-green-800 dark:text-green-300 flex items-center gap-1">
+        <span className="text-yellow-500">💰</span> Total Estimado
       </label>
-      <div className="text-2xl font-bold text-green-700 dark:text-green-400">
+      <div className="text-xl font-medium text-green-700 dark:text-green-400 mt-2">
         ${totalAmount ? totalAmount.toFixed(2) : "0.00"}
       </div>
     </div>
@@ -477,8 +474,8 @@ function CotizacionSearch({
   });
 
   return (
-    <div className="mb-4">
-      <label className="mb-3 text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+    <div className="mb-3">
+      <label className="mb-2 text-base font-medium text-gray-800 dark:text-gray-100 flex items-center gap-2">
         <span className="text-blue-600 dark:text-blue-400">🔍</span> Buscar Cotización
       </label>
       <input
@@ -486,41 +483,52 @@ function CotizacionSearch({
         value={query}
         onChange={(e) => onQueryChange(e.target.value)}
         placeholder="Buscar por código, cliente o descripción..."
-        className="w-full rounded-lg border-2 border-gray-300 bg-white px-5 py-4 text-lg outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-all"
+        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-base outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-all"
       />
       {query.trim() && !loading && !error && (
-        <ul className="divide-y divide-gray-200 dark:divide-gray-600 max-h-64 overflow-y-auto mt-4 rounded-xl border-2 border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-700 shadow-lg">
-          {filtered.map((c) => {
-            const code = c.code ?? c.codigo ?? `Cotización ${c.id}`;
-            const client = c.client_name ?? c.cliente ?? "";
-            const monto = c.total ?? c.amount ?? c.monto ?? "";
-            const desc = c.description ?? c.descripcion ?? "";
-            let date = c.date ?? c.fecha ?? "";
-            if (typeof date === "string" && date.length > 10) date = date.slice(0, 10);
-            return (
-              <li
-                key={c.id}
-                className="cursor-pointer px-5 py-4 text-base hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
-                onClick={() => onSelect(c)}
-              >
-                <div className="flex flex-wrap items-center gap-2 justify-between">
-                  <span className="text-sm text-gray-500 dark:text-gray-400 min-w-[80px]">{date}</span>
-                  <span className="font-medium text-gray-800 dark:text-white min-w-[90px]">{code}</span>
-                  <span className="flex-1 text-sm text-gray-700 dark:text-gray-300 truncate">{desc}</span>
-                  <span className="text-sm text-gray-500 dark:text-gray-400 min-w-[90px]">{client}</span>
-                  <span className="text-sm text-green-700 dark:text-green-400 font-semibold min-w-[80px] text-right">
-                    {monto ? `$${monto}` : ""}
-                  </span>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+        <div className="max-h-48 overflow-y-auto mt-2 rounded-md border border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-700 shadow-md">
+          <table className="w-full divide-y divide-gray-200 dark:divide-gray-600">
+            <thead className="bg-gray-100 dark:bg-gray-800">
+              <tr>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Fecha</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Código</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Descripción</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Cliente</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Monto</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
+              {filtered.map((c) => {
+                const code = c.code ?? c.codigo ?? `Cotización ${c.id}`;
+                const client = c.client_name ?? c.cliente ?? "";
+                const monto = c.total ?? c.amount ?? c.monto ?? "";
+                const desc = c.description ?? c.descripcion ?? "";
+                let date = c.date ?? c.fecha ?? "";
+                if (typeof date === "string" && date.length > 10) date = date.slice(0, 10);
+                return (
+                  <tr
+                    key={c.id}
+                    className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                    onClick={() => onSelect(c)}
+                  >
+                    <td className="px-3 py-2 text-sm text-gray-900 dark:text-white">{date}</td>
+                    <td className="px-3 py-2 text-sm text-gray-900 dark:text-white">{code}</td>
+                    <td className="px-3 py-2 text-sm text-gray-900 dark:text-white truncate">{desc}</td>
+                    <td className="px-3 py-2 text-sm text-gray-900 dark:text-white">{client}</td>
+                    <td className="px-3 py-2 text-sm text-green-700 dark:text-green-400 font-medium">
+                      {monto ? `$${monto}` : ""}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
       {loading && (
-        <div className="px-5 py-4 text-base font-medium text-gray-600 dark:text-gray-400">⏳ Cargando cotizaciones...</div>
+        <div className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">Cargando cotizaciones...</div>
       )}
-      {error && <div className="px-5 py-4 text-base font-medium text-red-600 dark:text-red-400">{error}</div>}
+      {error && <div className="px-3 py-2 text-sm text-red-600 dark:text-red-400">{error}</div>}
     </div>
   );
 }
@@ -533,16 +541,16 @@ function SelectedCotizacionBanner({
   onClear: () => void;
 }) {
   return (
-    <div className="rounded-xl border-2 border-green-300 bg-green-50/80 dark:bg-green-900/20 p-6 shadow-lg dark:border-green-700">
-      <div className="mb-4 flex items-center justify-between">
-        <div className="text-xl font-bold text-gray-900 dark:text-white">
+    <div className="rounded-md border border-green-300 bg-green-50 dark:bg-green-900/20 p-4 dark:border-green-700">
+      <div className="mb-2 flex items-center justify-between">
+        <div className="text-base font-medium text-gray-900 dark:text-white">
           {cotizacion.code ?? cotizacion.codigo}
         </div>
-        <Button size="sm" variant="outline" type="button" onClick={onClear} className="px-4 py-2 text-base">
+        <Button size="sm" variant="outline" type="button" onClick={onClear} className="px-3 py-1 text-sm">
           Cambiar
         </Button>
       </div>
-      <div className="text-base text-gray-500 dark:text-gray-400">
+      <div className="text-sm text-gray-500 dark:text-gray-400">
         {cotizacion.description ?? cotizacion.descripcion ?? ""}
       </div>
     </div>
@@ -563,12 +571,12 @@ function FormFooter({
   isSubmit?: boolean;
 }) {
   return (
-    <div className="border-t-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-8 py-6 flex items-center justify-between">
-      <Button size="sm" variant="outline" type="button" onClick={onBack} className="px-6 py-3 text-base font-semibold">
+    <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 flex items-center justify-between">
+      <Button size="sm" variant="outline" type="button" onClick={onBack} className="px-4 py-2 text-sm font-medium">
         ← Volver
       </Button>
-      <div className="flex gap-4">
-        <Button size="sm" variant="outline" type="button" onClick={onCancel} className="px-6 py-3 text-base font-semibold">
+      <div className="flex gap-3">
+        <Button size="sm" variant="outline" type="button" onClick={onCancel} className="px-4 py-2 text-sm font-medium">
           Cancelar
         </Button>
         <Button
@@ -577,9 +585,9 @@ function FormFooter({
           type={isSubmit ? "submit" : "button"}
           onClick={isSubmit ? undefined : onSave}
           disabled={saving}
-          className="px-6 py-3 text-base font-semibold bg-green-600 hover:bg-green-700"
+          className="px-4 py-2 text-sm font-medium bg-green-600 hover:bg-green-700"
         >
-          {saving ? "Guardando..." : "💾 Guardar Factura"}
+          {saving ? "Guardando..." : "Guardar Factura"}
         </Button>
       </div>
     </div>

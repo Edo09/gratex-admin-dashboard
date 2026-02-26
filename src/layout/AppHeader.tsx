@@ -90,7 +90,7 @@ const AppHeader: React.FC = () => {
             />
             <img
               className="hidden dark:block"
-              src="./admin/images/logo/logo-dark.svg"
+              src="./admin/images/logo/logo-gratex-white.svg"
               alt="Logo"
             />
           </Link>
