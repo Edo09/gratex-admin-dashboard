@@ -155,6 +155,27 @@ const AppHeader: React.FC = () => {
             } items-center justify-between w-full gap-4 px-5 py-4 lg:flex shadow-theme-md lg:justify-end lg:px-0 lg:shadow-none`}
         >
           <div className="flex items-center gap-2 2xsm:gap-3">
+            <a
+              href="https://gratex.net/"
+              className="flex h-11 items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
+            >
+              <svg
+                className="fill-current"
+                width="20"
+                height="20"
+                viewBox="0 0 20 20"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                  d="M10.5113 1.15732C10.2117 0.947209 9.78825 0.947209 9.48866 1.15732L1.82199 6.53322C1.59754 6.69064 1.46484 6.94539 1.46484 7.21774V16.875C1.46484 17.4963 1.96855 18 2.58984 18H17.4102C18.0314 18 18.5352 17.4963 18.5352 16.875V7.21774C18.5352 6.94539 18.4025 6.69064 18.178 6.53322L10.5113 1.15732ZM3.13151 7.6111V16.3333H7.81055V11.2222H12.1895V16.3333H16.8685V7.6111L10 2.79412L3.13151 7.6111Z"
+                  fill="currentColor"
+                />
+              </svg>
+              <span>Ver Sitio</span>
+            </a>
             <ThemeToggleButton />
           </div>
           <UserDropdown />
