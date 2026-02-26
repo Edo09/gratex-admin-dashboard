@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.12",
+    "@types/react-router-dom": "^5.3.3",
     "apexcharts": "^4.1.0",
     "clsx": "^2.1.1",
     "react": "^19.0.0",
