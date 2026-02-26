@@ -7,7 +7,6 @@ import BasicTableOne from "../components/tables/BasicTableOne";
 import { useDebounce } from "../hooks/useDebounce";
 import { Modal } from "../components/ui/modal";
 import Button from "../components/ui/button/Button";
-import { BoxIcon } from "../icons";
 import { clientesApi, cotizacionesApi, apiClient } from "../services/api";
 import type { Cotizacion } from "../services/api";
 import type { Cliente, LineItem } from "../types";
