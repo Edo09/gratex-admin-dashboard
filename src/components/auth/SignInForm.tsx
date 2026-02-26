@@ -59,6 +59,28 @@ export default function SignInForm() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 px-4">
       <div className="w-full max-w-md">
+        {/* Back to Landing Page Link */}
+        <a
+          href="https://gratex.net/"
+          className="inline-flex items-center gap-2 mb-6 text-sm font-bold text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors group"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="transition-transform group-hover:-translate-x-1"
+          >
+            <path d="m15 18-6-6 6-6" />
+          </svg>
+          Volver a la página principal
+        </a>
+
         {/* Card Container */}
         <div className="rounded-2xl bg-white shadow-2xl dark:bg-gray-800 p-8 sm:p-10">
           {/* Header */}
