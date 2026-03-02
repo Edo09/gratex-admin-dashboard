@@ -9,6 +9,7 @@ import Button from "../components/ui/button/Button";
 import BasicTableOne from "../components/tables/BasicTableOne";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "../components/ui/table";
 import type { Cliente } from "../types";
+import { formatCurrency } from '../utils/format';
 
 interface ClienteRow extends Cliente {
   [key: string]: unknown;
@@ -100,7 +101,7 @@ export default function Clientes() {
       total: (item.total as string) ?? '',
       ncf: (item.NCF as string) ?? '',
       description: (item.description as string) ?? '',
-      amount: typeof item.amount === "number" ? item.amount.toFixed(2) : typeof item.amount === "string" ? item.amount : typeof item.total === "number" ? item.total.toFixed(2) : typeof item.total === "string" ? item.total : "",
+      amount: formatCurrency((item.amount ?? item.total ?? 0) as number | string).replace('$', ''),
     }));
   }
 
@@ -114,8 +115,8 @@ export default function Clientes() {
       date: (item.date as string) ?? '',
       client: (item.client_name as string) ?? (item.cliente as string) ?? '',
       description: (item.description as string) ?? (item.descripcion as string) ?? '',
-      total: typeof item.total === "string" ? item.total : typeof item.total === "number" ? item.total.toFixed(2) : "",
-      amount: typeof item.amount === "number" ? item.amount.toFixed(2) : typeof item.amount === "string" ? item.amount : typeof item.total === "number" ? item.total.toFixed(2) : typeof item.total === "string" ? item.total : "",
+      total: formatCurrency((item.total ?? 0) as number | string).replace('$', ''),
+      amount: formatCurrency((item.amount ?? item.total ?? 0) as number | string).replace('$', ''),
     }));
   }
 

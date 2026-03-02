@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { formatCurrency } from "../../utils/format";
 import {
   Table,
   TableBody,
@@ -104,7 +105,7 @@ export default function RecentOrders() {
                   </p>
                 </TableCell>
                 <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
-                  ${typeof row.total === 'number' ? row.total.toLocaleString('en-US', { minimumFractionDigits: 2 }) : row.total}
+                  {formatCurrency(row.total)}
                 </TableCell>
               </TableRow>
             ))}

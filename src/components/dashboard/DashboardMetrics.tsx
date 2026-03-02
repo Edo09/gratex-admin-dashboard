@@ -7,6 +7,7 @@ import {
 } from "../../icons";
 import { clientesApi, cotizacionesApi, facturasApi } from "../../services/api";
 import type { Factura } from "../../services/api";
+import { formatCurrency } from "../../utils/format";
 
 /** Fetch all facturas using root-level data[] + pagination. */
 async function fetchAllFacturas(): Promise<Factura[]> {
@@ -72,10 +73,9 @@ export default function DashboardMetrics() {
   const currentYear = new Date().getFullYear();
 
   const monthlySales = allFacturas.reduce((sum, f) => {
-    const fDate = new Date(f.date);
-    console.log(fDate.getMonth(), fDate.getFullYear(), f.date);
+    const fDate = new Date(f.date.replace(' ', 'T'));
 
-    if (fDate.getMonth()+1 === currentMonth && fDate.getFullYear() === currentYear) {
+    if (fDate.getMonth() === currentMonth && fDate.getFullYear() === currentYear) {
       return sum + parseAmount(f);
     }
     return sum;
@@ -130,11 +130,9 @@ export default function DashboardMetrics() {
                 {metric.title}
               </span>
               <h4 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-                {metric.isCurrency && "$"}
-                {metric.value.toLocaleString('en-US', {
-                  minimumFractionDigits: metric.isCurrency ? 2 : 0,
-                  maximumFractionDigits: metric.isCurrency ? 2 : 0
-                })}
+                {metric.isCurrency
+                  ? formatCurrency(metric.value)
+                  : metric.value.toLocaleString('en-US')}
                 {metric.secondaryValue != null && (
                   <>
                     <span className="mx-1.5 text-base font-normal text-gray-300 dark:text-gray-600">|</span>

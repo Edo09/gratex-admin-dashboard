@@ -9,6 +9,7 @@ import { useNcf } from "../../hooks/useNcf";
 import { facturasApi, clientesApi, cotizacionesApi } from "../../services/api";
 import type { Cliente, CotizacionRecord, FacturaFormData } from "../../types";
 import { getTodayDate, getClientDisplayName } from "../../types";
+import { formatCurrency } from "../../utils/format";
 
 interface FacturaCreateModalProps {
   isOpen: boolean;
@@ -198,7 +199,7 @@ export default function FacturaCreateModal({ isOpen, onClose, onSuccess }: Factu
         const response = await cotizacionesApi.getCotizacionById(cot.id);
         let fullCotizacion: CotizacionRecord | null = null;
 
-        // Handle case where API returns an array directly
+        // Handle case where API returns an array directly (legacy fallback)
         if (Array.isArray(response.data)) {
           const found = (response.data as unknown as Record<string, unknown>[]).find((item) => {
             const itemData = item as unknown as { id?: number };
@@ -209,7 +210,7 @@ export default function FacturaCreateModal({ isOpen, onClose, onSuccess }: Factu
             fullCotizacion = response.data[0] as unknown as CotizacionRecord;
           }
         }
-        // Handle case where API returns a paginated list wrapper
+        // Handle case where API returns a paginated list wrapper (legacy fallback)
         else if (response.data && typeof response.data === 'object' && 'data' in response.data && Array.isArray((response.data as unknown as Record<string, unknown>).data)) {
           const list = (response.data as unknown as Record<string, unknown>).data as Record<string, unknown>[];
           const found = list.find((item) => {
@@ -220,6 +221,10 @@ export default function FacturaCreateModal({ isOpen, onClose, onSuccess }: Factu
           if (!fullCotizacion && list.length > 0) {
             fullCotizacion = list[0] as unknown as CotizacionRecord;
           }
+        }
+        // Direct object response from /cotizaciones/:id — use as-is
+        else if (response.data && typeof response.data === 'object') {
+          fullCotizacion = response.data as unknown as CotizacionRecord;
         }
 
         const nextNCF = await fetchNextNCF();
@@ -443,7 +448,7 @@ function TotalDisplay({ totalAmount }: { totalAmount: number }) {
         <span className="text-yellow-500">💰</span> Total Estimado
       </label>
       <div className="text-xl font-medium text-green-700 dark:text-green-400 mt-2">
-        ${totalAmount ? totalAmount.toFixed(2) : "0.00"}
+        {formatCurrency(totalAmount)}
       </div>
     </div>
   );

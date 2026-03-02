@@ -1,5 +1,6 @@
 import type { LineItem, ItemFormData } from "../../types";
 import Button from "../ui/button/Button";
+import { formatCurrency } from "../../utils/format";
 import { BoxIcon } from "../../icons";
 
 interface LineItemsEditorProps {
@@ -104,11 +105,11 @@ export default function LineItemsEditor({
                 <div className="flex-1">
                   <div className="font-semibold text-gray-900 dark:text-white text-base">{item.description}</div>
                   <div className="text-sm text-gray-500 dark:text-gray-400">
-                    Cant. {item.quantity} · Monto ${item.amount.toFixed(2)}
+                    Cant. {item.quantity} · Monto {formatCurrency(item.amount)}
                   </div>
                 </div>
                 <div className="text-lg font-bold text-gray-900 dark:text-white">
-                  ${(item.amount * item.quantity).toFixed(2)}
+                  {formatCurrency(item.amount * item.quantity)}
                 </div>
                 <Button
                   size="sm"

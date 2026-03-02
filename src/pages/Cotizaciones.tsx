@@ -11,6 +11,7 @@ import { clientesApi, cotizacionesApi, apiClient } from "../services/api";
 import type { Cotizacion } from "../services/api";
 import type { Cliente, LineItem } from "../types";
 import Alert from '../components/ui/alert/Alert';
+import { formatCurrency } from '../utils/format';
 
 type TableRow = { id: number; date: string; code?: string; client?: string; description: string; amount: string; total: string };
 
@@ -121,28 +122,26 @@ export default function Cotizaciones() {
 
       let data = response.data;
 
-      // Handle case where API returns an array directly
+      // Handle case where API returns an array directly (legacy fallback)
       if (Array.isArray(data)) {
         const found = (data as unknown as Record<string, unknown>[]).find((item) => item.id == row.id);
         if (found) {
           data = found as unknown as Cotizacion;
         } else if (data.length > 0) {
-          // If we returned a list but ID not found (unlikely if filtered by ID), use first?
-          // Or maybe it's just a single item list.
           data = data[0];
         }
       }
-      // Handle case where API returns a paginated list wrapper
+      // Handle case where API returns a paginated list wrapper (legacy fallback)
       else if (data && typeof data === 'object' && 'data' in data && Array.isArray((data as unknown as Record<string, unknown>).data)) {
         const list = (data as unknown as Record<string, unknown>).data as Record<string, unknown>[];
         const found = list.find((item) => item.id == row.id);
         if (found) {
           data = found as unknown as Cotizacion;
         } else if (list.length > 0) {
-          // Fallback if filtering happened
           data = list[0] as unknown as Cotizacion;
         }
       }
+      // Direct object response from /cotizaciones/:id — use as-is
 
       const currentCotizacion = data as Cotizacion | undefined;
 
@@ -155,14 +154,24 @@ export default function Cotizaciones() {
           amount: currentCotizacion.total,
         });
 
-        // Set items
-        if (currentCotizacion.items) {
+        // Set items from API response, or reconstruct from description + total
+        if (currentCotizacion.items && currentCotizacion.items.length > 0) {
           setItems((currentCotizacion.items as Record<string, unknown>[]).map((i) => ({
             id: (i.id as number) || Date.now() + Math.random(),
             description: i.description as string,
             amount: parseFloat(i.amount as unknown as string),
             quantity: i.quantity as number
           })));
+        } else if (currentCotizacion.description) {
+          // API doesn't return individual items — reconstruct a single editable item
+          // from the concatenated description and total so the user can edit it
+          const totalVal = parseFloat(currentCotizacion.total) || 0;
+          setItems([{
+            id: Date.now(),
+            description: currentCotizacion.description,
+            amount: totalVal,
+            quantity: 1,
+          }]);
         } else {
           setItems([]);
         }
@@ -293,7 +302,7 @@ export default function Cotizaciones() {
             <h2 className="text-lg font-semibold text-white">{isEditMode ? "Editar Cotización" : "Nueva Cotización"}</h2>
             <p className="text-blue-100 text-xs mt-0.5">Complete los detalles para generar la cotización</p>
           </div>
-          <button
+          {/* <button
             onClick={() => {
               setIsCreateOpen(false);
               resetForm();
@@ -301,7 +310,7 @@ export default function Cotizaciones() {
             className="text-white hover:text-blue-200 transition-colors"
           >
             ×
-          </button>
+          </button> */}
         </div>
         <div className="overflow-y-auto p-4 space-y-4" style={{ maxHeight: 'calc(92vh - 140px)' }}>
           <form
@@ -478,7 +487,7 @@ export default function Cotizaciones() {
               <div className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/30 dark:to-emerald-800/30 rounded-md p-4 border border-green-300 dark:border-green-700">
                 <label className="mb-2 text-sm font-medium text-green-800 dark:text-green-300">Total Estimado</label>
                 <div className="text-xl font-medium text-green-700 dark:text-green-400">
-                  ${totalAmount ? totalAmount.toFixed(2) : "0.00"}
+                  {formatCurrency(totalAmount)}
                 </div>
               </div>
             </div>
@@ -547,25 +556,27 @@ export default function Cotizaciones() {
                   <table className="w-full divide-y divide-gray-200 dark:divide-gray-600">
                     <thead className="bg-gray-100 dark:bg-gray-800">
                       <tr>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">#</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Descripción</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Cantidad x Monto</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Subtotal</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400"></th>
+                        <th className="w-10 px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">#</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Descripción</th>
+                        <th className="w-32 px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400">Cantidad x Monto</th>
+                        <th className="w-28 px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400">Subtotal</th>
+                        <th className="w-16 px-3 py-2"></th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
                       {items.map((item, index) => (
                         <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
-                          <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">{index + 1}</td>
-                          <td className="px-4 py-2 text-sm text-gray-900 dark:text-white truncate">{item.description}</td>
-                          <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">
-                            {item.quantity} x ${item.amount.toFixed(2)}
+                          <td className="w-10 px-3 py-2 text-sm text-gray-900 dark:text-white align-top">{index + 1}</td>
+                          <td className="px-3 py-2 text-sm text-gray-900 dark:text-white align-top">
+                            <div className="whitespace-pre-line break-words max-w-xs" title={item.description}>{item.description}</div>
                           </td>
-                          <td className="px-4 py-2 text-sm font-medium text-gray-900 dark:text-white">
-                            ${(item.amount * item.quantity).toFixed(2)}
+                          <td className="w-32 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 text-right whitespace-nowrap align-top">
+                            {item.quantity} x {formatCurrency(item.amount)}
                           </td>
-                          <td className="px-4 py-2">
+                          <td className="w-28 px-3 py-2 text-sm font-medium text-gray-900 dark:text-white text-right whitespace-nowrap align-top">
+                            {formatCurrency(item.amount * item.quantity)}
+                          </td>
+                          <td className="w-16 px-3 py-2 align-top">
                             <Button
                               size="sm"
                               variant="outline"

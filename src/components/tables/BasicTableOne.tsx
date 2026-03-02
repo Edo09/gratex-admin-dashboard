@@ -8,6 +8,7 @@ import {
 
 import { useMemo, useState } from "react";
 import { cotizacionesApi, facturasApi } from "../../services/api";
+import { formatCurrency } from "../../utils/format";
 
 
 type DataType = "cotizaciones" | "facturas";
@@ -287,7 +288,7 @@ export default function BasicTableOne({
                       ))}
                     </TableCell>
                     <TableCell className="px-5 py-5 text-gray-900 text-base font-bold dark:text-white">
-                      ${typeof row.amount === 'string' ? parseFloat(row.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : row.amount}
+                      {formatCurrency(row.amount)}
                     </TableCell>
                   </>
                 ) : (
@@ -307,7 +308,7 @@ export default function BasicTableOne({
                       ))}
                     </TableCell>
                     <TableCell className="px-5 py-5 text-gray-900 text-base font-bold dark:text-white">
-                      ${typeof row.amount === 'string' ? parseFloat(row.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : row.amount}
+                      {formatCurrency(row.amount)}
                     </TableCell>
                   </>
                 )}
