@@ -160,7 +160,7 @@ export default function StatisticsChart() {
     },
     yaxis: {
       labels: {
-        formatter: (val: number) => `$${(val / 1000).toFixed(1)}k`,
+        formatter: (val: number) => `$${parseFloat((val / 1000).toFixed(2)).toLocaleString('en-US', { minimumFractionDigits: 2 })}k`,
         style: {
           fontSize: "12px",
           colors: ["#6B7280"],
