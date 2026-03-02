@@ -73,7 +73,9 @@ export default function DashboardMetrics() {
 
   const monthlySales = allFacturas.reduce((sum, f) => {
     const fDate = new Date(f.date);
-    if (fDate.getMonth() === currentMonth && fDate.getFullYear() === currentYear) {
+    console.log(fDate.getMonth(), fDate.getFullYear(), f.date);
+
+    if (fDate.getMonth()+1 === currentMonth && fDate.getFullYear() === currentYear) {
       return sum + parseAmount(f);
     }
     return sum;
