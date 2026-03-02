@@ -8,7 +8,6 @@ import Button from "../components/ui/button/Button";
 import FacturaCreateModal from "../components/facturas/FacturaCreateModal";
 import { facturasApi } from "../services/api";
 import type { FacturaTableRow } from "../types";
-import { formatCurrency } from '../utils/format';
 
 /**
  * Facturas page — Single Responsibility: table display + modal orchestration.
@@ -33,7 +32,7 @@ export default function Facturas() {
         total: (item.total as string) ?? "",
         ncf: (item.NCF as string) ?? "",
         description: (item.description as string) ?? "",
-        amount: formatCurrency((item.amount ?? item.total ?? 0) as number | string).replace('$', ''),
+        amount: ((item.amount ?? item.total ?? 0) as string),
       }),
     [],
   );
