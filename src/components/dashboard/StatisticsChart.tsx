@@ -2,18 +2,14 @@ import Chart from "react-apexcharts";
 import { ApexOptions } from "apexcharts";
 import { useQuery } from "@tanstack/react-query";
 import { facturasApi, cotizacionesApi } from "../../services/api";
-import type { Factura, PaginatedResponse, Cotizacion } from "../../services/api";
+import type { Factura, Cotizacion } from "../../services/api";
 import { useMemo } from "react";
 
-/** Fetch all facturas, handling both flat array and paginated responses. */
+/** Fetch all facturas using root-level data[] + pagination. */
 async function fetchAllFacturas(): Promise<Factura[]> {
   const response = await facturasApi.getFacturas({ page: 1, pageSize: 100 });
-  const payload = response.data;
-  if (Array.isArray(payload)) return payload;
-  const paginated = payload as PaginatedResponse<Factura> | undefined;
-  if (!paginated?.data) return [];
-  const allItems = [...paginated.data];
-  const totalPages = paginated.totalPages ?? 1;
+  const allItems = Array.isArray(response.data) ? [...response.data] : [];
+  const totalPages = response.pagination?.totalPages ?? 1;
   if (totalPages > 1) {
     const remaining = await Promise.all(
       Array.from({ length: totalPages - 1 }, (_, i) =>
@@ -21,22 +17,17 @@ async function fetchAllFacturas(): Promise<Factura[]> {
       )
     );
     for (const res of remaining) {
-      const p = res.data as PaginatedResponse<Factura> | undefined;
-      if (p?.data && Array.isArray(p.data)) allItems.push(...p.data);
+      if (Array.isArray(res.data)) allItems.push(...res.data);
     }
   }
   return allItems;
 }
 
-/** Fetch all cotizaciones, handling both flat array and paginated responses. */
+/** Fetch all cotizaciones using root-level data[] + pagination. */
 async function fetchAllCotizaciones(): Promise<Cotizacion[]> {
   const response = await cotizacionesApi.getCotizaciones({ page: 1, pageSize: 100 });
-  const payload = response.data;
-  if (Array.isArray(payload)) return payload;
-  const paginated = payload as PaginatedResponse<Cotizacion> | undefined;
-  if (!paginated?.data) return [];
-  const allItems = [...paginated.data];
-  const totalPages = paginated.totalPages ?? 1;
+  const allItems = Array.isArray(response.data) ? [...response.data] : [];
+  const totalPages = response.pagination?.totalPages ?? 1;
   if (totalPages > 1) {
     const remaining = await Promise.all(
       Array.from({ length: totalPages - 1 }, (_, i) =>
@@ -44,8 +35,7 @@ async function fetchAllCotizaciones(): Promise<Cotizacion[]> {
       )
     );
     for (const res of remaining) {
-      const p = res.data as PaginatedResponse<Cotizacion> | undefined;
-      if (p?.data && Array.isArray(p.data)) allItems.push(...p.data);
+      if (Array.isArray(res.data)) allItems.push(...res.data);
     }
   }
   return allItems;

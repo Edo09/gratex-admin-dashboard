@@ -6,23 +6,25 @@ interface RequestOptions extends RequestInit {
   skipAuth?: boolean;
 }
 
+interface Pagination {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
 interface ApiResponse<T> {
   success?: boolean;
   status?: boolean;
-  data?: T;
+  data?: T; // T may be an array for list endpoints
+  pagination?: Pagination; // root-level pagination metadata
   message?: string;
   error?: string;
   pdf?: string;
 }
 
 // Domain-specific types
-export interface PaginatedResponse<T> {
-  page: number;
-  pageSize: number;
-  total: number;
-  totalPages: number;
-  data: T[];
-}
+// Pagination is now at the root level of ApiResponse via the `pagination` field
 
 export interface Cliente {
   id: number;
@@ -234,7 +236,7 @@ export const facturasApi = {
     if (params?.pageSize) queryParams.append('pageSize', params.pageSize.toString());
     const qp = queryParams.toString();
     const endpoint = qp ? `/facturas?${qp}` : '/facturas';
-    return apiClient.get<PaginatedResponse<Factura>>(endpoint);
+    return apiClient.get<Factura[]>(endpoint);
   },
 
   // Get factura PDF
@@ -280,7 +282,7 @@ export const clientesApi = {
     if (params?.query) queryParams.append('query', params.query);
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.pageSize) queryParams.append('pageSize', params.pageSize.toString());
-    return apiClient.get<PaginatedResponse<Cliente>>(`/clients?${queryParams.toString()}`);
+    return apiClient.get<Cliente[]>(`/clients?${queryParams.toString()}`);
   },
 
   // Create a new cliente
@@ -310,7 +312,7 @@ export const cotizacionesApi = {
     if (params?.pageSize) queryParams.append('pageSize', params.pageSize.toString());
     const qp = queryParams.toString();
     const endpoint = qp ? `/cotizaciones?${qp}` : '/cotizaciones';
-    return apiClient.get<PaginatedResponse<Cotizacion>>(endpoint);
+    return apiClient.get<Cotizacion[]>(endpoint);
   },
 
   // Get cotizacion PDF

@@ -42,15 +42,8 @@ export default function Cotizaciones() {
     queryFn: async () => {
       const response = await clientesApi.getClientes({ query: debouncedClienteQuery });
       let items: Cliente[] = [];
-      if (response.data) {
-        if (Array.isArray(response.data)) {
-          items = response.data;
-        } else {
-          const paginatedData = response.data as unknown as { data?: unknown };
-          if (Array.isArray(paginatedData.data)) {
-            items = paginatedData.data as Cliente[];
-          }
-        }
+      if (response.data && Array.isArray(response.data)) {
+        items = response.data as Cliente[];
       }
       return items;
     },
@@ -115,22 +108,12 @@ export default function Cotizaciones() {
 
 
 
-  // Parse data and total from API response
-  let rows: TableRow[] = [];
-  let total = 0;
-  if (cotizacionesData && cotizacionesData.data) {
-    if (Array.isArray(cotizacionesData.data)) {
-      rows = cotizacionesData.data.map(mapApiToRow);
-      total = rows.length;
-    } else if (
-      typeof cotizacionesData.data === 'object' &&
-      'data' in cotizacionesData.data &&
-      Array.isArray((cotizacionesData.data as unknown as Record<string, unknown>).data)
-    ) {
-      rows = ((cotizacionesData.data as unknown as Record<string, unknown>).data as Record<string, unknown>[]).map(mapApiToRow);
-      total = ((cotizacionesData.data as unknown as Record<string, unknown>).total as number) || rows.length;
-    }
-  }
+    // Parse data and total from API response (root-level `data` array + `pagination` expected)
+    let rows: TableRow[] = [];
+    let total = 0;
+    const dataArr = Array.isArray(cotizacionesData?.data) ? (cotizacionesData!.data as unknown as Record<string, unknown>[]) : [];
+    rows = dataArr.map(mapApiToRow);
+    total = (cotizacionesData?.pagination?.total as number) || rows.length;
 
   const handleRowClick = async (row: TableRow) => {
     try {

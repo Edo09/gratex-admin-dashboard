@@ -59,46 +59,23 @@ export default function Facturas() {
     placeholderData: (previousData) => previousData,
   });
 
-  // Parse total from API response
+  // Parse total from API response (root-level pagination expected)
   useEffect(() => {
     if (!facturasData) return;
-
-    // Check for pagination object at root level (status, data, pagination structure)
-    const paginationInfo = (facturasData as unknown as Record<string, unknown>).pagination;
-    if (paginationInfo && typeof paginationInfo === "object") {
-      const paginationTotal = (paginationInfo as Record<string, unknown>).total as number | undefined;
-      if (typeof paginationTotal === "number") {
-        setTotal(paginationTotal);
-        return;
-      }
+    const paginationTotal = facturasData.pagination?.total;
+    if (typeof paginationTotal === 'number') {
+      setTotal(paginationTotal);
+      return;
     }
-
-    // Fallback: check nested structure
-    if (!facturasData.data) return;
-    const data = facturasData.data;
-    if (Array.isArray(data)) {
-      setTotal(data.length);
-    } else if (typeof data === "object" && "data" in data) {
-      const nested = data as unknown as Record<string, unknown>;
-      if (Array.isArray(nested.data)) {
-        setTotal((nested.total as number) || (nested.data as unknown[]).length);
-      }
-    }
+    // Fallback to data length if pagination is missing
+    const dataArr = Array.isArray(facturasData.data) ? facturasData.data : [];
+    setTotal(dataArr.length);
   }, [facturasData]);
 
   // Map API response to table rows
   let rows: FacturaTableRow[] = [];
-  if (facturasData?.data) {
-    const data = facturasData.data;
-    if (Array.isArray(data)) {
-      rows = data.map(mapApiToRow);
-    } else if (typeof data === "object" && "data" in data) {
-      const nested = data as unknown as Record<string, unknown>;
-      if (Array.isArray(nested.data)) {
-        rows = (nested.data as Record<string, unknown>[]).map(mapApiToRow);
-      }
-    }
-  }
+  const facturasArray = Array.isArray(facturasData?.data) ? (facturasData!.data as unknown as Record<string, unknown>[]) : [];
+  rows = facturasArray.map(mapApiToRow);
 
   return (
     <div>

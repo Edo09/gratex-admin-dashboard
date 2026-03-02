@@ -23,20 +23,20 @@ export default function RecentOrders() {
   });
 
   const combinedRows = useMemo(() => {
-    const cotizaciones = (cotizacionesData?.data?.data || []).map(item => ({
+    const cotizaciones = (Array.isArray(cotizacionesData?.data) ? cotizacionesData!.data : []).map(item => ({
       ...item,
-      type: "Cotización",
+      type: "Cotización" as const,
       displayDate: item.date ? item.date.split(" ")[0] : "",
       sortBy: item.date ? new Date(item.date).getTime() : 0,
     }));
 
-    const facturas = (facturasData?.data?.data || []).map(item => ({
+    const facturas = (Array.isArray(facturasData?.data) ? facturasData!.data : []).map(item => ({
       ...item,
-      type: "Factura",
-      client_name: item.client, // Factura has 'client', Cotizacion has 'client_name'
+      type: "Factura" as const,
+      client_name: item.client_name ?? item.client,
       displayDate: item.date ? item.date.split(" ")[0] : "",
       sortBy: item.date ? new Date(item.date).getTime() : 0,
-      total: item.amount, // Normalize total/amount
+      total: item.amount ?? item.total,
     }));
 
     return [...cotizaciones, ...facturas]

@@ -6,17 +6,13 @@ import { MoreDotIcon } from "../../icons";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { facturasApi } from "../../services/api";
-import type { Factura, PaginatedResponse } from "../../services/api";
+import type { Factura } from "../../services/api";
 
-/** Fetch all facturas, handling both flat array and paginated responses. */
+/** Fetch all facturas using root-level data[] + pagination. */
 async function fetchAllFacturas(): Promise<Factura[]> {
   const response = await facturasApi.getFacturas({ page: 1, pageSize: 100 });
-  const payload = response.data;
-  if (Array.isArray(payload)) return payload;
-  const paginated = payload as PaginatedResponse<Factura> | undefined;
-  if (!paginated?.data) return [];
-  const allItems = [...paginated.data];
-  const totalPages = paginated.totalPages ?? 1;
+  const allItems = Array.isArray(response.data) ? [...response.data] : [];
+  const totalPages = response.pagination?.totalPages ?? 1;
   if (totalPages > 1) {
     const remaining = await Promise.all(
       Array.from({ length: totalPages - 1 }, (_, i) =>
@@ -24,8 +20,7 @@ async function fetchAllFacturas(): Promise<Factura[]> {
       )
     );
     for (const res of remaining) {
-      const p = res.data as PaginatedResponse<Factura> | undefined;
-      if (p?.data && Array.isArray(p.data)) allItems.push(...p.data);
+      if (Array.isArray(res.data)) allItems.push(...res.data);
     }
   }
   return allItems;

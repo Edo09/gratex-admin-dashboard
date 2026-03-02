@@ -40,35 +40,17 @@ export default function Clientes() {
   });
 
   useEffect(() => {
-    if (clientesData && clientesData.data) {
-      if (Array.isArray(clientesData.data)) {
-        setTotal(clientesData.data.length);
-      } else if (
-        typeof clientesData.data === 'object' &&
-        'data' in clientesData.data
-      ) {
-        const nested = clientesData.data as unknown as Record<string, unknown>;
-        if (Array.isArray(nested.data)) {
-          setTotal((nested.total as number) || (nested.data as unknown[]).length);
-        }
-      }
+    if (!clientesData) return;
+    const paginationTotal = clientesData.pagination?.total;
+    if (typeof paginationTotal === 'number') {
+      setTotal(paginationTotal);
+      return;
     }
+    const dataArr = Array.isArray(clientesData.data) ? clientesData.data : [];
+    setTotal(dataArr.length);
   }, [clientesData]);
-
   let rows: ClienteRow[] = [];
-  if (clientesData && clientesData.data) {
-    if (Array.isArray(clientesData.data)) {
-      rows = clientesData.data as ClienteRow[];
-    } else if (
-      typeof clientesData.data === 'object' &&
-      'data' in clientesData.data
-    ) {
-      const nested = clientesData.data as unknown as Record<string, unknown>;
-      if (Array.isArray(nested.data)) {
-        rows = nested.data as ClienteRow[];
-      }
-    }
-  }
+  rows = Array.isArray(clientesData?.data) ? (clientesData!.data as ClienteRow[]) : [];
 
   const handleRowClick = (client: ClienteRow) => {
     setSelectedClient(client);
@@ -108,11 +90,9 @@ export default function Clientes() {
   // Extract Modal Factura Rows
   type RowShape = { id: number; date: string; code?: string; client?: string; description: string; amount: string; no_factura?: string; client_name?: string; total: string; ncf?: string };
   let facturaRows: RowShape[] = [];
-  if (clientFacturasData && clientFacturasData.data) {
-    const rawData = Array.isArray(clientFacturasData.data)
-      ? clientFacturasData.data
-      : ((clientFacturasData.data as unknown as Record<string, unknown>).data as Record<string, unknown>[]) || [];
-    facturaRows = (rawData as Record<string, unknown>[]).map((item: Record<string, unknown>, index: number) => ({
+  if (clientFacturasData && Array.isArray(clientFacturasData.data)) {
+    const rawData = clientFacturasData.data as unknown as Record<string, unknown>[];
+    facturaRows = rawData.map((item: Record<string, unknown>, index: number) => ({
       id: (item.id as number) ?? index + 1,
       no_factura: (item.no_factura as string) ?? '',
       date: (item.date as string) ?? '',
@@ -126,11 +106,9 @@ export default function Clientes() {
 
   // Extract Modal Cotizacion Rows
   let cotizacionRows: RowShape[] = [];
-  if (clientCotizacionesData && clientCotizacionesData.data) {
-    const rawData = Array.isArray(clientCotizacionesData.data)
-      ? clientCotizacionesData.data
-      : ((clientCotizacionesData.data as unknown as Record<string, unknown>).data as Record<string, unknown>[]) || [];
-    cotizacionRows = (rawData as Record<string, unknown>[]).map((item: Record<string, unknown>, index: number) => ({
+  if (clientCotizacionesData && Array.isArray(clientCotizacionesData.data)) {
+    const rawData = clientCotizacionesData.data as unknown as Record<string, unknown>[];
+    cotizacionRows = rawData.map((item: Record<string, unknown>, index: number) => ({
       id: (item.id as number) ?? index + 1,
       code: (item.code as string) ?? (item.codigo as string) ?? '',
       date: (item.date as string) ?? '',
@@ -142,7 +120,7 @@ export default function Clientes() {
   }
 
   const clientNameDisplay = selectedClient?.client_name ?? selectedClient?.nombre ?? selectedClient?.name ?? "Cliente Desconocido";
-
+  
   return (
     <div>
       <PageMeta
