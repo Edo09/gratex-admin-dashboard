@@ -354,7 +354,7 @@ export const cotizacionesApi = {
 
   // Get cotizacion by ID
   getCotizacionById: (id: number) =>
-    apiClient.get<Cotizacion>(`/cotizaciones?id=${id}`),
+    apiClient.get<Cotizacion>(`/cotizaciones/${id}`),
 
   // Update cotizacion
   updateCotizacion: (id: number, data: unknown) =>

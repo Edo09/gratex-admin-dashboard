@@ -195,44 +195,12 @@ export default function FacturaCreateModal({ isOpen, onClose, onSuccess }: Factu
   const handleCotizacionSelect = useCallback(
     async (cot: CotizacionRecord) => {
       try {
-        // Fetch full cotización data with items
+        // Fetch full cotización data with items using /cotizaciones/:id
         const response = await cotizacionesApi.getCotizacionById(cot.id);
-        let fullCotizacion: CotizacionRecord | null = null;
-
-        // Handle case where API returns an array directly (legacy fallback)
-        if (Array.isArray(response.data)) {
-          const found = (response.data as unknown as Record<string, unknown>[]).find((item) => {
-            const itemData = item as unknown as { id?: number };
-            return itemData.id == cot.id;
-          });
-          fullCotizacion = found as unknown as CotizacionRecord || null;
-          if (!fullCotizacion && response.data.length > 0) {
-            fullCotizacion = response.data[0] as unknown as CotizacionRecord;
-          }
-        }
-        // Handle case where API returns a paginated list wrapper (legacy fallback)
-        else if (response.data && typeof response.data === 'object' && 'data' in response.data && Array.isArray((response.data as unknown as Record<string, unknown>).data)) {
-          const list = (response.data as unknown as Record<string, unknown>).data as Record<string, unknown>[];
-          const found = list.find((item) => {
-            const itemData = item as unknown as { id?: number };
-            return itemData.id == cot.id;
-          });
-          fullCotizacion = found as unknown as CotizacionRecord || null;
-          if (!fullCotizacion && list.length > 0) {
-            fullCotizacion = list[0] as unknown as CotizacionRecord;
-          }
-        }
-        // Direct object response from /cotizaciones/:id — use as-is
-        else if (response.data && typeof response.data === 'object') {
-          fullCotizacion = response.data as unknown as CotizacionRecord;
-        }
+        const fullCotizacion = response.data as unknown as CotizacionRecord | null;
 
         const nextNCF = await fetchNextNCF();
-        if (fullCotizacion) {
-          setSelectedCotizacion(fullCotizacion);
-        } else {
-          setSelectedCotizacion(cot);
-        }
+        setSelectedCotizacion(fullCotizacion ?? cot);
         setFacturaData((fd) => ({ ...fd, ncf: nextNCF }));
       } catch (err) {
         console.error("Error fetching cotización details:", err);
