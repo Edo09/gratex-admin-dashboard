@@ -11,6 +11,7 @@ import { facturasApi, clientesApi, cotizacionesApi } from "../../services/api";
 import type { Cliente, CotizacionRecord, FacturaFormData } from "../../types";
 import { getTodayDate, getClientDisplayName } from "../../types";
 import { formatCurrency } from "../../utils/format";
+import { useAuth } from "../../context/AuthContext";
 
 interface FacturaCreateModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ interface FacturaCreateModalProps {
  */
 export default function FacturaCreateModal({ isOpen, onClose, onSuccess }: FacturaCreateModalProps) {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const { fetchNextNCF } = useNcf();
   const { items, setItems, itemForm, setItemForm, totalAmount, addItem, removeItem, reset: resetItems } = useLineItems();
 
@@ -166,6 +168,7 @@ export default function FacturaCreateModal({ isOpen, onClose, onSuccess }: Factu
         date: facturaData.date,
         client: facturaData.client,
         client_id: selectedCliente.id,
+        user_id: user?.id,
         items: items.map(({ description, amount, quantity }) => ({ description, amount, quantity })),
         ncf: facturaData.ncf || undefined,
       });

@@ -10,6 +10,7 @@ import Button from "../components/ui/button/Button";
 import { clientesApi, cotizacionesApi, apiClient } from "../services/api";
 import type { Cotizacion } from "../services/api";
 import type { Cliente, LineItem } from "../types";
+import { useAuth } from "../context/AuthContext";
 import Alert from '../components/ui/alert/Alert';
 import { formatCurrency } from '../utils/format';
 
@@ -17,6 +18,7 @@ type TableRow = { id: number; date: string; code?: string; client?: string; desc
 
 export default function Cotizaciones() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [query, setQuery] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const todayStr = new Date().toISOString().slice(0, 10);
@@ -322,6 +324,7 @@ export default function Cotizaciones() {
               const payload = {
                 client_id: selectedCliente?.id ?? null,
                 client_name: selectedCliente?.client_name ?? selectedCliente?.nombre ?? selectedCliente?.name ?? null,
+                user_id: user?.id,
                 date: newRow.date,
                 items: items.map((item) => ({
                   description: item.description,

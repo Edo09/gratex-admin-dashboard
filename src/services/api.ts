@@ -256,6 +256,7 @@ export const facturasApi = {
     date: string;
     client: string;
     client_id?: number;
+    user_id?: number;
     items: Array<{ description: string; amount: number; quantity: number }>;
     ncf?: string;
   }) =>
@@ -345,6 +346,7 @@ export const cotizacionesApi = {
   createCotizacion: (data: {
     client_id: number | null;
     client_name: string | null;
+    user_id?: number;
     date: string;
     items: Array<{ description: string; amount: number; quantity: number; subtotal: number }>;
     total: number;
