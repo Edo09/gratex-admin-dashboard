@@ -117,13 +117,27 @@ export default function FacturaCreateModal({ isOpen, onClose, onSuccess }: Factu
   useEffect(() => {
     if (!selectedCotizacion) return;
     const cotItems = Array.isArray(selectedCotizacion.items) ? selectedCotizacion.items : [];
-    const mappedItems = cotItems.map((item) => ({
-      id: Date.now() + Math.random(),
-      description: item.description,
-      amount: Number(item.amount),
-      quantity: Number(item.quantity),
-    }));
-    setItems(mappedItems);
+    if (cotItems.length > 0) {
+      const mappedItems = cotItems.map((item) => ({
+        id: Date.now() + Math.random(),
+        description: item.description,
+        amount: Number(item.amount),
+        quantity: Number(item.quantity),
+      }));
+      setItems(mappedItems);
+    } else if (selectedCotizacion.description ?? selectedCotizacion.descripcion) {
+      // Fallback: reconstruct a single item from the concatenated description + total
+      const desc = selectedCotizacion.description ?? selectedCotizacion.descripcion ?? "";
+      const totalVal = parseFloat(String(selectedCotizacion.total ?? selectedCotizacion.amount ?? selectedCotizacion.monto ?? 0)) || 0;
+      setItems([{
+        id: Date.now(),
+        description: desc,
+        amount: totalVal,
+        quantity: 1,
+      }]);
+    } else {
+      setItems([]);
+    }
     setItemForm({ description: "", amount: "", quantity: "1" });
     setSelectedCliente({
       id: selectedCotizacion.client_id ?? 0,
@@ -180,7 +194,7 @@ export default function FacturaCreateModal({ isOpen, onClose, onSuccess }: Factu
     } finally {
       setSaving(false);
     }
-  }, [selectedCliente, facturaData, items, queryClient, handleClose, onSuccess]);
+  }, [selectedCliente, facturaData, items, user, queryClient, handleClose, onSuccess]);
 
   const handleClientSelect = useCallback(
     async (cliente: Cliente) => {
