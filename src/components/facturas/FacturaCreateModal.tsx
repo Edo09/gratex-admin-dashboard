@@ -6,6 +6,7 @@ import ClienteSelector from "../shared/ClienteSelector";
 import LineItemsEditor from "../shared/LineItemsEditor";
 import { useLineItems } from "../../hooks/useLineItems";
 import { useNcf } from "../../hooks/useNcf";
+import { useDebounce } from "../../hooks/useDebounce";
 import { facturasApi, clientesApi, cotizacionesApi } from "../../services/api";
 import type { Cliente, CotizacionRecord, FacturaFormData } from "../../types";
 import { getTodayDate, getClientDisplayName } from "../../types";
@@ -47,6 +48,7 @@ export default function FacturaCreateModal({ isOpen, onClose, onSuccess }: Factu
   const [loadingCotizaciones, setLoadingCotizaciones] = useState(false);
   const [errorCotizaciones, setErrorCotizaciones] = useState<string | undefined>();
   const [cotizacionQuery, setCotizacionQuery] = useState("");
+  const debouncedCotizacionQuery = useDebounce(cotizacionQuery, 400);
   const [selectedCotizacion, setSelectedCotizacion] = useState<CotizacionRecord | null>(null);
 
   // Fetch clients when client flow is selected
@@ -76,15 +78,19 @@ export default function FacturaCreateModal({ isOpen, onClose, onSuccess }: Factu
     return () => { ignore = true; };
   }, [isOpen, creationType]);
 
-  // Fetch cotizaciones when cotización flow is selected
+  // Fetch cotizaciones from API using debounced search query
   useEffect(() => {
     if (!isOpen || creationType !== "cotizacion") return;
+    if (!debouncedCotizacionQuery.trim()) {
+      setCotizaciones([]);
+      return;
+    }
     let ignore = false;
     (async () => {
       try {
         setLoadingCotizaciones(true);
         setErrorCotizaciones(undefined);
-        const response = await cotizacionesApi.getCotizaciones();
+        const response = await cotizacionesApi.getCotizaciones({ query: debouncedCotizacionQuery });
         const raw = response.data;
         const data = raw
           ? Array.isArray(raw)
@@ -103,7 +109,7 @@ export default function FacturaCreateModal({ isOpen, onClose, onSuccess }: Factu
       }
     })();
     return () => { ignore = true; };
-  }, [isOpen, creationType]);
+  }, [isOpen, creationType, debouncedCotizacionQuery]);
 
   // Populate form when a cotización is selected
   useEffect(() => {
@@ -195,9 +201,20 @@ export default function FacturaCreateModal({ isOpen, onClose, onSuccess }: Factu
   const handleCotizacionSelect = useCallback(
     async (cot: CotizacionRecord) => {
       try {
-        // Fetch full cotización data with items using /cotizaciones/:id
+        // Fetch full cotización data with items
         const response = await cotizacionesApi.getCotizacionById(cot.id);
-        const fullCotizacion = response.data as unknown as CotizacionRecord | null;
+        let fullCotizacion: CotizacionRecord | null = null;
+
+        const raw = response.data;
+        if (Array.isArray(raw)) {
+          // /cotizaciones?id=X returns an array — find the matching record
+          const found = (raw as unknown as Record<string, unknown>[]).find(
+            (item) => (item as unknown as { id?: number }).id == cot.id
+          );
+          fullCotizacion = (found ?? raw[0] ?? null) as unknown as CotizacionRecord;
+        } else if (raw && typeof raw === 'object') {
+          fullCotizacion = raw as unknown as CotizacionRecord;
+        }
 
         const nextNCF = await fetchNextNCF();
         setSelectedCotizacion(fullCotizacion ?? cot);
@@ -437,15 +454,6 @@ function CotizacionSearch({
   onQueryChange: (q: string) => void;
   onSelect: (cot: CotizacionRecord) => void;
 }) {
-  const filtered = cotizaciones.filter((c) => {
-    const q = query.trim().toLowerCase();
-    if (!q) return true;
-    const code = c.code ?? c.codigo ?? "";
-    const client = c.client_name ?? c.cliente ?? "";
-    const desc = c.description ?? c.descripcion ?? "";
-    return [code, client, desc].join(" ").toLowerCase().includes(q);
-  });
-
   return (
     <div className="mb-3">
       <label className="mb-2 text-base font-medium text-gray-800 dark:text-gray-100 flex items-center gap-2">
@@ -458,44 +466,46 @@ function CotizacionSearch({
         placeholder="Buscar por código, cliente o descripción..."
         className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-base outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-all"
       />
-      {query.trim() && !loading && !error && (
-        <div className="max-h-48 overflow-y-auto mt-2 rounded-md border border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-700 shadow-md">
-          <table className="w-full divide-y divide-gray-200 dark:divide-gray-600">
-            <thead className="bg-gray-100 dark:bg-gray-800">
-              <tr>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Fecha</th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Código</th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Descripción</th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Cliente</th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Monto</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
-              {filtered.map((c) => {
-                const code = c.code ?? c.codigo ?? `Cotización ${c.id}`;
-                const client = c.client_name ?? c.cliente ?? "";
-                const monto = c.total ?? c.amount ?? c.monto ?? "";
-                const desc = c.description ?? c.descripcion ?? "";
-                let date = c.date ?? c.fecha ?? "";
-                if (typeof date === "string" && date.length > 10) date = date.slice(0, 10);
-                return (
-                  <tr
-                    key={c.id}
-                    className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
-                    onClick={() => onSelect(c)}
-                  >
-                    <td className="px-3 py-2 text-sm text-gray-900 dark:text-white">{date}</td>
-                    <td className="px-3 py-2 text-sm text-gray-900 dark:text-white">{code}</td>
-                    <td className="px-3 py-2 text-sm text-gray-900 dark:text-white truncate">{desc}</td>
-                    <td className="px-3 py-2 text-sm text-gray-900 dark:text-white">{client}</td>
-                    <td className="px-3 py-2 text-sm text-green-700 dark:text-green-400 font-medium">
-                      {monto ? `$${monto}` : ""}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+      {query.trim() && !loading && !error && cotizaciones.length > 0 && (
+        <div className="max-h-72 overflow-y-auto mt-2 rounded-md border border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-700 shadow-md divide-y divide-gray-200 dark:divide-gray-600">
+          {cotizaciones.map((c) => {
+            const code = c.code ?? c.codigo ?? `Cotización ${c.id}`;
+            const client = c.client_name ?? c.cliente ?? "";
+            const monto = c.total ?? c.amount ?? c.monto ?? "";
+            const desc = c.description ?? c.descripcion ?? "";
+            let date = c.date ?? c.fecha ?? "";
+            if (typeof date === "string" && date.length > 10) date = date.slice(0, 10);
+            return (
+              <div
+                key={c.id}
+                className="px-4 py-3 cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-600 transition-colors"
+                onClick={() => onSelect(c)}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">{code}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">{date}</span>
+                  </div>
+                  {monto && (
+                    <span className="text-sm font-medium text-green-700 dark:text-green-400">
+                      ${monto}
+                    </span>
+                  )}
+                </div>
+                {client && (
+                  <div className="text-sm text-gray-700 dark:text-gray-300">{client}</div>
+                )}
+                {desc && (
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{desc}</div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {query.trim() && !loading && !error && cotizaciones.length === 0 && (
+        <div className="px-3 py-3 mt-2 text-sm text-gray-500 dark:text-gray-400 text-center rounded-md border border-gray-200 dark:border-gray-600">
+          No se encontraron cotizaciones
         </div>
       )}
       {loading && (
