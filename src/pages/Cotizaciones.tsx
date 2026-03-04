@@ -690,7 +690,7 @@ export default function Cotizaciones() {
             form="cotizacion-form"
             className="px-4 py-2 text-sm font-medium bg-green-600 hover:bg-green-700"
           >
-            Guardar Cotización
+            Enviar
           </Button>
         </div>
         {showSuccessAlert && (
