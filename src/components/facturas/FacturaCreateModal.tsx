@@ -196,6 +196,37 @@ export default function FacturaCreateModal({ isOpen, onClose, onSuccess }: Factu
     }
   }, [selectedCliente, facturaData, items, user, queryClient, handleClose, onSuccess]);
 
+  const handlePreview = useCallback(async () => {
+    if (!selectedCliente || items.length === 0 || !facturaData.ncf) return;
+    try {
+      const payload = {
+        client_id: selectedCliente.id,
+        items: items.map(({ description, amount, quantity }) => ({ description, amount, quantity })),
+        ncf: facturaData.ncf,
+        date: facturaData.date || undefined,
+      };
+
+      const result = await facturasApi.previewFactura(payload);
+      const base64Data = result.data?.content ?? '';
+
+      if (base64Data.length > 0) {
+        const byteCharacters = atob(base64Data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: "application/pdf" });
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, "_blank");
+      } else {
+        console.error("Preview response did not contain a valid PDF base64 string.", result);
+      }
+    } catch (err) {
+      console.error("Error previewing factura:", err);
+    }
+  }, [selectedCliente, facturaData, items]);
+
   const handleClientSelect = useCallback(
     async (cliente: Cliente) => {
       const nextNCF = await fetchNextNCF();
@@ -299,6 +330,7 @@ export default function FacturaCreateModal({ isOpen, onClose, onSuccess }: Factu
               onBack={() => setCreationType(null)}
               onCancel={handleClose}
               onSave={() => { }}
+              onPreview={handlePreview}
               saving={saving}
               isSubmit
             />
@@ -368,6 +400,7 @@ export default function FacturaCreateModal({ isOpen, onClose, onSuccess }: Factu
               onBack={() => setCreationType(null)}
               onCancel={handleClose}
               onSave={handleSave}
+              onPreview={handlePreview}
               saving={saving}
             />
           </div>
@@ -561,12 +594,14 @@ function FormFooter({
   onBack,
   onCancel,
   onSave,
+  onPreview,
   saving,
   isSubmit = false,
 }: {
   onBack: () => void;
   onCancel: () => void;
   onSave: () => void;
+  onPreview?: () => void;
   saving: boolean;
   isSubmit?: boolean;
 }) {
@@ -579,6 +614,17 @@ function FormFooter({
         <Button size="sm" variant="outline" type="button" onClick={onCancel} className="px-4 py-2 text-sm font-medium">
           Cancelar
         </Button>
+        {onPreview && (
+          <Button
+            size="sm"
+            variant="primary"
+            type="button"
+            onClick={onPreview}
+            className="px-4 py-2 text-sm font-medium bg-gray-600 hover:bg-gray-700"
+          >
+            Ver Preview
+          </Button>
+        )}
         <Button
           size="sm"
           variant="primary"

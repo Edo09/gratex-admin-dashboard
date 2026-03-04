@@ -270,6 +270,19 @@ export const facturasApi = {
   updateFactura: (id: number, data: unknown) =>
     apiClient.put<Factura>(`/facturas/${id}`, data),
 
+  // Preview a factura (does not persist, returns base64 PDF)
+  previewFactura: (data: {
+    client_id: number;
+    items: Array<{ description: string; amount: number; quantity: number }>;
+    ncf: string;
+    date?: string;
+  }) =>
+    apiClient.post<{
+      filename: string;
+      content: string;
+      mime_type: string;
+    }>('/facturas/preview', data),
+
   // Delete factura
   deleteFactura: (id: number) =>
     apiClient.delete<void>(`/facturas/${id}`),
