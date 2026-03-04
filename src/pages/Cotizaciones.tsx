@@ -261,6 +261,7 @@ export default function Cotizaciones() {
   };
 
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [showClienteRequiredAlert, setShowClienteRequiredAlert] = useState(false);
 
   return (
     <div>
@@ -620,6 +621,11 @@ export default function Cotizaciones() {
             type="button"
             className="px-4 py-2 text-sm font-medium bg-gray-600 hover:bg-gray-700"
             onClick={async () => {
+              if (!selectedCliente) {
+                setShowClienteRequiredAlert(true);
+                setTimeout(() => setShowClienteRequiredAlert(false), 3500);
+                return;
+              }
               try {
                 // If in Edit Mode, allow viewing the original saved PDF (Old Logic)
                 if (isEditMode && editingId) {
@@ -698,6 +704,13 @@ export default function Cotizaciones() {
             variant="success"
             title={isEditMode ? "Cotización actualizada" : "Cotización creada"}
             message={isEditMode ? "La cotización ha sido actualizada correctamente." : "La cotización ha sido creada correctamente."}
+          />
+        )}
+        {showClienteRequiredAlert && (
+          <Alert
+            variant="warning"
+            title="Cliente requerido"
+            message="Debe seleccionar un cliente antes de ver el preview de la cotización."
           />
         )}
       </Modal>
