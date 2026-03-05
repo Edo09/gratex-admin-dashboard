@@ -263,6 +263,69 @@ export default function Cotizaciones() {
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [showClienteRequiredAlert, setShowClienteRequiredAlert] = useState(false);
 
+  const handleSubmitCotizacion = async (sentEmail: boolean) => {
+    // Build the payload that would be sent to api/cotizaciones
+    const payload = {
+      client_id: selectedCliente?.id ?? null,
+      client_name: selectedCliente?.client_name ?? selectedCliente?.nombre ?? selectedCliente?.name ?? null,
+      user_id: user?.id,
+      date: newRow.date,
+      items: items.map((item) => ({
+        description: item.description,
+        amount: item.amount,
+        quantity: item.quantity,
+        subtotal: item.amount * item.quantity,
+      })),
+      total: totalAmount,
+      sent_email: sentEmail,
+    };
+    try {
+      let cotizacionId;
+      if (isEditMode && editingId) {
+        const updatePayload = {
+          ...payload,
+          id: editingId,
+        };
+        await apiClient.put('/cotizaciones', updatePayload);
+        cotizacionId = editingId;
+        setShowSuccessAlert(true);
+      } else {
+        const response = await cotizacionesApi.createCotizacion(payload);
+        cotizacionId = response.data?.id;
+        setShowSuccessAlert(true);
+      }
+
+      setTimeout(() => setShowSuccessAlert(false), 3500);
+      setIsCreateOpen(false);
+      setPage(1);
+      resetForm();
+      await queryClient.invalidateQueries({ queryKey: ['cotizaciones'] });
+      if (cotizacionId) {
+        try {
+          const pdfResponse = await cotizacionesApi.getCotizacionPdf(cotizacionId);
+          const base64Data = pdfResponse?.content || pdfResponse?.data?.content || pdfResponse?.data;
+          if (typeof base64Data === "string" && base64Data.length > 0) {
+            const byteCharacters = atob(base64Data);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: "application/pdf" });
+            const blobUrl = URL.createObjectURL(blob);
+            window.open(blobUrl, "_blank");
+          } else {
+            console.error("❌ PDF response is not valid base64:", base64Data);
+          }
+        } catch (pdfErr) {
+          console.error("❌ Error fetching PDF:", pdfErr);
+        }
+      }
+    } catch (err) {
+      console.error("❌ Error creating cotización:", err);
+    }
+  };
+
   return (
     <div>
       <PageMeta
@@ -319,74 +382,8 @@ export default function Cotizaciones() {
           <form
             id="cotizacion-form"
             className="space-y-4"
-            onSubmit={async (e) => {
+            onSubmit={(e) => {
               e.preventDefault();
-              // Build the payload that would be sent to api/cotizaciones
-              const payload = {
-                client_id: selectedCliente?.id ?? null,
-                client_name: selectedCliente?.client_name ?? selectedCliente?.nombre ?? selectedCliente?.name ?? null,
-                user_id: user?.id,
-                date: newRow.date,
-                items: items.map((item) => ({
-                  description: item.description,
-                  amount: item.amount,
-                  quantity: item.quantity,
-                  subtotal: item.amount * item.quantity,
-                })),
-                total: totalAmount,
-              };
-              try {
-                let cotizacionId;
-                if (isEditMode && editingId) {
-                  // Update - User requested PUT /api/cotizaciones with body
-                  const updatePayload = {
-                    ...payload,
-                    id: editingId,
-                  };
-                  // We use the root endpoint for update as requested
-                  // Use apiClient.put directly for the root endpoint
-                  await apiClient.put('/cotizaciones', updatePayload);
-
-                  cotizacionId = editingId;
-                  setShowSuccessAlert(true);
-                } else {
-                  // Create
-                  const response = await cotizacionesApi.createCotizacion(payload);
-                  cotizacionId = response.data?.id;
-                  setShowSuccessAlert(true);
-                }
-
-                setTimeout(() => setShowSuccessAlert(false), 3500);
-                setIsCreateOpen(false);
-                setPage(1);
-                resetForm();
-                // Invalidate and refetch cotizaciones table
-                await queryClient.invalidateQueries({ queryKey: ['cotizaciones'] });
-                // Open PDF in new tab
-                if (cotizacionId) {
-                  try {
-                    const pdfResponse = await cotizacionesApi.getCotizacionPdf(cotizacionId);
-                    const base64Data = pdfResponse?.content || pdfResponse?.data?.content || pdfResponse?.data;
-                    if (typeof base64Data === "string" && base64Data.length > 0) {
-                      const byteCharacters = atob(base64Data);
-                      const byteNumbers = new Array(byteCharacters.length);
-                      for (let i = 0; i < byteCharacters.length; i++) {
-                        byteNumbers[i] = byteCharacters.charCodeAt(i);
-                      }
-                      const byteArray = new Uint8Array(byteNumbers);
-                      const blob = new Blob([byteArray], { type: "application/pdf" });
-                      const blobUrl = URL.createObjectURL(blob);
-                      window.open(blobUrl, "_blank");
-                    } else {
-                      console.error("❌ PDF response is not valid base64:", base64Data);
-                    }
-                  } catch (pdfErr) {
-                    console.error("❌ Error fetching PDF:", pdfErr);
-                  }
-                }
-              } catch (err) {
-                console.error("❌ Error creating cotización:", err);
-              }
             }}
           >
             {/* Client Section */}
@@ -396,6 +393,8 @@ export default function Cotizaciones() {
                 <div className="space-y-2">
                   <input
                     type="text"
+                    autoComplete="off"
+
                     value={clienteQuery}
                     onChange={(e) => {
                       setClienteQuery(e.target.value);
@@ -692,9 +691,18 @@ export default function Cotizaciones() {
           <Button
             size="sm"
             variant="primary"
-            type="submit"
-            form="cotizacion-form"
+            type="button"
+            className="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700"
+            onClick={() => handleSubmitCotizacion(false)}
+          >
+            Guardar
+          </Button>
+          <Button
+            size="sm"
+            variant="primary"
+            type="button"
             className="px-4 py-2 text-sm font-medium bg-green-600 hover:bg-green-700"
+            onClick={() => handleSubmitCotizacion(true)}
           >
             Enviar
           </Button>

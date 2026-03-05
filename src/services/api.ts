@@ -364,6 +364,7 @@ export const cotizacionesApi = {
     items: Array<{ description: string; amount: number; quantity: number; subtotal: number }>;
     total: number;
     preview?: boolean;
+    sent_email?: boolean;
   }) =>
     apiClient.post<{ id: number; code: string; message: string }>('/cotizaciones', data),
 
