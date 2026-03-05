@@ -627,22 +627,23 @@ export default function Cotizaciones() {
               }
               try {
                 // If in Edit Mode, allow viewing the original saved PDF (Old Logic)
-                if (isEditMode && editingId) {
-                  const pdfResponse = await cotizacionesApi.getCotizacionPdf(editingId);
-                  const base64Data = pdfResponse?.content || pdfResponse?.data?.content || pdfResponse?.data;
-                  if (typeof base64Data === "string" && base64Data.length > 0) {
-                    const byteCharacters = atob(base64Data);
-                    const byteNumbers = new Array(byteCharacters.length);
-                    for (let i = 0; i < byteCharacters.length; i++) {
-                      byteNumbers[i] = byteCharacters.charCodeAt(i);
-                    }
-                    const byteArray = new Uint8Array(byteNumbers);
-                    const blob = new Blob([byteArray], { type: "application/pdf" });
-                    const blobUrl = URL.createObjectURL(blob);
-                    window.open(blobUrl, "_blank");
-                    return;
-                  }
-                }
+                
+                // if (isEditMode && editingId) {
+                //   const pdfResponse = await cotizacionesApi.getCotizacionPdf(editingId);
+                //   const base64Data = pdfResponse?.content || pdfResponse?.data?.content || pdfResponse?.data;
+                //   if (typeof base64Data === "string" && base64Data.length > 0) {
+                //     const byteCharacters = atob(base64Data);
+                //     const byteNumbers = new Array(byteCharacters.length);
+                //     for (let i = 0; i < byteCharacters.length; i++) {
+                //       byteNumbers[i] = byteCharacters.charCodeAt(i);
+                //     }
+                //     const byteArray = new Uint8Array(byteNumbers);
+                //     const blob = new Blob([byteArray], { type: "application/pdf" });
+                //     const blobUrl = URL.createObjectURL(blob);
+                //     window.open(blobUrl, "_blank");
+                //     return;
+                //   }
+                // }
 
                 // Build the payload as in the submit handler
                 const payload = {
