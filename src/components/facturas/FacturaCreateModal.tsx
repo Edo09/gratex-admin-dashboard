@@ -12,6 +12,7 @@ import type { Cliente, CotizacionRecord, FacturaFormData } from "../../types";
 import { getTodayDate, getClientDisplayName } from "../../types";
 import { formatCurrency } from "../../utils/format";
 import { useAuth } from "../../context/AuthContext";
+import Alert from "../ui/alert/Alert";
 
 interface FacturaCreateModalProps {
   isOpen: boolean;
@@ -39,6 +40,7 @@ export default function FacturaCreateModal({ isOpen, onClose, onSuccess }: Factu
     rnc: "",
   });
   const [saving, setSaving] = useState(false);
+  const [showClienteRequiredAlert, setShowClienteRequiredAlert] = useState(false);
 
   // Client list state
   const [clientes, setClientes] = useState<Cliente[]>([]);
@@ -175,7 +177,12 @@ export default function FacturaCreateModal({ isOpen, onClose, onSuccess }: Factu
   }, [onClose, resetItems]);
 
   const handleSave = useCallback(async () => {
-    if (!selectedCliente || !facturaData.date || items.length === 0) return;
+    if (!selectedCliente) {
+      setShowClienteRequiredAlert(true);
+      setTimeout(() => setShowClienteRequiredAlert(false), 3500);
+      return;
+    }
+    if (!facturaData.date || items.length === 0) return;
     try {
       setSaving(true);
       await facturasApi.createFactura({
@@ -197,7 +204,12 @@ export default function FacturaCreateModal({ isOpen, onClose, onSuccess }: Factu
   }, [selectedCliente, facturaData, items, user, queryClient, handleClose, onSuccess]);
 
   const handlePreview = useCallback(async () => {
-    if (!selectedCliente || items.length === 0 || !facturaData.ncf) return;
+    if (!selectedCliente) {
+      setShowClienteRequiredAlert(true);
+      setTimeout(() => setShowClienteRequiredAlert(false), 3500);
+      return;
+    }
+    if (items.length === 0 || !facturaData.ncf) return;
     try {
       const payload = {
         client_id: selectedCliente.id,
@@ -406,6 +418,13 @@ export default function FacturaCreateModal({ isOpen, onClose, onSuccess }: Factu
           </div>
         )}
       </div>
+      {showClienteRequiredAlert && (
+        <Alert
+          variant="warning"
+          title="Cliente requerido"
+          message="Debe seleccionar un cliente antes de guardar o ver el preview de la factura."
+        />
+      )}
     </Modal>
   );
 }
