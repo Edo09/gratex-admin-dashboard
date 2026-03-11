@@ -56,12 +56,17 @@ export default function BasicTableOne({
   onRowClick,
 }: BasicTableOneProps) {
 
+  const [loadingRowId, setLoadingRowId] = useState<number | null>(null);
+
   const handleRowClick = async (row: RecordRow) => {
     if (onRowClick) {
       onRowClick(row);
       return;
     }
 
+    if (loadingRowId !== null) return;
+
+    setLoadingRowId(row.id);
     try {
       let base64String: string;
 
@@ -79,20 +84,37 @@ export default function BasicTableOne({
       }
 
       if (base64String && typeof base64String === 'string') {
-        // Convert base64 to blob
-        const binaryString = atob(base64String);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-        const blob = new Blob([bytes], { type: 'application/pdf' });
+        // // Convert base64 to blob
+        // const binaryString = atob(base64String);
+        // const bytes = new Uint8Array(binaryString.length);
+        // for (let i = 0; i < binaryString.length; i++) {
+        //   bytes[i] = binaryString.charCodeAt(i);
+        // }
+        // const blob = new Blob([bytes], { type: 'application/pdf' });
 
-        // Create object URL and open in new tab
+        // // Create object URL and open in new tab
+        // const objectUrl = URL.createObjectURL(blob);
+        // window.open(objectUrl, '_blank');
+
+        // // Clean up URL reference after a delay
+        // setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+
+
+
+                const byteCharacters = atob(base64String);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: "application/pdf" });
         const objectUrl = URL.createObjectURL(blob);
         window.open(objectUrl, '_blank');
 
         // Clean up URL reference after a delay
-        setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+        // setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+
+
       } else {
         console.error("Invalid PDF response format:", base64String);
         alert("Formato de PDF inválido");
@@ -100,6 +122,8 @@ export default function BasicTableOne({
     } catch (error) {
       console.error("Error opening PDF:", error);
       alert("Error al abrir el PDF");
+    } finally {
+      setLoadingRowId(null);
     }
   };
   const source = useMemo(() => (rows && rows.length ? rows : []), [rows]);
@@ -255,18 +279,25 @@ export default function BasicTableOne({
                 onClick={() => handleRowClick(row)}
                 role="button"
                 tabIndex={0}
-                className="cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.06]"
+                className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.06] ${loadingRowId === row.id ? 'opacity-60 pointer-events-none' : ''} ${loadingRowId !== null && loadingRowId !== row.id ? 'pointer-events-none' : ''}`}
               >
                 <TableCell className="px-5 py-5 sm:px-6 text-start">
-                  <span className="block font-bold text-gray-900 text-base dark:text-white">
-                    {(() => {
-                      // Format date to dd/mm/yyyy
-                      if (!row.date) return "";
-                      const d = row.date.split(" ")[0]; // Remove time if present
-                      const [y, m, day] = d.split("-");
-                      return `${day}/${m}/${y}`;
-                    })()}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {loadingRowId === row.id && (
+                      <svg className="animate-spin h-5 w-5 text-brand-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                    )}
+                    <span className="block font-bold text-gray-900 text-base dark:text-white">
+                      {(() => {
+                        if (!row.date) return "";
+                        const d = row.date.split(" ")[0];
+                        const [y, m, day] = d.split("-");
+                        return `${day}/${m}/${y}`;
+                      })()}
+                    </span>
+                  </div>
                 </TableCell>
                 {dataType === "facturas" ? (
                   <>
