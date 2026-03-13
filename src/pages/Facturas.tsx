@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
+import BasicCardListOne from "../components/tables/BasicCardListOne";
 import BasicTableOne from "../components/tables/BasicTableOne";
 import { useDebounce } from "../hooks/useDebounce";
 import Button from "../components/ui/button/Button";
@@ -20,6 +21,7 @@ export default function Facturas() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
+  const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
   const debouncedQuery = useDebounce(query, 400);
 
   const mapApiToRow = useMemo(
@@ -29,6 +31,11 @@ export default function Facturas() {
         no_factura: (item.no_factura as string) ?? "",
         date: (item.date as string) ?? "",
         client_name: (item.client_name as string) ?? "",
+        company_name:
+          (item.company_name as string) ??
+          (item.empresa as string) ??
+          (item.company as string) ??
+          "",
         total: (item.total as string) ?? "",
         ncf: (item.NCF as string) ?? "",
         description: (item.description as string) ?? "",
@@ -81,14 +88,40 @@ export default function Facturas() {
           placeholder="Buscar por fecha, código, cliente o descripción..."
           className="w-full max-w-md rounded-lg border-2 border-gray-300 px-4 py-3 text-base font-medium outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-800 dark:text-white bg-white transition-all"
         />
-        <Button
-          size="sm"
-          variant="primary"
-          onClick={() => setIsCreateModalOpen(true)}
-          className="whitespace-nowrap text-base px-5 py-2.5"
-        >
-          Crear Factura
-        </Button>
+        <div className="flex items-center gap-2">
+          <div className="inline-flex rounded-lg border border-gray-300 bg-white p-1 dark:border-gray-600 dark:bg-gray-800">
+            <button
+              type="button"
+              onClick={() => setViewMode("cards")}
+              className={`rounded-md px-3 py-1.5 text-sm font-semibold transition-colors ${
+                viewMode === "cards"
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+              }`}
+            >
+              Cards
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("table")}
+              className={`rounded-md px-3 py-1.5 text-sm font-semibold transition-colors ${
+                viewMode === "table"
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+              }`}
+            >
+              Tabla
+            </button>
+          </div>
+          <Button
+            size="sm"
+            variant="primary"
+            onClick={() => setIsCreateModalOpen(true)}
+            className="whitespace-nowrap text-base px-5 py-2.5"
+          >
+            Crear Factura
+          </Button>
+        </div>
       </div>
 
       <FacturaCreateModal
@@ -106,22 +139,41 @@ export default function Facturas() {
         </div>
       )}
 
-      <BasicTableOne
-        dataType="facturas"
-        query={debouncedQuery}
-        rows={rows}
-        loading={loading}
-        error={error instanceof Error ? error.message : (error as unknown as string)}
-        pagination="server"
-        page={page}
-        pageSize={pageSize}
-        total={total}
-        onPageChange={setPage}
-        onPageSizeChange={(s) => {
-          setPageSize(s);
-          setPage(1);
-        }}
-      />
+      {viewMode === "cards" ? (
+        <BasicCardListOne
+          dataType="facturas"
+          query={debouncedQuery}
+          rows={rows}
+          loading={loading}
+          error={error instanceof Error ? error.message : (error as unknown as string)}
+          pagination="server"
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          onPageChange={setPage}
+          onPageSizeChange={(s) => {
+            setPageSize(s);
+            setPage(1);
+          }}
+        />
+      ) : (
+        <BasicTableOne
+          dataType="facturas"
+          query={debouncedQuery}
+          rows={rows}
+          loading={loading}
+          error={error instanceof Error ? error.message : (error as unknown as string)}
+          pagination="server"
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          onPageChange={setPage}
+          onPageSizeChange={(s) => {
+            setPageSize(s);
+            setPage(1);
+          }}
+        />
+      )}
     </div>
   );
 }

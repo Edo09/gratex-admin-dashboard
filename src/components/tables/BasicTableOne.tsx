@@ -31,6 +31,7 @@ interface RecordRow {
   date: string;
   code?: string;
   client?: string;
+  company_name?: string;
   description: string;
   amount: string;
   no_factura?: string;
@@ -55,7 +56,6 @@ export default function BasicTableOne({
   onPageSizeChange,
   onRowClick,
 }: BasicTableOneProps) {
-
   const [loadingRowId, setLoadingRowId] = useState<number | null>(null);
 
   const handleRowClick = async (row: RecordRow) => {
@@ -70,38 +70,18 @@ export default function BasicTableOne({
     try {
       let base64String: string;
 
-      // Fetch PDF based on data type
       if (dataType === "cotizaciones") {
         const response = await cotizacionesApi.getCotizacionPdf(row.id);
-        // API returns { status, data: { filename, content, mime_type } }
         base64String = response.data?.content || response.content || response;
       } else if (dataType === "facturas") {
         const response = await facturasApi.getFacturaPdf(row.id);
-        // API returns { status, data: { filename, content, mime_type } }
         base64String = response.data?.content || response.content || response;
       } else {
         return;
       }
 
-      if (base64String && typeof base64String === 'string') {
-        // // Convert base64 to blob
-        // const binaryString = atob(base64String);
-        // const bytes = new Uint8Array(binaryString.length);
-        // for (let i = 0; i < binaryString.length; i++) {
-        //   bytes[i] = binaryString.charCodeAt(i);
-        // }
-        // const blob = new Blob([bytes], { type: 'application/pdf' });
-
-        // // Create object URL and open in new tab
-        // const objectUrl = URL.createObjectURL(blob);
-        // window.open(objectUrl, '_blank');
-
-        // // Clean up URL reference after a delay
-        // setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
-
-
-
-                const byteCharacters = atob(base64String);
+      if (base64String && typeof base64String === "string") {
+        const byteCharacters = atob(base64String);
         const byteNumbers = new Array(byteCharacters.length);
         for (let i = 0; i < byteCharacters.length; i++) {
           byteNumbers[i] = byteCharacters.charCodeAt(i);
@@ -109,12 +89,7 @@ export default function BasicTableOne({
         const byteArray = new Uint8Array(byteNumbers);
         const blob = new Blob([byteArray], { type: "application/pdf" });
         const objectUrl = URL.createObjectURL(blob);
-        window.open(objectUrl, '_blank');
-
-        // Clean up URL reference after a delay
-        // setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
-
-
+        window.open(objectUrl, "_blank");
       } else {
         console.error("Invalid PDF response format:", base64String);
         alert("Formato de PDF inválido");
@@ -132,14 +107,13 @@ export default function BasicTableOne({
     const q = query.trim().toLowerCase();
     if (!q) return source;
     return source.filter((r) =>
-      [r.date, r.code, r.client, r.description, r.amount]
+      [r.date, r.code, r.client, r.company_name, r.description, r.amount]
         .join(" ")
         .toLowerCase()
         .includes(q)
     );
   }, [query, pagination, source]);
 
-  // Pagination state (client) or controlled (server)
   const [clientPage, setClientPage] = useState(1);
   const [clientPageSize, setClientPageSize] = useState(10);
   const effectivePage = pagination === "server" ? page ?? 1 : clientPage;
@@ -149,8 +123,6 @@ export default function BasicTableOne({
   const startIdx = (effectivePage - 1) * effectivePageSize;
   const endIdx = startIdx + effectivePageSize;
 
-  // For server-side pagination, use data as-is (already paginated by backend)
-  // For client-side pagination, slice the data
   const displayRows = pagination === "server"
     ? filtered
     : filtered.slice((effectivePage - 1) * effectivePageSize, effectivePage * effectivePageSize);
@@ -177,7 +149,6 @@ export default function BasicTableOne({
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
       <div className="max-w-full overflow-x-auto">
         <Table>
-          {/* Table Header */}
           <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
             <TableRow>
               <TableCell
@@ -250,7 +221,6 @@ export default function BasicTableOne({
             </TableRow>
           </TableHeader>
 
-          {/* Table Body */}
           <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
             {loading && (
               <TableRow>
@@ -279,7 +249,7 @@ export default function BasicTableOne({
                 onClick={() => handleRowClick(row)}
                 role="button"
                 tabIndex={0}
-                className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.06] ${loadingRowId === row.id ? 'opacity-60 pointer-events-none' : ''} ${loadingRowId !== null && loadingRowId !== row.id ? 'pointer-events-none' : ''}`}
+                className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.06] ${loadingRowId === row.id ? "opacity-60 pointer-events-none" : ""} ${loadingRowId !== null && loadingRowId !== row.id ? "pointer-events-none" : ""}`}
               >
                 <TableCell className="px-5 py-5 sm:px-6 text-start">
                   <div className="flex items-center gap-2">
@@ -347,7 +317,6 @@ export default function BasicTableOne({
             ))}
           </TableBody>
         </Table>
-        {/* Pagination Controls */}
         {!loading && !error && totalCount > 0 && (
           <div className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between border-t-2 border-gray-200 dark:border-gray-700">
             <div className="text-base font-medium text-gray-700 dark:text-gray-300">

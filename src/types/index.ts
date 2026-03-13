@@ -67,6 +67,7 @@ export interface FacturaTableRow {
   no_factura: string;
   date: string;
   client_name: string;
+  company_name?: string;
   total: string;
   ncf: string;
   description: string;

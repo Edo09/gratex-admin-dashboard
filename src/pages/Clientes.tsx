@@ -89,7 +89,7 @@ export default function Clientes() {
   });
 
   // Extract Modal Factura Rows
-  type RowShape = { id: number; date: string; code?: string; client?: string; description: string; amount: string; no_factura?: string; client_name?: string; total: string; ncf?: string };
+  type RowShape = { id: number; date: string; code?: string; client?: string; company_name?: string; description: string; amount: string; no_factura?: string; client_name?: string; total: string; ncf?: string };
   let facturaRows: RowShape[] = [];
   if (clientFacturasData && Array.isArray(clientFacturasData.data)) {
     const rawData = clientFacturasData.data as unknown as Record<string, unknown>[];
@@ -98,6 +98,7 @@ export default function Clientes() {
       no_factura: (item.no_factura as string) ?? '',
       date: (item.date as string) ?? '',
       client_name: (item.client_name as string) ?? '',
+      company_name: (item.company_name as string) ?? (item.empresa as string) ?? (item.company as string) ?? '',
       total: (item.total as string) ?? '',
       ncf: (item.NCF as string) ?? '',
       description: (item.description as string) ?? '',
@@ -114,6 +115,7 @@ export default function Clientes() {
       code: (item.code as string) ?? (item.codigo as string) ?? '',
       date: (item.date as string) ?? '',
       client: (item.client_name as string) ?? (item.cliente as string) ?? '',
+      company_name: (item.company_name as string) ?? (item.empresa as string) ?? (item.company as string) ?? '',
       description: (item.description as string) ?? (item.descripcion as string) ?? '',
       total: formatCurrency((item.total ?? 0) as number | string).replace('$', ''),
       amount: formatCurrency((item.amount ?? item.total ?? 0) as number | string).replace('$', ''),
