@@ -198,44 +198,50 @@ export default function BasicCardListOne({
                 } ${loadingRowId !== null && loadingRowId !== row.id ? "pointer-events-none" : ""}`}
               >
                 <div className="grid gap-4 lg:grid-cols-[132px_minmax(0,1fr)_auto] lg:items-start lg:gap-5">
-                  <div className="min-w-[132px] rounded-lg bg-white px-3 py-2 text-sm shadow-sm ring-1 ring-gray-200 dark:bg-white/[0.03] dark:ring-white/[0.08]">
-                    <div className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                      {dataType === "facturas" ? "Factura" : "Codigo"}
+                  <div className="flex items-center gap-2 lg:col-span-3">
+                    {loadingRowId === row.id && (
+                      <svg className="h-4 w-4 shrink-0 animate-spin text-brand-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                    )}
+                    <h3 className="w-full whitespace-nowrap text-2xl font-bold leading-tight text-gray-900 dark:text-white">
+                      {getCardTitle(row)}
+                    </h3>
+                  </div>
+
+                  <div className="min-w-[132px]">
+                    <div className="rounded-lg bg-white px-3 py-2 text-sm shadow-sm ring-1 ring-gray-200 dark:bg-white/[0.03] dark:ring-white/[0.08]">
+                      <div className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                        {dataType === "facturas" ? "Factura" : "Codigo"}
+                      </div>
+                      <div className="truncate text-sm font-bold text-gray-900 dark:text-white">
+                        {getCardMetaCode(row)}
+                      </div>
+                      <div className="mt-1 text-xs font-medium text-gray-500 dark:text-gray-400">
+                        {formatDisplayDate(row.date)}
+                      </div>
                     </div>
-                    <div className="truncate text-sm font-bold text-gray-900 dark:text-white">
-                      {getCardMetaCode(row)}
-                    </div>
-                    <div className="mt-1 text-xs font-medium text-gray-500 dark:text-gray-400">
-                      {formatDisplayDate(row.date)}
-                    </div>
+
+                    {dataType === "facturas" && row.ncf && (
+                      <p className="mt-2 text-sm font-semibold text-gray-500 dark:text-gray-400">NCF: {row.ncf}</p>
+                    )}
                   </div>
 
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      {loadingRowId === row.id && (
-                        <svg className="h-4 w-4 animate-spin text-brand-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                        </svg>
-                      )}
-                      <h3 className="truncate text-2xl font-bold text-gray-900 dark:text-white">
-                        {getCardTitle(row)}
-                      </h3>
-                    </div>
-
                     {getCompanyName(row) && (
                       <p className="mt-1 truncate text-sm font-semibold text-gray-500 dark:text-gray-400">
                         {getCompanyName(row)}
                       </p>
                     )}
 
-                    <p className="mt-1 whitespace-pre-line text-base font-medium italic text-gray-600 dark:text-gray-300">
+                    <p
+                      title={row.description}
+                      className="mt-1 min-h-[5.5rem] cursor-help line-clamp-4 whitespace-pre-line break-words text-base font-medium italic text-gray-600 dark:text-gray-300"
+                    >
                       {row.description}
                     </p>
 
-                    {dataType === "facturas" && row.ncf && (
-                      <p className="mt-2 text-sm font-semibold text-gray-500 dark:text-gray-400">NCF: {row.ncf}</p>
-                    )}
                   </div>
 
                   <div className="text-left lg:min-w-[170px] lg:self-center lg:text-right">
