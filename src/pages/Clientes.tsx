@@ -34,6 +34,7 @@ export default function Clientes() {
     email: "",
     phone_number: "",
     sent_mail: false,
+    rnc: "",
   });
 
   const handleCreateClient = async (e: React.FormEvent) => {
@@ -49,7 +50,7 @@ export default function Clientes() {
         setTimeout(() => {
           setIsCreateModalOpen(false);
           setCreateSuccess("");
-          setNewClientData({ client_name: "", company_name: "", email: "", phone_number: "", sent_mail: false });
+          setNewClientData({ client_name: "", company_name: "", email: "", phone_number: "", sent_mail: false, rnc: "" });
         }, 1500);
       } else {
         setCreateError("Failed to save client");
@@ -448,6 +449,24 @@ export default function Clientes() {
                     placeholder="Ej. Acme Corp"
                     value={newClientData.company_name}
                     onChange={(e) => setNewClientData({ ...newClientData, company_name: e.target.value })}
+                    className="block w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:focus:border-blue-400 dark:focus:ring-blue-400 transition-colors"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">RNC (Opcional)</label>
+                <div className="relative">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                    <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+                    </svg>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Ej. 130123456"
+                    value={newClientData.rnc}
+                    onChange={(e) => setNewClientData({ ...newClientData, rnc: e.target.value })}
                     className="block w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:focus:border-blue-400 dark:focus:ring-blue-400 transition-colors"
                   />
                 </div>
