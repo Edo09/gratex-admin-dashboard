@@ -56,6 +56,8 @@ export default function Cotizaciones() {
   });
   const [items, setItems] = useState<LineItem[]>([]);
   const [itemForm, setItemForm] = useState({ description: "", amount: "", quantity: "1" });
+  const [editingItemId, setEditingItemId] = useState<number | null>(null);
+  const [editingItemForm, setEditingItemForm] = useState({ description: "", amount: "", quantity: "" });
   const totalAmount = useMemo(() => items.reduce((sum, item) => sum + item.amount * item.quantity, 0), [items]);
 
   useEffect(() => {
@@ -265,6 +267,38 @@ export default function Cotizaciones() {
 
   const handleRemoveItem = (id: number) => {
     setItems((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const handleEditItem = (id: number) => {
+    const item = items.find((item) => item.id === id);
+    if (item) {
+      setEditingItemId(id);
+      setEditingItemForm({
+        description: item.description,
+        amount: item.amount.toString(),
+        quantity: item.quantity.toString(),
+      });
+    }
+  };
+
+  const handleSaveItemEdit = () => {
+    if (editingItemId === null) return;
+    const description = editingItemForm.description.trim();
+    const amount = parseFloat(editingItemForm.amount);
+    const quantity = parseFloat(editingItemForm.quantity);
+    if (!description || isNaN(amount) || isNaN(quantity) || amount <= 0 || quantity <= 0) return;
+    setItems((prev) =>
+      prev.map((item) =>
+        item.id === editingItemId ? { ...item, description, amount, quantity } : item
+      )
+    );
+    setEditingItemId(null);
+    setEditingItemForm({ description: "", amount: "", quantity: "" });
+  };
+
+  const handleCancelItemEdit = () => {
+    setEditingItemId(null);
+    setEditingItemForm({ description: "", amount: "", quantity: "" });
   };
 
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
@@ -542,7 +576,7 @@ export default function Cotizaciones() {
                       value={itemForm.description}
                       onChange={(e) => setItemForm((prev) => ({ ...prev, description: e.target.value }))}
                       rows={2}
-                      className="w-full resize-none rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-600 dark:text-white transition-all"
+                      className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-600 dark:text-white transition-all"
                     />
                   </div>
                   <div className="md:col-span-2">
@@ -601,31 +635,109 @@ export default function Cotizaciones() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
-                      {items.map((item, index) => (
-                        <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+                      {items.map((item, index) => {
+                        const isEditingThis = editingItemId === item.id;
+                        return (
+                        <tr key={item.id} className={`transition-colors ${isEditingThis ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-600'}`}>
                           <td className="w-10 px-3 py-2 text-sm text-gray-900 dark:text-white align-top">{index + 1}</td>
                           <td className="px-3 py-2 text-sm text-gray-900 dark:text-white align-top">
-                            <div className="whitespace-pre-line break-words max-w-xs" title={item.description}>{item.description}</div>
+                            {isEditingThis ? (
+                              <textarea
+                                ref={(el) => {
+                                  if (el) {
+                                    el.style.height = 'auto';
+                                    el.style.height = el.scrollHeight + 'px';
+                                  }
+                                }}
+                                value={editingItemForm.description}
+                                onChange={(e) => {
+                                  setEditingItemForm((prev) => ({ ...prev, description: e.target.value }));
+                                  e.target.style.height = 'auto';
+                                  e.target.style.height = e.target.scrollHeight + 'px';
+                                }}
+                                className="w-full rounded-md border border-blue-400 bg-white px-2 py-1 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 dark:border-blue-600 dark:bg-gray-700 dark:text-white transition-all resize-none overflow-hidden"
+                              />
+                            ) : (
+                              <div className="whitespace-pre-line break-words max-w-xs" title={item.description}>{item.description}</div>
+                            )}
                           </td>
                           <td className="w-32 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 text-right whitespace-nowrap align-top">
-                            {item.quantity} x {formatCurrency(item.amount)}
+                            {isEditingThis ? (
+                              <div className="flex flex-col gap-1">
+                                <input
+                                  type="number"
+                                  step="1"
+                                  min="1"
+                                  value={editingItemForm.quantity}
+                                  onChange={(e) => setEditingItemForm((prev) => ({ ...prev, quantity: e.target.value }))}
+                                  className="w-full rounded-md border border-blue-400 bg-white px-2 py-1 text-sm text-right outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 dark:border-blue-600 dark:bg-gray-700 dark:text-white transition-all"
+                                />
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  value={editingItemForm.amount}
+                                  onChange={(e) => setEditingItemForm((prev) => ({ ...prev, amount: e.target.value }))}
+                                  className="w-full rounded-md border border-blue-400 bg-white px-2 py-1 text-sm text-right outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 dark:border-blue-600 dark:bg-gray-700 dark:text-white transition-all"
+                                />
+                              </div>
+                            ) : (
+                              <>{item.quantity} x {formatCurrency(item.amount)}</>
+                            )}
                           </td>
                           <td className="w-28 px-3 py-2 text-sm font-medium text-gray-900 dark:text-white text-right whitespace-nowrap align-top">
-                            {formatCurrency(item.amount * item.quantity)}
+                            {isEditingThis
+                              ? formatCurrency((parseFloat(editingItemForm.amount) || 0) * (parseFloat(editingItemForm.quantity) || 0))
+                              : formatCurrency(item.amount * item.quantity)}
                           </td>
                           <td className="w-16 px-3 py-2 align-top">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              type="button"
-                              onClick={() => handleRemoveItem(item.id)}
-                              className="px-3 py-1 text-sm text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/30"
-                            >
-                              Quitar
-                            </Button>
+                            {isEditingThis ? (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  type="button"
+                                  onClick={handleCancelItemEdit}
+                                  className="px-3 py-1 text-sm text-gray-600 border-gray-300 hover:bg-gray-100 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-700"
+                                >
+                                  Cancelar
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="primary"
+                                  type="button"
+                                  onClick={handleSaveItemEdit}
+                                  className="px-3 py-1 text-sm bg-green-600 hover:bg-green-700 text-white"
+                                >
+                                  Guardar
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  type="button"
+                                  onClick={() => handleRemoveItem(item.id)}
+                                  className="px-3 py-1 text-sm text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/30"
+                                >
+                                  Quitar
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  type="button"
+                                  onClick={() => handleEditItem(item.id)}
+                                  className="px-3 py-1 text-sm text-blue-600 border-blue-300 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-700 dark:hover:bg-blue-900/30"
+                                >
+                                  Editar
+                                </Button>
+                              </>
+                            )}
                           </td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 )}
