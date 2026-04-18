@@ -10,10 +10,74 @@ import BasicTableOne from "../components/tables/BasicTableOne";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "../components/ui/table";
 import type { Cliente } from "../types";
 import { formatCurrency } from '../utils/format';
+import Alert from '../components/ui/alert/Alert';
 
 interface ClienteRow extends Cliente {
   [key: string]: unknown;
 }
+
+type CreateClientFormData = {
+  client_name: string;
+  company_name: string;
+  email: string;
+  phone_number: string;
+  sent_mail: boolean;
+  rnc: string;
+};
+
+type CreateClientValidationErrors = Partial<Record<"email" | "client_name" | "company_name" | "phone_number", string>>;
+
+const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
+const normalizeClientFormData = (formData: CreateClientFormData): CreateClientFormData => ({
+  ...formData,
+  client_name: formData.client_name.trim(),
+  company_name: formData.company_name.trim(),
+  email: formData.email.trim(),
+  phone_number: formData.phone_number.trim(),
+  rnc: formData.rnc.trim(),
+});
+
+const validateCreateClientData = (formData: CreateClientFormData): CreateClientValidationErrors => {
+  const errors: CreateClientValidationErrors = {};
+
+  if (!formData.email || !isValidEmail(formData.email) || formData.email.length > 100) {
+    errors.email = "El email es obligatorio, debe ser valido y tener maximo 100 caracteres.";
+  }
+
+  if (!formData.client_name || formData.client_name.length > 100) {
+    errors.client_name = "El nombre del cliente es obligatorio y no puede exceder 100 caracteres.";
+  }
+
+  if (!formData.company_name || formData.company_name.length > 100) {
+    errors.company_name = "La empresa es obligatoria y no puede exceder 100 caracteres.";
+  }
+
+  const phoneDigits = formData.phone_number.replace(/\D/g, "");
+  if (!formData.phone_number || formData.phone_number.length > 20 || phoneDigits.length > 13) {
+    errors.phone_number = "El telefono es obligatorio, maximo 20 caracteres y 13 digitos.";
+  }
+
+  return errors;
+};
+
+const extractErrorMessage = (response: unknown): string | undefined => {
+  if (!response || typeof response !== "object") return undefined;
+
+  const candidate = response as { message?: unknown; error?: unknown; data?: unknown };
+  if (typeof candidate.message === "string" && candidate.message.trim()) return candidate.message;
+  if (typeof candidate.error === "string" && candidate.error.trim()) return candidate.error;
+
+  if (candidate.data && typeof candidate.data === "object") {
+    const nested = candidate.data as { message?: unknown; error?: unknown };
+    if (typeof nested.message === "string" && nested.message.trim()) return nested.message;
+    if (typeof nested.error === "string" && nested.error.trim()) return nested.error;
+  }
+
+  if (typeof candidate.data === "string" && candidate.data.trim()) return candidate.data;
+
+  return undefined;
+};
 
 export default function Clientes() {
   const [query, setQuery] = useState("");
@@ -28,7 +92,7 @@ export default function Clientes() {
   const [createLoading, setCreateLoading] = useState(false);
   const [createError, setCreateError] = useState("");
   const [createSuccess, setCreateSuccess] = useState("");
-  const [newClientData, setNewClientData] = useState({
+  const [newClientData, setNewClientData] = useState<CreateClientFormData>({
     client_name: "",
     company_name: "",
     email: "",
@@ -36,31 +100,76 @@ export default function Clientes() {
     sent_mail: false,
     rnc: "",
   });
+  const [createValidationErrors, setCreateValidationErrors] = useState<CreateClientValidationErrors>({});
+
+  const openCreateClientModal = () => {
+    setCreateError("");
+    setCreateSuccess("");
+    setCreateValidationErrors({});
+    setIsCreateModalOpen(true);
+  };
+
+  const closeCreateClientModal = () => {
+    if (createLoading) return;
+    setCreateValidationErrors({});
+    setCreateError("");
+    setIsCreateModalOpen(false);
+  };
+
+  const updateCreateField = <K extends keyof CreateClientFormData>(key: K, value: CreateClientFormData[K]) => {
+    setNewClientData((prev) => {
+      const next = { ...prev, [key]: value };
+      const normalized = normalizeClientFormData(next);
+      const nextErrors = validateCreateClientData(normalized);
+      setCreateValidationErrors((prevErrors) => {
+        if (Object.keys(prevErrors).length === 0 && !prevErrors[key as keyof CreateClientValidationErrors]) {
+          return prevErrors;
+        }
+        return nextErrors;
+      });
+      return next;
+    });
+  };
 
   const handleCreateClient = async (e: React.FormEvent) => {
     e.preventDefault();
+    const normalizedData = normalizeClientFormData(newClientData);
+    const validationErrors = validateCreateClientData(normalizedData);
+    setCreateValidationErrors(validationErrors);
+
+    if (Object.keys(validationErrors).length > 0) {
+      setCreateError("Corrige los campos marcados antes de guardar.");
+      return;
+    }
+
     setCreateLoading(true);
     setCreateError("");
     setCreateSuccess("");
     try {
-      const response = await clientesApi.createCliente(newClientData);
+      const response = await clientesApi.createCliente(normalizedData);
       if (response && response.status === true) {
-        setCreateSuccess(typeof response.data === 'string' ? response.data : "cliente Guardado ");
+        const successMsg = typeof response.data === 'string' ? response.data : "Cliente guardado exitosamente.";
         queryClient.invalidateQueries({ queryKey: ['clientes'] });
-        setTimeout(() => {
-          setIsCreateModalOpen(false);
-          setCreateSuccess("");
-          setNewClientData({ client_name: "", company_name: "", email: "", phone_number: "", sent_mail: false, rnc: "" });
-        }, 1500);
+        setIsCreateModalOpen(false);
+        setCreateSuccess("");
+        setCreateValidationErrors({});
+        setNewClientData({ client_name: "", company_name: "", email: "", phone_number: "", sent_mail: false, rnc: "" });
+        setPageSuccessMessage(successMsg);
+        setTimeout(() => setPageSuccessMessage(""), 5000);
       } else {
-        setCreateError("Failed to save client");
+        const backendMessage = extractErrorMessage(response);
+        setCreateError(backendMessage ?? "No se pudo guardar el cliente.");
       }
-    } catch (err: any) {
-      setCreateError("Failed to save client");
+    } catch (e) {
+      console.error("Error creating client:", e);
+      const errorMessage = extractErrorMessage(e);
+      setCreateError(errorMessage ?? "No se pudo guardar el cliente.");
     } finally {
       setCreateLoading(false);
     }
   };
+
+  const [pageSuccessMessage, setPageSuccessMessage] = useState("");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<ClienteRow | null>(null);
@@ -172,6 +281,16 @@ export default function Clientes() {
       />
       <PageBreadcrumb pageTitle="Clientes" />
 
+      {pageSuccessMessage && (
+        <div className="mb-4">
+          <Alert
+            variant="success"
+            title="Cliente Creado"
+            message={pageSuccessMessage}
+          />
+        </div>
+      )}
+
       <div className="mb-4 flex items-center justify-between gap-3">
         <input
           type="text"
@@ -180,7 +299,7 @@ export default function Clientes() {
           placeholder="Buscar clientes por nombre, empresa o RNC..."
           className="w-full max-w-md rounded-lg border-2 border-gray-300 px-4 py-3 text-base font-medium outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-800 dark:text-white bg-white transition-all"
         />
-        <Button onClick={() => setIsCreateModalOpen(true)} variant="primary">
+        <Button onClick={openCreateClientModal} variant="primary">
           Nuevo Cliente
         </Button>
       </div>
@@ -379,15 +498,15 @@ export default function Clientes() {
       {/* Create Client Modal */}
       <Modal
         isOpen={isCreateModalOpen}
-        onClose={() => !createLoading && setIsCreateModalOpen(false)}
-        className="max-w-md w-full p-0 flex flex-col bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden"
+        onClose={closeCreateClientModal}
+        className="max-w-md w-full max-h-[90vh] p-0 flex flex-col bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden"
       >
         <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-4 relative">
           <h2 className="text-xl font-bold text-white">Crear Nuevo Cliente</h2>
           <p className="text-blue-100 text-sm mt-0.5">Ingresa los datos para el registro</p>
           <button
             type="button"
-            onClick={() => !createLoading && setIsCreateModalOpen(false)}
+            onClick={closeCreateClientModal}
             className="absolute right-5 top-1/2 -translate-y-1/2 rounded-full p-1 text-white/70 hover:bg-white/10 hover:text-white transition-all"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -396,7 +515,7 @@ export default function Clientes() {
           </button>
         </div>
         
-        <div className="p-6 bg-gray-50 dark:bg-gray-800">
+        <div className="p-6 bg-gray-50 dark:bg-gray-800 overflow-y-auto no-scrollbar">
           {createSuccess && (
             <div className="mb-5 flex items-center gap-2 rounded-xl bg-green-50 p-4 text-sm font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800/50">
               <svg className="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -428,16 +547,20 @@ export default function Clientes() {
                   <input
                     type="text"
                     required
+                    maxLength={100}
                     placeholder="Ej. Juan Pérez"
                     value={newClientData.client_name}
-                    onChange={(e) => setNewClientData({ ...newClientData, client_name: e.target.value })}
-                    className="block w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:focus:border-blue-400 dark:focus:ring-blue-400 transition-colors"
+                    onChange={(e) => updateCreateField("client_name", e.target.value)}
+                    className={`block w-full rounded-lg border py-2.5 pl-10 pr-3 text-sm focus:outline-none focus:ring-1 transition-colors dark:bg-gray-800 dark:text-white ${createValidationErrors.client_name ? "border-red-400 focus:border-red-500 focus:ring-red-300 dark:border-red-500 dark:focus:border-red-400 dark:focus:ring-red-500" : "border-gray-300 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:focus:border-blue-400 dark:focus:ring-blue-400"}`}
                   />
                 </div>
+                {createValidationErrors.client_name && (
+                  <p className="mt-1.5 text-xs font-medium text-red-600 dark:text-red-400">{createValidationErrors.client_name}</p>
+                )}
               </div>
               
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Empresa</label>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Empresa <span className="text-red-500">*</span></label>
                 <div className="relative">
                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                     <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -446,12 +569,17 @@ export default function Clientes() {
                   </div>
                   <input
                     type="text"
+                    required
+                    maxLength={100}
                     placeholder="Ej. Acme Corp"
                     value={newClientData.company_name}
-                    onChange={(e) => setNewClientData({ ...newClientData, company_name: e.target.value })}
-                    className="block w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:focus:border-blue-400 dark:focus:ring-blue-400 transition-colors"
+                    onChange={(e) => updateCreateField("company_name", e.target.value)}
+                    className={`block w-full rounded-lg border py-2.5 pl-10 pr-3 text-sm focus:outline-none focus:ring-1 transition-colors dark:bg-gray-800 dark:text-white ${createValidationErrors.company_name ? "border-red-400 focus:border-red-500 focus:ring-red-300 dark:border-red-500 dark:focus:border-red-400 dark:focus:ring-red-500" : "border-gray-300 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:focus:border-blue-400 dark:focus:ring-blue-400"}`}
                   />
                 </div>
+                {createValidationErrors.company_name && (
+                  <p className="mt-1.5 text-xs font-medium text-red-600 dark:text-red-400">{createValidationErrors.company_name}</p>
+                )}
               </div>
 
               <div>
@@ -464,16 +592,17 @@ export default function Clientes() {
                   </div>
                   <input
                     type="text"
+                    maxLength={100}
                     placeholder="Ej. 130123456"
                     value={newClientData.rnc}
-                    onChange={(e) => setNewClientData({ ...newClientData, rnc: e.target.value })}
+                    onChange={(e) => updateCreateField("rnc", e.target.value)}
                     className="block w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:focus:border-blue-400 dark:focus:ring-blue-400 transition-colors"
                   />
                 </div>
               </div>
               
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Email</label>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Email <span className="text-red-500">*</span></label>
                 <div className="relative">
                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                     <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -482,16 +611,21 @@ export default function Clientes() {
                   </div>
                   <input
                     type="email"
+                    required
+                    maxLength={100}
                     placeholder="Ej. juan@ejemplo.com"
                     value={newClientData.email}
-                    onChange={(e) => setNewClientData({ ...newClientData, email: e.target.value })}
-                    className="block w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:focus:border-blue-400 dark:focus:ring-blue-400 transition-colors"
+                    onChange={(e) => updateCreateField("email", e.target.value)}
+                    className={`block w-full rounded-lg border py-2.5 pl-10 pr-3 text-sm focus:outline-none focus:ring-1 transition-colors dark:bg-gray-800 dark:text-white ${createValidationErrors.email ? "border-red-400 focus:border-red-500 focus:ring-red-300 dark:border-red-500 dark:focus:border-red-400 dark:focus:ring-red-500" : "border-gray-300 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:focus:border-blue-400 dark:focus:ring-blue-400"}`}
                   />
                 </div>
+                {createValidationErrors.email && (
+                  <p className="mt-1.5 text-xs font-medium text-red-600 dark:text-red-400">{createValidationErrors.email}</p>
+                )}
               </div>
               
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Teléfono</label>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Teléfono <span className="text-red-500">*</span></label>
                 <div className="relative">
                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                     <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -500,28 +634,39 @@ export default function Clientes() {
                   </div>
                   <input
                     type="text"
+                    required
+                    maxLength={20}
                     placeholder="Ej. (809) 555-0198"
                     value={newClientData.phone_number}
-                    onChange={(e) => setNewClientData({ ...newClientData, phone_number: e.target.value })}
-                    className="block w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:focus:border-blue-400 dark:focus:ring-blue-400 transition-colors"
+                    onChange={(e) => updateCreateField("phone_number", e.target.value)}
+                    className={`block w-full rounded-lg border py-2.5 pl-10 pr-3 text-sm focus:outline-none focus:ring-1 transition-colors dark:bg-gray-800 dark:text-white ${createValidationErrors.phone_number ? "border-red-400 focus:border-red-500 focus:ring-red-300 dark:border-red-500 dark:focus:border-red-400 dark:focus:ring-red-500" : "border-gray-300 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:focus:border-blue-400 dark:focus:ring-blue-400"}`}
                   />
                 </div>
+                {createValidationErrors.phone_number && (
+                  <p className="mt-1.5 text-xs font-medium text-red-600 dark:text-red-400">{createValidationErrors.phone_number}</p>
+                )}
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm relative overflow-hidden">
-              <label className="relative flex items-center justify-between cursor-pointer w-full z-10">
+            <div className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+              <label className="flex items-center justify-between cursor-pointer w-full">
                 <span className="flex flex-col">
                   <span className="text-sm font-semibold text-gray-900 dark:text-white">Correo de Bienvenida</span>
                   <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Enviar un correo introduciendo nuestros servicios.</span>
                 </span>
                 <input
                   type="checkbox"
-                  className="sr-only peer"
+                  className="sr-only"
                   checked={newClientData.sent_mail}
-                  onChange={(e) => setNewClientData({ ...newClientData, sent_mail: e.target.checked })}
+                  onChange={(e) => updateCreateField("sent_mail", e.target.checked)}
                 />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[22px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                <div
+                  className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${newClientData.sent_mail ? "bg-blue-600" : "bg-gray-200 dark:bg-gray-700"}`}
+                >
+                  <div
+                    className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white border border-gray-300 shadow-sm transition-transform duration-200 ${newClientData.sent_mail ? "translate-x-5 border-white" : "translate-x-0"}`}
+                  />
+                </div>
               </label>
             </div>
             
@@ -529,7 +674,7 @@ export default function Clientes() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setIsCreateModalOpen(false)}
+                onClick={closeCreateClientModal}
                 disabled={createLoading}
                 className="px-5 py-2.5 shadow-sm"
               >
