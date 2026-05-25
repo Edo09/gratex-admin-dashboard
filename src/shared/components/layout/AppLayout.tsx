@@ -1,36 +1,24 @@
-import { Outlet } from "react-router-dom";
-import { SidebarProvider, useSidebar } from "@/shared/context/SidebarContext";
-import { AppHeader } from "./AppHeader";
-import { AppSidebar } from "./AppSidebar";
-import { Backdrop } from "./Backdrop";
+import { Outlet, useLocation } from "react-router-dom";
+import { PressSidebar } from "@/shared/components/press/PressSidebar";
+import { PressTopbar } from "@/shared/components/press/PressTopbar";
 
-function LayoutContent() {
-  const { isExpanded, isHovered, isMobileOpen } = useSidebar();
+/**
+ * Press direction layout — CMYK chrome around every authenticated screen.
+ * The `.app` / `.sidebar` / `.main` class names come from design-system.css.
+ * `key={pathname}` retriggers the slide-up anim on route change.
+ */
+export function AppLayout() {
+  const { pathname } = useLocation();
 
   return (
-    <div className="min-h-screen xl:flex">
-      <div>
-        <AppSidebar />
-        <Backdrop />
-      </div>
-      <div
-        className={`flex-1 transition-all duration-300 ease-in-out ${
-          isExpanded || isHovered ? "lg:ml-[230px]" : "lg:ml-[90px]"
-        } ${isMobileOpen ? "ml-0" : ""}`}
-      >
-        <AppHeader />
-        <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
+    <div className="app">
+      <PressSidebar />
+      <div className="main" key={pathname}>
+        <PressTopbar />
+        <div className="anim-in">
           <Outlet />
         </div>
       </div>
     </div>
-  );
-}
-
-export function AppLayout() {
-  return (
-    <SidebarProvider>
-      <LayoutContent />
-    </SidebarProvider>
   );
 }
