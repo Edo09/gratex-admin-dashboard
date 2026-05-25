@@ -15,13 +15,13 @@ import {
   parseCotizacionAmount,
 } from "../hooks/useDashboardData";
 import type { Cotizacion } from "@/features/cotizaciones/types";
+import { mockCotizacionStatus } from "@/shared/lib/press-mocks";
 
 /** Hardcoded annual sales target — surface as config if/when the backend exposes one. */
 const ANNUAL_GOAL = 70_000_000;
 
-/** Cotizacion status isn't in the backend yet; default everything to "Pendiente". */
-// TODO: replace with cotizacion.status once the backend exposes it.
-const statusFor = (_c: Cotizacion): PressStatus => "Pendiente";
+// MOCK: cotizacion status — replace with c.status once the backend exposes it.
+const statusFor = (c: Cotizacion): PressStatus => mockCotizacionStatus(c.id);
 
 export default function Home() {
   const navigate = useNavigate();

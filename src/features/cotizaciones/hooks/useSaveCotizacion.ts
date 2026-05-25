@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { cotizacionesApi } from "../api/cotizaciones";
-import { cotizacionToRowMapper } from "../mappers";
 import type { CreateCotizacionPayload } from "../types";
 
 interface SaveArgs {
@@ -28,6 +27,3 @@ export function useSaveCotizacion() {
     },
   });
 }
-
-// Re-export for mappers used in the cotizaciones page
-export { cotizacionToRowMapper };

@@ -31,3 +31,15 @@ export async function fetchCotizacionById(id: number): Promise<Cotizacion | null
   const response = await cotizacionesApi.byId(id);
   return unwrapOne<Cotizacion>(response, id);
 }
+
+export function useCotizacionByIdQuery(id: number | null) {
+  return useQuery({
+    queryKey: ["cotizaciones", "detail", id],
+    queryFn: async () => {
+      if (id == null) return null;
+      return fetchCotizacionById(id);
+    },
+    enabled: id != null,
+    staleTime: 5 * 60 * 1000,
+  });
+}

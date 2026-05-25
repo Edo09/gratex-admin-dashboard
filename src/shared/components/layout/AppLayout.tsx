@@ -1,6 +1,5 @@
 import { Outlet, useLocation } from "react-router-dom";
 import { PressSidebar } from "@/shared/components/press/PressSidebar";
-import { PressTopbar } from "@/shared/components/press/PressTopbar";
 
 /**
  * Press direction layout — CMYK chrome around every authenticated screen.
@@ -14,7 +13,6 @@ export function AppLayout() {
     <div className="app">
       <PressSidebar />
       <div className="main" key={pathname}>
-        <PressTopbar />
         <div className="anim-in">
           <Outlet />
         </div>

@@ -1,83 +1,95 @@
 import { useState } from "react";
-import { PageBreadcrumb } from "@/shared/components/layout/PageBreadcrumb";
 import { PageMeta } from "@/shared/components/layout/PageMeta";
-import { Alert } from "@/shared/components/ui/Alert";
-import Button from "@/shared/components/ui/Button";
+import { PageMarks } from "@/shared/components/press/PageMarks";
+import { Icons } from "@/shared/components/press/PressIcons";
+import { fmt } from "@/shared/utils/press-fmt";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import { useClientesQuery } from "../hooks/useClientesQuery";
-import { ClientesTable } from "../components/ClientesTable";
-import { ClienteDetailsModal } from "../components/ClienteDetailsModal";
+import { getClientDisplayName, getClientPhone } from "../types";
+import { mockClienteOrders, mockClienteTotal } from "@/shared/lib/press-mocks";
 import { CreateClienteModal } from "../components/CreateClienteModal";
-import type { Cliente } from "../types";
 
 export default function Clientes() {
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query, 400);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [toast, setToast] = useState("");
 
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
-  const [successMessage, setSuccessMessage] = useState("");
-
-  const { data, isLoading, error } = useClientesQuery({ query: debouncedQuery, page, pageSize });
-  const rows = data?.items ?? [];
-  const total = data?.pagination?.total ?? rows.length;
-
-  const handleCreateSuccess = (message: string) => {
-    setSuccessMessage(message);
-    setTimeout(() => setSuccessMessage(""), 5000);
-  };
+  const { data } = useClientesQuery({ query: debouncedQuery, page: 1, pageSize: 50 });
+  const list = data?.items ?? [];
+  const total = data?.pagination?.total ?? list.length;
 
   return (
-    <div>
-      <PageMeta
-        title="Gestión de Clientes | Gratex Admin"
-        description="Panel de administración de clientes para Gratex"
-      />
-      <PageBreadcrumb pageTitle="Clientes" />
-
-      {successMessage && (
-        <div className="mb-4">
-          <Alert variant="success" title="Cliente Creado" message={successMessage} />
+    <div className="content">
+      <PageMeta title="Clientes · Gratex" description="Listado de clientes" />
+      <PageMarks label="CLIENTES / 04" />
+      <div className="page-head">
+        <div>
+          <h1 className="page-title">Clientes</h1>
+          <div className="page-sub">{total} registros activos</div>
         </div>
-      )}
-
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar clientes por nombre, empresa o RNC..."
-          className="w-full max-w-md rounded-lg border-2 border-gray-300 px-4 py-3 text-base font-medium outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-800 dark:text-white bg-white transition-all"
-        />
-        <Button onClick={() => setIsCreateOpen(true)} variant="primary">
-          Nuevo Cliente
-        </Button>
+        <button className="btn btn-accent" onClick={() => setCreateOpen(true)}>
+          <Icons.plus size={13} /> Nuevo cliente
+        </button>
       </div>
 
-      <ClientesTable
-        rows={rows}
-        loading={isLoading}
-        error={error}
-        page={page}
-        pageSize={pageSize}
-        total={total}
-        onPageChange={setPage}
-        onPageSizeChange={(s) => {
-          setPageSize(s);
-          setPage(1);
-        }}
-        onRowClick={setSelectedCliente}
-      />
+      <div style={{ marginBottom: 14 }}>
+        <div className="search" style={{ maxWidth: "none" }}>
+          <span className="search-icon">
+            <Icons.search size={14} />
+          </span>
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar por nombre, empresa, correo…"
+          />
+        </div>
+      </div>
 
-      <ClienteDetailsModal cliente={selectedCliente} onClose={() => setSelectedCliente(null)} />
+      <div className="panel" style={{ padding: "4px 16px" }}>
+        {list.map((c) => (
+          <div key={c.id} className="client">
+            <div className="client-num">#{String(c.id).padStart(4, "0")}</div>
+            <div>
+              <div className="client-name">{getClientDisplayName(c)}</div>
+              <div className="client-company">{c.company_name ?? ""}</div>
+            </div>
+            <div className="client-meta">
+              <div className="client-mono">{c.email ?? ""}</div>
+              <div className="client-mono" style={{ color: "var(--muted)" }}>
+                {getClientPhone(c) ?? ""}
+              </div>
+            </div>
+            {/* MOCK: orders + total billed are not exposed by the backend. */}
+            <div className="client-mono">{mockClienteOrders(c.id)} órd.</div>
+            <div className="client-mono" style={{ textAlign: "right", fontWeight: 600, fontSize: 13 }}>
+              {fmt.money(mockClienteTotal(c.id))}
+            </div>
+            <div>
+              <Icons.chevronRight size={14} style={{ color: "var(--muted)" }} />
+            </div>
+          </div>
+        ))}
+        {list.length === 0 && (
+          <div style={{ padding: 32, textAlign: "center", color: "var(--muted)" }}>Sin clientes</div>
+        )}
+      </div>
 
       <CreateClienteModal
-        isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
-        onSuccess={handleCreateSuccess}
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={(msg) => {
+          setToast(msg || "Cliente creado");
+          window.setTimeout(() => setToast(""), 2500);
+        }}
       />
+
+      {toast && (
+        <div className="toast">
+          <span className="swatch" style={{ background: "var(--c-cyan)" }} />
+          {toast}
+        </div>
+      )}
     </div>
   );
 }

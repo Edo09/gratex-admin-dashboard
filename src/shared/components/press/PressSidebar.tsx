@@ -1,15 +1,18 @@
+import type { ReactElement } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { RegMark } from "./RegMark";
 import { useDashboardClientCount, useDashboardCotizacionCount } from "@/features/dashboard/hooks/useDashboardData";
 import { useFacturasQuery } from "@/features/facturas/hooks/useFacturasQuery";
 import { useAuth } from "@/features/auth/hooks/useAuth";
+import { Icons } from "./PressIcons";
 
 interface NavItem {
   to: string;
-  n: string;
+  icon: ReactElement;
   label: string;
   badge?: number;
 }
+
+const ICON_SIZE = 16;
 
 function initialsOf(name?: string, username?: string): string {
   const source = (name ?? username ?? "").trim();
@@ -31,12 +34,12 @@ export function PressSidebar() {
   const facturasCount = facturasResult?.pagination?.total;
 
   const items: NavItem[] = [
-    { to: "/", n: "01", label: "Dashboard" },
-    { to: "/cotizaciones", n: "02", label: "Cotizaciones", badge: cotizacionesCount },
-    { to: "/facturas", n: "03", label: "Facturas", badge: facturasCount },
-    { to: "/clientes", n: "04", label: "Clientes", badge: clientesCount },
-    { to: "/ncf", n: "05", label: "NCF" },
-    { to: "/configuracion", n: "06", label: "Configuración" },
+    { to: "/", icon: <Icons.dashboard size={ICON_SIZE} />, label: "Dashboard" },
+    { to: "/cotizaciones", icon: <Icons.fileText size={ICON_SIZE} />, label: "Cotizaciones", badge: cotizacionesCount },
+    { to: "/facturas", icon: <Icons.receipt size={ICON_SIZE} />, label: "Facturas", badge: facturasCount },
+    { to: "/clientes", icon: <Icons.users size={ICON_SIZE} />, label: "Clientes", badge: clientesCount },
+    { to: "/ncf", icon: <Icons.hash size={ICON_SIZE} />, label: "NCF" },
+    { to: "/configuracion", icon: <Icons.settings size={ICON_SIZE} />, label: "Configuración" },
   ];
 
   const isActive = (to: string) =>
@@ -44,13 +47,13 @@ export function PressSidebar() {
 
   return (
     <aside className="sidebar">
-      <div className="brand">
-        <RegMark />
-        <div className="brand-text">
-          <div className="brand-name">GRATEX</div>
-          <div className="brand-sub">Taller · Imp.</div>
-        </div>
-      </div>
+      <Link to="/" className="brand">
+        <img
+          className="brand-logo"
+          src="/admin/images/logo/logo-gratex-gray.svg"
+          alt="Gratex"
+        />
+      </Link>
       <div className="nav-h">Menú</div>
       {items.map((it) => (
         <Link
@@ -58,12 +61,22 @@ export function PressSidebar() {
           to={it.to}
           className={"nav-item" + (isActive(it.to) ? " active" : "")}
         >
-          <span className="nav-num">{it.n}</span>
+          <span className="nav-icon">{it.icon}</span>
           <span>{it.label}</span>
           {it.badge !== undefined && <span className="nav-badge">{it.badge}</span>}
         </Link>
       ))}
       <div className="sidebar-foot">
+        <a
+          href="https://gratex.net/"
+          target="_blank"
+          rel="noreferrer"
+          className="sidebar-cta"
+        >
+          <Icons.external size={13} />
+          <span>Ver sitio</span>
+        </a>
+
         <div className="nav-h">Sesión</div>
         <div className="user-row">
           <div className="avatar">{initialsOf(user?.name, user?.username)}</div>

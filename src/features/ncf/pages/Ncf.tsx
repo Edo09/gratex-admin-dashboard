@@ -1,135 +1,187 @@
-import { useEffect, useState } from "react";
-import { PageBreadcrumb } from "@/shared/components/layout/PageBreadcrumb";
 import { PageMeta } from "@/shared/components/layout/PageMeta";
-import Button from "@/shared/components/ui/Button";
-import { InputField } from "@/shared/components/ui/InputField";
-import { Label } from "@/shared/components/ui/Label";
-import { useNcfSequenceQuery, useUpdateNcfSequence } from "../hooks/useNcf";
+import { PageMarks } from "@/shared/components/press/PageMarks";
+import { Pill } from "@/shared/components/press/Pill";
+import { Icons } from "@/shared/components/press/PressIcons";
+import { fmt } from "@/shared/utils/press-fmt";
+import { formatDisplayDate } from "@/shared/utils/format";
+import { useNcfSequenceQuery } from "../hooks/useNcf";
+import { useFacturasQuery } from "@/features/facturas/hooks/useFacturasQuery";
+import { parseFacturaAmount } from "@/features/dashboard/hooks/useDashboardData";
+
+const STRIPES = ["var(--c-cyan)", "var(--c-magenta)", "var(--c-yellow)", "var(--c-key)"];
+
+interface NcfCardData {
+  type: string;
+  name: string;
+  from: string;
+  to: string;
+  used: number;
+  total: number;
+  expires: string;
+}
+
+// MOCK: the backend exposes a single sequence today. The remaining types are
+// stubbed so the visual matches the design until /ncf returns the full set.
+const MOCK_EXTRA_SEQUENCES: NcfCardData[] = [
+  {
+    type: "B02",
+    name: "Consumidor Final",
+    from: "B0200000001",
+    to: "B0200000200",
+    used: 44,
+    total: 200,
+    expires: "31/12/2026",
+  },
+  {
+    type: "B14",
+    name: "Régimen Especial",
+    from: "B1400000001",
+    to: "B1400000050",
+    used: 8,
+    total: 50,
+    expires: "31/12/2026",
+  },
+  {
+    type: "B15",
+    name: "Gubernamental",
+    from: "B1500000001",
+    to: "B1500000100",
+    used: 22,
+    total: 100,
+    expires: "31/12/2026",
+  },
+];
+
+const NAME_BY_TYPE: Record<string, string> = {
+  B01: "Crédito Fiscal",
+  B02: "Consumidor Final",
+  B14: "Régimen Especial",
+  B15: "Gubernamental",
+};
 
 export default function Ncf() {
-  const { data: sequence, isLoading, refetch } = useNcfSequenceQuery();
-  const updateMutation = useUpdateNcfSequence();
-  const [newValue, setNewValue] = useState("");
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const { data: sequence } = useNcfSequenceQuery();
+  const { data: facturasData } = useFacturasQuery({ pageSize: 5 });
+  const recentFacturas = facturasData?.items ?? [];
 
-  useEffect(() => {
-    if (sequence) setNewValue(sequence.current_value.toString());
-  }, [sequence]);
-
-  const handleUpdate = async () => {
-    setMessage(null);
-    try {
-      await updateMutation.mutateAsync(parseInt(newValue));
-      setMessage({ type: "success", text: "NCF Sequence updated successfully" });
-      refetch();
-    } catch (err) {
-      setMessage({
-        type: "error",
-        text: err instanceof Error ? err.message : "Network error occurred",
-      });
-    }
-  };
+  const cards: NcfCardData[] = [];
+  if (sequence) {
+    // MOCK: from/to/total/expires aren't returned by /ncf/sequence today;
+    // synthesize a reasonable window so the bar/meta row renders.
+    const total = 500;
+    cards.push({
+      type: sequence.type,
+      name: sequence.description ?? NAME_BY_TYPE[sequence.type] ?? sequence.type,
+      from: `${sequence.type}${"0".repeat(8)}`,
+      to: `${sequence.type}${String(total).padStart(8, "0")}`,
+      used: sequence.current_value,
+      total,
+      expires: `31/12/${new Date().getFullYear()}`,
+    });
+  }
+  cards.push(...MOCK_EXTRA_SEQUENCES);
 
   return (
-    <div>
-      <PageMeta title="NCF Configuration" description="Manage NCF Sequences" />
-      <PageBreadcrumb pageTitle="NCF Configuration" />
-      <div className="min-h-screen rounded-2xl border border-gray-200 bg-white px-5 py-7 dark:border-gray-800 dark:bg-white/[0.03] xl:px-10 xl:py-12">
-        <div className="mx-auto w-full max-w-[630px]">
-          <h3 className="mb-4 font-semibold text-gray-800 text-theme-xl dark:text-white/90 sm:text-2xl text-center">
-            Secuencia de Comprobantes Fiscales
-          </h3>
-          <p className="mb-8 text-sm text-gray-500 dark:text-gray-400 sm:text-base text-center">
-            Configure la secuencia actual de su NCF.
-          </p>
+    <div className="content">
+      <PageMeta title="NCF · Gratex" description="Secuencias NCF DGII" />
+      <PageMarks label="NCF / 05" />
+      <div className="page-head">
+        <div>
+          <h1 className="page-title">Números de comprobante fiscal</h1>
+          <div className="page-sub">Secuencias activas · DGII</div>
+        </div>
+        <button className="btn btn-accent">
+          <Icons.plus size={13} /> Nueva secuencia
+        </button>
+      </div>
 
-          {isLoading || !sequence ? (
-            <div className="text-center py-10">Cargando...</div>
-          ) : (
-            <div className="space-y-6">
-              <CurrentSequenceCard
-                type={sequence.type}
-                description={sequence.description}
-                currentValue={sequence.current_value}
-              />
-
-              <div className="bg-white dark:bg-gray-900 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
-                <h4 className="font-semibold text-gray-900 dark:text-white mb-4">
-                  Actualizar Secuencia Manualmente
-                </h4>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="sequence">Nueva Secuencia Actual</Label>
-                    <InputField
-                      type="number"
-                      id="sequence"
-                      placeholder="Enter new sequence number"
-                      value={newValue}
-                      onChange={(e) => setNewValue(e.target.value)}
-                    />
-                    <p className="text-xs text-gray-500 mt-2">
-                      Advertencia: Cambiar esto afectará la generación de futuros comprobantes.
-                    </p>
+      <div className="ncf-grid">
+        {cards.map((n, i) => {
+          const pct = n.total > 0 ? (n.used / n.total) * 100 : 0;
+          const color = pct > 85 ? "var(--bad)" : pct > 60 ? "var(--warn)" : STRIPES[i % STRIPES.length];
+          return (
+            <div key={n.type} className="ncf-card">
+              <div className="strip" style={{ background: STRIPES[i % STRIPES.length] }} />
+              <div
+                style={{
+                  paddingLeft: 8,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                }}
+              >
+                <div>
+                  <div className="ncf-type">{n.type}</div>
+                  <div className="ncf-name">{n.name}</div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div className="ncf-big">
+                    {n.used}
+                    <small> / {n.total}</small>
                   </div>
-
-                  {message && (
-                    <div
-                      className={`p-3 rounded-lg text-sm ${
-                        message.type === "success"
-                          ? "bg-green-50 text-green-700"
-                          : "bg-red-50 text-red-700"
-                      }`}
-                    >
-                      {message.text}
-                    </div>
-                  )}
-
-                  <Button
-                    variant="primary"
-                    className="w-full justify-center"
-                    onClick={handleUpdate}
-                    disabled={updateMutation.isPending}
-                  >
-                    {updateMutation.isPending ? "Guardando..." : "Actualizar Secuencia"}
-                  </Button>
+                </div>
+              </div>
+              <div style={{ paddingLeft: 8 }}>
+                <div className="ncf-bar">
+                  <div className="ncf-bar-fill" style={{ width: pct + "%", background: color }} />
+                </div>
+                <div className="ncf-meta">
+                  <span>
+                    {n.from} → {n.to}
+                  </span>
+                  <span>VENCE {n.expires}</span>
                 </div>
               </div>
             </div>
-          )}
-        </div>
+          );
+        })}
       </div>
-    </div>
-  );
-}
 
-function CurrentSequenceCard({
-  type,
-  description,
-  currentValue,
-}: {
-  type: string;
-  description: string;
-  currentValue: number;
-}) {
-  return (
-    <div className="rounded-xl border border-gray-200 bg-gray-50 p-6 dark:border-gray-700 dark:bg-gray-800">
-      <div className="mb-4">
-        <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-          Tipo de Comprobante
-        </span>
-        <div className="text-lg font-medium text-gray-900 dark:text-white">
-          {type} - {description}
+      <div className="panel" style={{ marginTop: 20 }}>
+        <div className="panel-head">
+          <div>
+            <h2 className="panel-title">Últimos comprobantes emitidos</h2>
+            <div className="panel-sub">Últimas {recentFacturas.length} emisiones</div>
+          </div>
         </div>
-      </div>
-      <div>
-        <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-          Valor Actual en Base de Datos
-        </span>
-        <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{currentValue}</div>
-        <div className="text-sm text-gray-500 mt-1">
-          Próximo NCF a generar: {type}
-          {String(currentValue + 1).padStart(8, "0")}
-        </div>
+        <table className="ds-table">
+          <thead>
+            <tr>
+              <th>NCF</th>
+              <th>Tipo</th>
+              <th>Cliente</th>
+              <th>Fecha</th>
+              <th style={{ textAlign: "right" }}>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {recentFacturas.map((f) => (
+              <tr key={f.id}>
+                <td className="mono" style={{ fontSize: 11 }}>
+                  {f.no_factura ?? f.NCF ?? `#${f.id}`}
+                </td>
+                <td>
+                  {/* MOCK: tipo NCF — assume Enviada until /facturas exposes status. */}
+                  <Pill status="Enviada" />
+                </td>
+                <td style={{ fontWeight: 600 }}>{f.client_name ?? f.client ?? "—"}</td>
+                <td className="mono" style={{ fontSize: 11 }}>
+                  {formatDisplayDate(f.date)}
+                </td>
+                <td className="mono" style={{ textAlign: "right", fontWeight: 600, fontSize: 13 }}>
+                  {fmt.money(parseFacturaAmount(f))}
+                </td>
+              </tr>
+            ))}
+            {recentFacturas.length === 0 && (
+              <tr>
+                <td colSpan={5} style={{ textAlign: "center", color: "var(--muted)", padding: 24 }}>
+                  Sin emisiones recientes
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );

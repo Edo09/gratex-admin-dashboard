@@ -15,6 +15,19 @@ export function openPdfFromBase64(base64: string): void {
   window.open(url, "_blank");
 }
 
+/** Trigger a file-download for a PDF (provided as a base64 string). */
+export function downloadPdfFromBase64(base64: string, filename: string): void {
+  const url = base64ToPdfBlobUrl(base64);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename.endsWith(".pdf") ? filename : `${filename}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  // Defer revoking the blob URL so the browser has time to fetch it.
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 /**
  * Pull the base64 PDF string out of any of the response shapes the API
  * uses (`{ data: { content } }`, `{ content }`, `{ data: { pdf } }`,

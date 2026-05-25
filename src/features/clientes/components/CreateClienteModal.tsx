@@ -1,232 +1,206 @@
 import { useState, type FormEvent } from "react";
-import { Modal } from "@/shared/components/ui/Modal";
-import Button from "@/shared/components/ui/Button";
-import { useCreateCliente } from "../hooks/useCreateCliente";
-import {
-  EMPTY_CLIENTE_FORM,
-  normalizeClienteForm,
-  validateCreateCliente,
-  type CreateClienteErrors,
-} from "../validation";
-import type { CreateClienteInput } from "../types";
+import { Icons } from "@/shared/components/press/PressIcons";
+import { ModalPortal } from "@/shared/components/press/ModalPortal";
 import { extractErrorMessage } from "@/shared/api/errors";
+import { useCreateCliente } from "../hooks/useCreateCliente";
+import type { CreateClienteInput } from "../types";
 
 interface CreateClienteModalProps {
-  isOpen: boolean;
+  open: boolean;
   onClose: () => void;
-  onSuccess: (message: string) => void;
+  onCreated?: (message: string) => void;
 }
 
-export function CreateClienteModal({ isOpen, onClose, onSuccess }: CreateClienteModalProps) {
-  const createMutation = useCreateCliente();
-  const [formData, setFormData] = useState<CreateClienteInput>(EMPTY_CLIENTE_FORM);
-  const [errors, setErrors] = useState<CreateClienteErrors>({});
-  const [submitError, setSubmitError] = useState("");
+interface Errors {
+  client_name?: string;
+  company_name?: string;
+  email?: string;
+  phone_number?: string;
+}
 
-  const updateField = <K extends keyof CreateClienteInput>(key: K, value: CreateClienteInput[K]) => {
-    setFormData((prev) => {
-      const next = { ...prev, [key]: value };
-      const normalized = normalizeClienteForm(next);
-      const nextErrors = validateCreateCliente(normalized);
-      setErrors((prevErrors) => {
-        if (Object.keys(prevErrors).length === 0 && !prevErrors[key as keyof CreateClienteErrors]) {
-          return prevErrors;
-        }
-        return nextErrors;
-      });
-      return next;
-    });
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const EMPTY: CreateClienteInput = {
+  client_name: "",
+  company_name: "",
+  email: "",
+  phone_number: "",
+  sent_mail: false,
+  rnc: "",
+};
+
+function normalize(d: CreateClienteInput): CreateClienteInput {
+  return {
+    ...d,
+    client_name: d.client_name.trim(),
+    company_name: d.company_name.trim(),
+    email: d.email.trim(),
+    phone_number: d.phone_number.trim(),
+    rnc: d.rnc.trim(),
+  };
+}
+
+function validate(d: CreateClienteInput): Errors {
+  const next: Errors = {};
+  if (!d.client_name) next.client_name = "Nombre obligatorio";
+  if (!d.company_name) next.company_name = "Empresa obligatoria";
+  if (!d.email || !EMAIL_RE.test(d.email)) next.email = "Email inválido";
+  if (!d.phone_number) next.phone_number = "Teléfono obligatorio";
+  return next;
+}
+
+export function CreateClienteModal({ open, onClose, onCreated }: CreateClienteModalProps) {
+  const createMutation = useCreateCliente();
+  const [form, setForm] = useState<CreateClienteInput>(EMPTY);
+  const [errors, setErrors] = useState<Errors>({});
+  const [apiError, setApiError] = useState("");
+
+  if (!open) return null;
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    const data = normalize(form);
+    const next = validate(data);
+    setErrors(next);
+    if (Object.keys(next).length > 0) {
+      setApiError("");
+      return;
+    }
+    setApiError("");
+    try {
+      const message = await createMutation.mutateAsync(data);
+      setForm(EMPTY);
+      setErrors({});
+      onCreated?.(message);
+      onClose();
+    } catch (err) {
+      setApiError(extractErrorMessage(err) ?? "No se pudo guardar el cliente.");
+    }
   };
 
-  const handleClose = () => {
+  const close = () => {
     if (createMutation.isPending) return;
+    setForm(EMPTY);
     setErrors({});
-    setSubmitError("");
-    setFormData(EMPTY_CLIENTE_FORM);
+    setApiError("");
     onClose();
   };
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    const normalized = normalizeClienteForm(formData);
-    const validationErrors = validateCreateCliente(normalized);
-    setErrors(validationErrors);
-
-    if (Object.keys(validationErrors).length > 0) {
-      setSubmitError("Corrige los campos marcados antes de guardar.");
-      return;
-    }
-
-    setSubmitError("");
-    try {
-      const message = await createMutation.mutateAsync(normalized);
-      setFormData(EMPTY_CLIENTE_FORM);
-      setErrors({});
-      onSuccess(message);
-      onClose();
-    } catch (err) {
-      setSubmitError(extractErrorMessage(err) ?? "No se pudo guardar el cliente.");
-    }
-  };
-
-  const loading = createMutation.isPending;
-
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={handleClose}
-      className="max-w-md w-full max-h-[90vh] p-0 flex flex-col bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden"
-      showCloseButton={false}
-    >
-      <Header onClose={handleClose} />
-
-      <div className="p-6 bg-gray-50 dark:bg-gray-800 overflow-y-auto no-scrollbar">
-        {submitError && (
-          <div className="mb-5 flex items-center gap-2 rounded-xl bg-red-50 p-4 text-sm font-medium text-red-800 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800/50">
-            {submitError}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="bg-white dark:bg-gray-900 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm space-y-4">
-            <FormField
-              label="Nombre del Cliente"
-              required
-              value={formData.client_name}
-              onChange={(v) => updateField("client_name", v)}
-              error={errors.client_name}
-              maxLength={100}
-              placeholder="Ej. Juan Pérez"
-            />
-            <FormField
-              label="Empresa"
-              required
-              value={formData.company_name}
-              onChange={(v) => updateField("company_name", v)}
-              error={errors.company_name}
-              maxLength={100}
-              placeholder="Ej. Acme Corp"
-            />
-            <FormField
-              label="RNC (Opcional)"
-              value={formData.rnc}
-              onChange={(v) => updateField("rnc", v)}
-              maxLength={100}
-              placeholder="Ej. 130123456"
-            />
-            <FormField
-              label="Email"
-              required
-              type="email"
-              value={formData.email}
-              onChange={(v) => updateField("email", v)}
-              error={errors.email}
-              maxLength={100}
-              placeholder="Ej. juan@ejemplo.com"
-            />
-            <FormField
-              label="Teléfono"
-              required
-              value={formData.phone_number}
-              onChange={(v) => updateField("phone_number", v)}
-              error={errors.phone_number}
-              maxLength={20}
-              placeholder="Ej. (809) 555-0198"
-            />
+    <ModalPortal>
+      <div className="modal-bg" onClick={close}>
+        <div className="modal anim-in" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-pad">
+          <div className="modal-head">
+            <div>
+              <h2 className="modal-title">Nuevo cliente</h2>
+              <div className="modal-sub">Registra un nuevo cliente del taller.</div>
+            </div>
+            <button className="close-x" onClick={close} aria-label="Cerrar">
+              <Icons.close size={18} />
+            </button>
           </div>
 
-          <WelcomeEmailToggle
-            checked={formData.sent_mail}
-            onChange={(checked) => updateField("sent_mail", checked)}
-          />
-
-          <div className="pt-2 flex justify-end gap-3">
-            <Button type="button" variant="outline" onClick={handleClose} disabled={loading} className="px-5 py-2.5 shadow-sm">
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={loading}
-              className="px-5 py-2.5 shadow-md hover:shadow-lg transition-all flex items-center gap-2"
+          {apiError && (
+            <div
+              className="field-error"
+              style={{
+                background: "#f7e9e9",
+                border: "1px solid #e8c3c3",
+                padding: "8px 10px",
+                borderRadius: 6,
+                marginBottom: 14,
+              }}
             >
-              {loading ? "Guardando..." : "Guardar Cliente"}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </Modal>
-  );
-}
+              {apiError}
+            </div>
+          )}
 
-function Header({ onClose }: { onClose: () => void }) {
-  return (
-    <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-4 relative">
-      <h2 className="text-xl font-bold text-white">Crear Nuevo Cliente</h2>
-      <p className="text-blue-100 text-sm mt-0.5">Ingresa los datos para el registro</p>
-      <button
-        type="button"
-        onClick={onClose}
-        className="absolute right-5 top-1/2 -translate-y-1/2 rounded-full p-1 text-white/70 hover:bg-white/10 hover:text-white transition-all"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-        </svg>
-      </button>
-    </div>
-  );
-}
+          <form onSubmit={submit}>
+            <div className="field-row">
+              <div className={"field" + (errors.client_name ? " error" : "")}>
+                <label>Nombre</label>
+                <input
+                  value={form.client_name}
+                  onChange={(e) => setForm({ ...form, client_name: e.target.value })}
+                  placeholder="Ej. Juan Pérez"
+                  maxLength={100}
+                />
+                {errors.client_name && <div className="field-error">{errors.client_name}</div>}
+              </div>
+              <div className={"field" + (errors.company_name ? " error" : "")}>
+                <label>Empresa</label>
+                <input
+                  value={form.company_name}
+                  onChange={(e) => setForm({ ...form, company_name: e.target.value })}
+                  placeholder="Ej. Acme Corp"
+                  maxLength={100}
+                />
+                {errors.company_name && <div className="field-error">{errors.company_name}</div>}
+              </div>
+            </div>
 
-interface FormFieldProps {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  error?: string;
-  type?: string;
-  placeholder?: string;
-  required?: boolean;
-  maxLength?: number;
-}
+            <div className="field-row">
+              <div className={"field" + (errors.email ? " error" : "")}>
+                <label>Email</label>
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  placeholder="cliente@ejemplo.do"
+                  maxLength={100}
+                />
+                {errors.email && <div className="field-error">{errors.email}</div>}
+              </div>
+              <div className={"field" + (errors.phone_number ? " error" : "")}>
+                <label>Teléfono</label>
+                <input
+                  value={form.phone_number}
+                  onChange={(e) => setForm({ ...form, phone_number: e.target.value })}
+                  placeholder="809-555-0000"
+                  maxLength={20}
+                />
+                {errors.phone_number && <div className="field-error">{errors.phone_number}</div>}
+              </div>
+            </div>
 
-function FormField({ label, value, onChange, error, type = "text", placeholder, required, maxLength }: FormFieldProps) {
-  return (
-    <div>
-      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
-      <input
-        type={type}
-        required={required}
-        maxLength={maxLength}
-        placeholder={placeholder}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className={`block w-full rounded-lg border py-2.5 px-3 text-sm focus:outline-none focus:ring-1 transition-colors dark:bg-gray-800 dark:text-white ${
-          error
-            ? "border-red-400 focus:border-red-500 focus:ring-red-300 dark:border-red-500"
-            : "border-gray-300 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:focus:border-blue-400"
-        }`}
-      />
-      {error && <p className="mt-1.5 text-xs font-medium text-red-600 dark:text-red-400">{error}</p>}
-    </div>
-  );
-}
+            <div className="field">
+              <label>RNC (opcional)</label>
+              <input
+                value={form.rnc}
+                onChange={(e) => setForm({ ...form, rnc: e.target.value })}
+                placeholder="130123456"
+                maxLength={20}
+              />
+            </div>
 
-function WelcomeEmailToggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <div className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-      <label className="flex items-center justify-between cursor-pointer w-full">
-        <span className="flex flex-col">
-          <span className="text-sm font-semibold text-gray-900 dark:text-white">Correo de Bienvenida</span>
-          <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-            Enviar un correo introduciendo nuestros servicios.
-          </span>
-        </span>
-        <input type="checkbox" className="sr-only" checked={checked} onChange={(e) => onChange(e.target.checked)} />
-        <div className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${checked ? "bg-blue-600" : "bg-gray-200 dark:bg-gray-700"}`}>
-          <div className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white border border-gray-300 shadow-sm transition-transform duration-200 ${checked ? "translate-x-5 border-white" : "translate-x-0"}`} />
+            <div className="field">
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", textTransform: "none", letterSpacing: 0, fontFamily: "Geist", fontSize: 12, color: "var(--ink-2)" }}>
+                <input
+                  type="checkbox"
+                  checked={form.sent_mail}
+                  onChange={(e) => setForm({ ...form, sent_mail: e.target.checked })}
+                  style={{ width: "auto", padding: 0 }}
+                />
+                Enviar correo de bienvenida
+              </label>
+            </div>
+          </form>
         </div>
-      </label>
-    </div>
+        <div className="modal-foot">
+          <button className="btn-ghost" onClick={close} disabled={createMutation.isPending}>
+            Cancelar
+          </button>
+          <button
+            className="btn btn-accent"
+            onClick={submit}
+            disabled={createMutation.isPending}
+          >
+            {createMutation.isPending ? "Guardando…" : "Crear cliente"}
+          </button>
+        </div>
+        </div>
+      </div>
+    </ModalPortal>
   );
 }
