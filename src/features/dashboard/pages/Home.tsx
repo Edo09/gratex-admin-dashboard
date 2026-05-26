@@ -1,12 +1,10 @@
 import { useNavigate } from "react-router-dom";
 import { PageMeta } from "@/shared/components/layout/PageMeta";
 import { PageMarks } from "@/shared/components/press/PageMarks";
-import { Pill, type PressStatus } from "@/shared/components/press/Pill";
 import { Icons } from "@/shared/components/press/PressIcons";
 import { fmt } from "@/shared/utils/press-fmt";
 import { formatDisplayDate } from "@/shared/utils/format";
 import { MonthlyChart } from "../components/MonthlyChart";
-import { Donut } from "../components/Donut";
 import { DashboardDateLine } from "../components/DashboardHeader";
 import {
   useDashboardKpis,
@@ -14,14 +12,6 @@ import {
   useRecentCotizacionesQuery,
   parseCotizacionAmount,
 } from "../hooks/useDashboardData";
-import type { Cotizacion } from "@/features/cotizaciones/types";
-import { mockCotizacionStatus } from "@/shared/lib/press-mocks";
-
-/** Hardcoded annual sales target — surface as config if/when the backend exposes one. */
-const ANNUAL_GOAL = 70_000_000;
-
-// MOCK: cotizacion status — replace with c.status once the backend exposes it.
-const statusFor = (c: Cotizacion): PressStatus => mockCotizacionStatus(c.id);
 
 export default function Home() {
   const navigate = useNavigate();
@@ -53,71 +43,33 @@ export default function Home() {
           conversion={kpis.conversion}
         />
         <VentasMesTile total={kpis.ventasMes} mom={kpis.ventasMomDelta} />
-        <VentasAnoTile total={kpis.ventasTotal} goal={ANNUAL_GOAL} />
+        <VentasAnoTile total={kpis.ventasTotal} />
       </div>
 
-      <div className="grid-2">
-        <div className="panel">
-          <div className="panel-head">
-            <div>
-              <h2 className="panel-title">Producción mensual</h2>
-              <div className="panel-sub">
-                Facturas (M) · Cotizaciones (C) · {new Date().getFullYear()}
-              </div>
-            </div>
-            <div className="chip-row">
-              <div
-                className="chip"
-                style={{ background: "var(--c-magenta)", color: "#fff", borderColor: "var(--c-magenta)" }}
-              >
-                FACT
-              </div>
-              <div
-                className="chip"
-                style={{ background: "var(--c-cyan)", color: "#fff", borderColor: "var(--c-cyan)" }}
-              >
-                COTZ
-              </div>
+      <div className="panel" style={{ marginBottom: 14 }}>
+        <div className="panel-head">
+          <div>
+            <h2 className="panel-title">Producción mensual</h2>
+            <div className="panel-sub">
+              Facturas (M) · Cotizaciones (C) · {new Date().getFullYear()}
             </div>
           </div>
-          <MonthlyChart data={monthly} />
-        </div>
-        <div className="panel">
-          <div className="panel-head">
-            <div>
-              <h2 className="panel-title">Meta anual</h2>
-              <div className="panel-sub">Año fiscal {new Date().getFullYear()}</div>
+          <div className="chip-row">
+            <div
+              className="chip"
+              style={{ background: "var(--c-magenta)", color: "#fff", borderColor: "var(--c-magenta)" }}
+            >
+              FACT
             </div>
-          </div>
-          <Donut value={kpis.ventasTotal} max={ANNUAL_GOAL} />
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              fontFamily: "Geist Mono",
-              fontSize: 11,
-              color: "var(--muted)",
-              marginTop: 12,
-              paddingTop: 12,
-              borderTop: "1px dashed var(--line)",
-            }}
-          >
-            <div>
-              ACTUAL
-              <br />
-              <span style={{ color: "var(--ink)", fontSize: 14, fontWeight: 600 }}>
-                {fmt.moneyK(kpis.ventasTotal)}
-              </span>
-            </div>
-            <div style={{ textAlign: "right" }}>
-              META
-              <br />
-              <span style={{ color: "var(--ink)", fontSize: 14, fontWeight: 600 }}>
-                {fmt.moneyK(ANNUAL_GOAL)}
-              </span>
+            <div
+              className="chip"
+              style={{ background: "var(--c-cyan)", color: "#fff", borderColor: "var(--c-cyan)" }}
+            >
+              COTZ
             </div>
           </div>
         </div>
+        <MonthlyChart data={monthly} />
       </div>
 
       <div className="panel">
@@ -136,13 +88,12 @@ export default function Home() {
               <th>Código</th>
               <th>Cliente</th>
               <th>Descripción</th>
-              <th>Estado</th>
               <th style={{ textAlign: "right" }}>Total</th>
             </tr>
           </thead>
           <tbody>
             {recentCotizaciones.map((c) => (
-              <tr key={c.id} onClick={() => navigate("/cotizaciones")}>
+              <tr key={c.id} onClick={() => navigate(`/cotizaciones/${c.id}`)}>
                 <td>
                   <span className="quote-code">{c.code ?? `#${c.id}`}</span>
                   <div className="mono" style={{ fontSize: 10, color: "var(--muted)", marginTop: 4 }}>
@@ -158,9 +109,6 @@ export default function Home() {
                 <td style={{ color: "var(--ink-2)", maxWidth: 300 }}>
                   {(c.description ?? "—").split(/\n/).slice(0, 2).join(" · ")}
                 </td>
-                <td>
-                  <Pill status={statusFor(c)} />
-                </td>
                 <td className="mono" style={{ textAlign: "right", fontWeight: 600, fontSize: 14 }}>
                   {fmt.money(parseCotizacionAmount(c))}
                 </td>
@@ -168,7 +116,7 @@ export default function Home() {
             ))}
             {recentCotizaciones.length === 0 && (
               <tr>
-                <td colSpan={5} style={{ textAlign: "center", color: "var(--muted)", padding: 24 }}>
+                <td colSpan={4} style={{ textAlign: "center", color: "var(--muted)", padding: 24 }}>
                   Sin cotizaciones recientes
                 </td>
               </tr>
@@ -237,15 +185,14 @@ function VentasMesTile({ total, mom }: { total: number; mom: number | null }) {
   );
 }
 
-function VentasAnoTile({ total, goal }: { total: number; goal: number }) {
-  const pct = goal > 0 ? Math.round((total / goal) * 100) : 0;
+function VentasAnoTile({ total }: { total: number }) {
   return (
     <div className="kpi">
       <div className="kpi-tag">
         <span className="swatch" style={{ background: "var(--c-key)" }} /> Ventas año
       </div>
       <div className="kpi-value">{fmt.moneyK(total)}</div>
-      <div className="kpi-delta">Meta {pct}%</div>
+      <div className="kpi-delta">Acumulado {new Date().getFullYear()}</div>
     </div>
   );
 }

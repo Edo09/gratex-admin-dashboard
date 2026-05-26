@@ -630,7 +630,7 @@ html, body {
 /* clientes */
 .client {
   display: grid;
-  grid-template-columns: 56px 1.8fr 1.6fr 1fr 1fr 24px;
+  grid-template-columns: 56px 1.8fr 2fr 24px;
   gap: 16px;
   align-items: center;
   padding: 14px 12px;

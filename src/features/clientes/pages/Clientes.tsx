@@ -2,11 +2,9 @@ import { useState } from "react";
 import { PageMeta } from "@/shared/components/layout/PageMeta";
 import { PageMarks } from "@/shared/components/press/PageMarks";
 import { Icons } from "@/shared/components/press/PressIcons";
-import { fmt } from "@/shared/utils/press-fmt";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import { useClientesQuery } from "../hooks/useClientesQuery";
 import { getClientDisplayName, getClientPhone } from "../types";
-import { mockClienteOrders, mockClienteTotal } from "@/shared/lib/press-mocks";
 import { CreateClienteModal } from "../components/CreateClienteModal";
 
 export default function Clientes() {
@@ -59,11 +57,6 @@ export default function Clientes() {
               <div className="client-mono" style={{ color: "var(--muted)" }}>
                 {getClientPhone(c) ?? ""}
               </div>
-            </div>
-            {/* MOCK: orders + total billed are not exposed by the backend. */}
-            <div className="client-mono">{mockClienteOrders(c.id)} órd.</div>
-            <div className="client-mono" style={{ textAlign: "right", fontWeight: 600, fontSize: 13 }}>
-              {fmt.money(mockClienteTotal(c.id))}
             </div>
             <div>
               <Icons.chevronRight size={14} style={{ color: "var(--muted)" }} />

@@ -1,7 +1,6 @@
 import { useRef, useState, type FormEvent } from "react";
 import { PageMeta } from "@/shared/components/layout/PageMeta";
 import { PageMarks } from "@/shared/components/press/PageMarks";
-import { Pill } from "@/shared/components/press/Pill";
 import { Icons } from "@/shared/components/press/PressIcons";
 import { API_BASE_URL } from "@/shared/api/client";
 import {
@@ -197,10 +196,6 @@ function CarouselTab() {
           <div>
             <div className="slide-title">{s.title}</div>
             <div className="slide-sub">{s.subtitle}</div>
-            <div style={{ marginTop: 6 }}>
-              {/* MOCK: backend has no `published` flag — assume all live. */}
-              <Pill status="Aprobada" />
-            </div>
           </div>
           <div style={{ display: "flex", gap: 6 }}>
             <button className="icon-btn" aria-label="Editar">

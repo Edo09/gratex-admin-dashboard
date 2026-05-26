@@ -2,17 +2,9 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { PageMeta } from "@/shared/components/layout/PageMeta";
 import { PageMarks } from "@/shared/components/press/PageMarks";
-import { Pill } from "@/shared/components/press/Pill";
 import { Icons } from "@/shared/components/press/PressIcons";
 import { fmt } from "@/shared/utils/press-fmt";
 import { formatDisplayDate } from "@/shared/utils/format";
-import {
-  mockCotizacionStatus,
-  MOCK_VENCIMIENTO,
-  MOCK_VENDEDOR,
-  MOCK_PAGO,
-  MOCK_ENTREGA,
-} from "@/shared/lib/press-mocks";
 import { useCotizacionByIdQuery } from "../hooks/useCotizacionesQuery";
 import { useCotizacionPdf } from "../hooks/useCotizacionPdf";
 import { CreateQuoteModal } from "../components/CreateQuoteModal";
@@ -120,40 +112,24 @@ export default function CotizacionDetail() {
             <div className="doc-h1">{cotizacion.company_name ?? cotizacion.client_name ?? "—"}</div>
           </div>
           <div style={{ textAlign: "right" }}>
-            <Pill status={mockCotizacionStatus(cotizacion.id)} />
-            <div className="mono" style={{ fontSize: 11, color: "var(--muted)", marginTop: 8 }}>
-              EMIT {dateLabel}
-            </div>
-            {/* MOCK: vencimiento — backend has no `expires_at` field. */}
             <div className="mono" style={{ fontSize: 11, color: "var(--muted)" }}>
-              VENC {MOCK_VENCIMIENTO}
+              EMIT {dateLabel}
             </div>
           </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, marginBottom: 24 }}>
-          <div className="doc-section">
-            <div className="doc-section-label">Facturar a</div>
-            <div className="doc-section-body">
-              <div style={{ fontWeight: 600, fontSize: 16 }}>
-                {cotizacion.company_name ?? cotizacion.client_name ?? "—"}
-              </div>
-              <div style={{ marginTop: 2 }}>{cotizacion.client_name ?? ""}</div>
-              <div className="mono" style={{ color: "var(--muted)", fontSize: 12 }}>
-                {cotizacion.email ?? ""}
-              </div>
-              <div className="mono" style={{ color: "var(--muted)", fontSize: 12 }}>
-                {cotizacion.phone_number ?? cotizacion.telefono ?? ""}
-              </div>
+        <div className="doc-section">
+          <div className="doc-section-label">Facturar a</div>
+          <div className="doc-section-body">
+            <div style={{ fontWeight: 600, fontSize: 16 }}>
+              {cotizacion.company_name ?? cotizacion.client_name ?? "—"}
             </div>
-          </div>
-          <div className="doc-section">
-            <div className="doc-section-label">Detalles</div>
-            <div className="doc-section-body mono" style={{ fontSize: 12 }}>
-              {/* MOCK: vendedor / pago / entrega — backend doesn't return these. */}
-              <DetailRow label="VENDEDOR" value={MOCK_VENDEDOR} />
-              <DetailRow label="PAGO" value={MOCK_PAGO} />
-              <DetailRow label="ENTREGA" value={MOCK_ENTREGA} />
+            <div style={{ marginTop: 2 }}>{cotizacion.client_name ?? ""}</div>
+            <div className="mono" style={{ color: "var(--muted)", fontSize: 12 }}>
+              {cotizacion.email ?? ""}
+            </div>
+            <div className="mono" style={{ color: "var(--muted)", fontSize: 12 }}>
+              {cotizacion.phone_number ?? cotizacion.telefono ?? ""}
             </div>
           </div>
         </div>
@@ -218,15 +194,6 @@ export default function CotizacionDetail() {
           {toast}
         </div>
       )}
-    </div>
-  );
-}
-
-function DetailRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={{ display: "flex", justifyContent: "space-between", padding: "3px 0" }}>
-      <span style={{ color: "var(--muted)" }}>{label}</span>
-      <span>{value}</span>
     </div>
   );
 }

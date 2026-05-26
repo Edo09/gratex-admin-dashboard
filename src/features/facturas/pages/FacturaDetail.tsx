@@ -1,16 +1,10 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { PageMeta } from "@/shared/components/layout/PageMeta";
 import { PageMarks } from "@/shared/components/press/PageMarks";
-import { Pill } from "@/shared/components/press/Pill";
 import { Icons } from "@/shared/components/press/PressIcons";
 import { fmt } from "@/shared/utils/press-fmt";
 import { formatDisplayDate } from "@/shared/utils/format";
 import { openPdfFromBase64, pickPdfBase64 } from "@/shared/lib/pdf";
-import {
-  mockFacturaStatus,
-  mockFacturaCotzCode,
-  MOCK_VENCIMIENTO,
-} from "@/shared/lib/press-mocks";
 import { useFacturaByIdQuery } from "../hooks/useFacturasQuery";
 import { facturasApi } from "../api/facturas";
 import { parseFacturaAmount } from "@/features/dashboard/hooks/useDashboardData";
@@ -69,7 +63,6 @@ export default function FacturaDetail() {
   const total = subtotal + itbis;
 
   const ncfCode = factura.NCF ?? factura.no_factura ?? `#${factura.id}`;
-  const cotzOrigin = mockFacturaCotzCode(factura.id); // MOCK
   const dateLabel = formatDisplayDate(factura.date);
 
   const downloadPdf = async () => {
@@ -89,12 +82,9 @@ export default function FacturaDetail() {
             ← Volver
           </button>
           <h1 className="page-title">{factura.client_name ?? factura.client ?? "—"}</h1>
-          <div className="page-sub">
-            NCF {ncfCode} · originada de {cotzOrigin}
-          </div>
+          <div className="page-sub">NCF {ncfCode}</div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <button className="btn-ghost">Marcar pagada</button>
           <button className="btn-ghost" onClick={() => window.print()}>
             <Icons.print size={13} /> Imprimir
           </button>
@@ -111,13 +101,8 @@ export default function FacturaDetail() {
             <div className="doc-h1">{factura.client_name ?? factura.client ?? "—"}</div>
           </div>
           <div style={{ textAlign: "right" }}>
-            <Pill status={mockFacturaStatus(factura.id)} />
-            <div className="mono" style={{ fontSize: 11, color: "var(--muted)", marginTop: 8 }}>
-              FECHA {dateLabel}
-            </div>
-            {/* MOCK: vencimiento — backend has no `due_date` field. */}
             <div className="mono" style={{ fontSize: 11, color: "var(--muted)" }}>
-              VENC {MOCK_VENCIMIENTO}
+              FECHA {dateLabel}
             </div>
           </div>
         </div>

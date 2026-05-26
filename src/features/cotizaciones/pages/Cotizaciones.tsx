@@ -2,14 +2,12 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageMeta } from "@/shared/components/layout/PageMeta";
 import { PageMarks } from "@/shared/components/press/PageMarks";
-import { Pill } from "@/shared/components/press/Pill";
 import { Icons } from "@/shared/components/press/PressIcons";
 import { fmt } from "@/shared/utils/press-fmt";
 import { formatDisplayDate } from "@/shared/utils/format";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import { useCotizacionesQuery } from "../hooks/useCotizacionesQuery";
 import { parseCotizacionAmount } from "@/features/dashboard/hooks/useDashboardData";
-import { mockCotizacionStatus } from "@/shared/lib/press-mocks";
 import { CreateQuoteModal } from "../components/CreateQuoteModal";
 import type { Cotizacion } from "../types";
 
@@ -82,7 +80,6 @@ export default function Cotizaciones() {
                 <th>Cliente</th>
                 <th>Descripción</th>
                 <th>Fecha</th>
-                <th>Estado</th>
                 <th style={{ textAlign: "right", paddingRight: 20 }}>Total</th>
               </tr>
             </thead>
@@ -101,9 +98,6 @@ export default function Cotizaciones() {
                   <td style={{ color: "var(--ink-2)", maxWidth: 320 }}>{c.description ?? "—"}</td>
                   <td className="mono" style={{ fontSize: 11 }}>
                     {formatDisplayDate(c.date)}
-                  </td>
-                  <td>
-                    <Pill status={mockCotizacionStatus(c.id)} />
                   </td>
                   <td className="mono" style={{ textAlign: "right", paddingRight: 20, fontWeight: 600, fontSize: 14 }}>
                     {fmt.money(parseCotizacionAmount(c))}
@@ -155,8 +149,7 @@ function CotizacionCard({ cotizacion, onOpen }: { cotizacion: Cotizacion; onOpen
           <div className="quote-amt-label">Total neto</div>
         </div>
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12 }}>
-        <Pill status={mockCotizacionStatus(cotizacion.id)} />
+      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginTop: 12 }}>
         <span style={{ color: "var(--muted)", fontSize: 11, fontFamily: "Geist Mono" }}>
           Ver detalle →
         </span>
