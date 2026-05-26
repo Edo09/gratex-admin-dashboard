@@ -1,6 +1,5 @@
 import { PageMeta } from "@/shared/components/layout/PageMeta";
 import { PageMarks } from "@/shared/components/press/PageMarks";
-import { Icons } from "@/shared/components/press/PressIcons";
 import { fmt } from "@/shared/utils/press-fmt";
 import { formatDisplayDate } from "@/shared/utils/format";
 import { useNcfSequenceQuery } from "../hooks/useNcf";
@@ -28,9 +27,7 @@ export default function Ncf() {
           <h1 className="page-title">Números de comprobante fiscal</h1>
           <div className="page-sub">Secuencias activas · DGII</div>
         </div>
-        <button className="btn btn-accent">
-          <Icons.plus size={13} /> Nueva secuencia
-        </button>
+
       </div>
 
       <div className="ncf-grid">
