@@ -487,7 +487,8 @@ html, body {
 .btn.btn-blue:hover { background: #1d4ed8; border-color: #1d4ed8; }
 .btn.btn-green { background: #16a34a; border-color: #16a34a; }
 .btn.btn-green:hover { background: #15803d; border-color: #15803d; }
-.modal-pad { padding: 24px 28px; flex: 1; overflow-y: auto; overflow-x: hidden; }
+.modal-pad { padding: 24px 28px; flex: 1; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
+.modal-pad::-webkit-scrollbar { display: none; }
 .modal-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; }
 .modal-title { font-size: 22px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
 .modal-sub { font-family: 'Geist Mono', monospace; font-size: 11px; color: var(--muted); margin-top: 4px; }

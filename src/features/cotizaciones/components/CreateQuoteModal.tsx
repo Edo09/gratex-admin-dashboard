@@ -294,34 +294,8 @@ export function CreateQuoteModal({
                 selected={selectedCliente}
                 onSelect={setSelectedCliente}
                 onClear={() => setSelectedCliente(null)}
+                total={totalAmount}
               />
-
-              <div className="field-row" style={{ marginTop: 14 }}>
-                <div className="field">
-                  <label>Fecha</label>
-                  <input
-                    type="date"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                  />
-                </div>
-                <div className="field">
-                  <label>Total estimado</label>
-                  <div
-                    className="mono"
-                    style={{
-                      padding: "9px 12px",
-                      border: "1px solid var(--line)",
-                      borderRadius: 6,
-                      background: "var(--bg)",
-                      fontSize: 16,
-                      fontWeight: 600,
-                    }}
-                  >
-                    {fmt.money(totalAmount)}
-                  </div>
-                </div>
-              </div>
 
               <ItemsSection
                 itemForm={itemForm}
@@ -381,9 +355,10 @@ interface ClientePickerProps {
   selected: Cliente | null;
   onSelect: (cliente: Cliente) => void;
   onClear: () => void;
+  total?: number;
 }
 
-function ClientePicker({ selected, onSelect, onClear }: ClientePickerProps) {
+function ClientePicker({ selected, onSelect, onClear, total }: ClientePickerProps) {
   const [query, setQuery] = useState("");
   const debounced = useDebounce(query, 350);
   const { data, isLoading, error } = useClientesQuery({
@@ -396,30 +371,59 @@ function ClientePicker({ selected, onSelect, onClear }: ClientePickerProps) {
     return (
       <div className="field">
         <label>Cliente</label>
-        <div
-          style={{
-            border: "1px solid #bcd9c5",
-            background: "#eaf5ed",
-            borderRadius: 6,
-            padding: "12px 14px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            gap: 12,
-          }}
-        >
-          <div>
-            <div style={{ fontWeight: 600, fontSize: 15 }}>{getClientDisplayName(selected)}</div>
-            <div className="mono" style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>
-              {selected.company_name ?? ""}
+        <div style={{ display: "flex", gap: 10, alignItems: "stretch" }}>
+          <div
+            style={{
+              flex: 1,
+              border: "1px solid #bcd9c5",
+              background: "#eaf5ed",
+              borderRadius: 6,
+              padding: "12px 14px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              gap: 12,
+            }}
+          >
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 15 }}>{getClientDisplayName(selected)}</div>
+              <div className="mono" style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>
+                {selected.company_name ?? ""}
+              </div>
+              <div className="mono" style={{ fontSize: 11, color: "var(--muted)" }}>
+                {selected.email ?? ""} {getClientPhone(selected) ? `· ${getClientPhone(selected)}` : ""}
+              </div>
             </div>
-            <div className="mono" style={{ fontSize: 11, color: "var(--muted)" }}>
-              {selected.email ?? ""} {getClientPhone(selected) ? `· ${getClientPhone(selected)}` : ""}
-            </div>
+            <button type="button" className="btn-ghost" onClick={onClear}>
+              Cambiar
+            </button>
           </div>
-          <button type="button" className="btn-ghost" onClick={onClear}>
-            Cambiar
-          </button>
+          {total !== undefined && (
+            <div
+              style={{
+                flexShrink: 0,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                border: "1px solid var(--line)",
+                borderRadius: 6,
+                padding: "10px 16px",
+                background: "var(--bg)",
+                minWidth: 130,
+                textAlign: "center",
+              }}
+            >
+              <div
+                className="mono"
+                style={{ fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 4 }}
+              >
+                Total estimado
+              </div>
+              <div className="mono" style={{ fontSize: 18, fontWeight: 600 }}>
+                {fmt.money(total)}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
