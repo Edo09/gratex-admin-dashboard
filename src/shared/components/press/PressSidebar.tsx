@@ -22,12 +22,14 @@ function initialsOf(name?: string, username?: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-export function PressSidebar() {
+interface PressSidebarProps {
+  onClose?: () => void;
+}
+
+export function PressSidebar({ onClose }: PressSidebarProps) {
   const location = useLocation();
   const { user } = useAuth();
 
-  // Badge counts come from cheap queries already used elsewhere on the dashboard;
-  // they share React Query's cache so this is essentially free.
   const { data: clientesCount } = useDashboardClientCount();
   const { data: cotizacionesCount } = useDashboardCotizacionCount();
   const { data: facturasResult } = useFacturasQuery({ page: 1, pageSize: 1 });
@@ -47,19 +49,26 @@ export function PressSidebar() {
 
   return (
     <aside className="sidebar">
-      <Link to="/" className="brand">
-        <img
-          className="brand-logo"
-          src="/admin/images/logo/logo-gratex-gray.svg"
-          alt="Gratex"
-        />
-      </Link>
+      <div className="sidebar-header">
+        <Link to="/" className="brand" onClick={onClose}>
+          <img
+            className="brand-logo"
+            src="/admin/images/logo/logo-gratex-gray.svg"
+            alt="Gratex"
+          />
+        </Link>
+        <button className="sidebar-close" onClick={onClose} aria-label="Cerrar menú">
+          <Icons.close size={16} />
+        </button>
+      </div>
+
       <div className="nav-h">Menú</div>
       {items.map((it) => (
         <Link
           key={it.to}
           to={it.to}
           className={"nav-item" + (isActive(it.to) ? " active" : "")}
+          onClick={onClose}
         >
           <span className="nav-icon">{it.icon}</span>
           <span>{it.label}</span>
@@ -72,6 +81,7 @@ export function PressSidebar() {
           target="_blank"
           rel="noreferrer"
           className="sidebar-cta"
+          onClick={onClose}
         >
           <Icons.external size={13} />
           <span>Ver sitio</span>

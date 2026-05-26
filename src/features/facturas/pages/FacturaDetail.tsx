@@ -84,7 +84,7 @@ export default function FacturaDetail() {
           <h1 className="page-title">{factura.client_name ?? factura.client ?? "—"}</h1>
           <div className="page-sub">NCF {ncfCode}</div>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button className="btn-ghost" onClick={() => window.print()}>
             <Icons.print size={13} /> Imprimir
           </button>

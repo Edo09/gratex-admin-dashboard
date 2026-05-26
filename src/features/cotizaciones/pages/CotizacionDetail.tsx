@@ -86,7 +86,7 @@ export default function CotizacionDetail() {
             {cotizacion.company_name ?? ""} · cotización emitida {dateLabel}
           </div>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button className="btn-ghost" onClick={() => setEditOpen(true)}>
             <Icons.edit size={13} /> Editar
           </button>

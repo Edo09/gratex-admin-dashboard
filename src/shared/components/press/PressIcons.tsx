@@ -36,6 +36,7 @@ export const Icons: Record<string, IconComponent> = {
   chevron: (p) => <Icon {...p} d="m6 9 6 6 6-6" />,
   chevronRight: (p) => <Icon {...p} d="m9 6 6 6-6 6" />,
   chevronLeft: (p) => <Icon {...p} d="m15 6-6 6 6 6" />,
+  menu: (p) => <Icon {...p} d="M4 6h16M4 12h16M4 18h16" />,
   arrowUp: (p) => <Icon {...p} d="M7 17 17 7M7 7h10v10" />,
   arrowDown: (p) => <Icon {...p} d="M17 7 7 17M17 17H7V7" />,
   external: (p) => (

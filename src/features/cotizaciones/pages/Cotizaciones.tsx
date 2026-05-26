@@ -65,7 +65,7 @@ export default function Cotizaciones() {
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
+      <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
         <div className="search" style={{ maxWidth: "none", flex: 1 }}>
           <span className="search-icon">
             <Icons.search size={14} />

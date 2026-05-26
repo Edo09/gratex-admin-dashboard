@@ -554,8 +554,8 @@ function ItemsSection({
           Items de la cotización
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 120px 90px auto", gap: 10, alignItems: "end" }}>
-          <div className="field" style={{ margin: 0 }}>
+        <div className="item-add-form">
+          <div className="field item-desc" style={{ margin: 0 }}>
             <label>Descripción</label>
             <textarea
               rows={2}
@@ -585,7 +585,7 @@ function ItemsSection({
               onChange={(e) => onItemFormChange({ ...itemForm, quantity: e.target.value })}
             />
           </div>
-          <button type="button" className="btn btn-accent" onClick={onAddItem} style={{ height: 36 }}>
+          <button type="button" className="btn btn-accent item-add-btn" onClick={onAddItem} style={{ height: 36 }}>
             Agregar
           </button>
         </div>
@@ -597,7 +597,8 @@ function ItemsSection({
             No hay items agregados
           </div>
         ) : (
-          <table className="ds-table" style={{ margin: 0 }}>
+          <div className="items-table-wrap">
+          <table className="ds-table" style={{ margin: 0, minWidth: 540 }}>
             <thead>
               <tr>
                 <th style={{ width: 40, paddingLeft: 16 }}>#</th>
@@ -714,6 +715,7 @@ function ItemsSection({
               })}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </>
