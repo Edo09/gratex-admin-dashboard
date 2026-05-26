@@ -13,16 +13,35 @@ import type { Cotizacion } from "../types";
 
 type ViewMode = "cards" | "table";
 
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
+
 export default function Cotizaciones() {
   const navigate = useNavigate();
   const [view, setView] = useState<ViewMode>("cards");
   const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [createOpen, setCreateOpen] = useState(false);
   const [toast, setToast] = useState("");
 
   const debouncedQuery = useDebounce(query, 400);
-  const { data } = useCotizacionesQuery({ query: debouncedQuery, page: 1, pageSize: 50 });
+  const { data, isFetching } = useCotizacionesQuery({ query: debouncedQuery, page, pageSize });
   const list = data?.items ?? [];
+  const pagination = data?.pagination;
+  const total = pagination?.total ?? list.length;
+  const totalPages = pagination?.totalPages ?? Math.max(1, Math.ceil(total / pageSize));
+  const canPrev = page > 1;
+  const canNext = page < totalPages;
+
+  const handleQueryChange = (q: string) => {
+    setQuery(q);
+    setPage(1);
+  };
+
+  const handlePageSizeChange = (n: number) => {
+    setPageSize(n);
+    setPage(1);
+  };
 
   const open = (c: Cotizacion) => navigate(`/cotizaciones/${c.id}`);
 
@@ -33,7 +52,7 @@ export default function Cotizaciones() {
       <div className="page-head">
         <div>
           <h1 className="page-title">Cotizaciones</h1>
-          <div className="page-sub">{list.length} registros · ord. fecha desc.</div>
+          <div className="page-sub">{total} registros · ord. fecha desc.</div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <div className="seg">
@@ -53,24 +72,59 @@ export default function Cotizaciones() {
           </span>
           <input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => handleQueryChange(e.target.value)}
             placeholder="Buscar por fecha, código, cliente o descripción…"
           />
         </div>
-        <button className="btn-ghost">
-          <Icons.filter size={13} /> Filtrar
-        </button>
-        <button className="btn-ghost">
+        <select
+          value={pageSize}
+          onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+          style={{
+            border: "1px solid var(--line)",
+            borderRadius: 6,
+            padding: "0 10px",
+            fontSize: 12,
+            fontFamily: "Geist Mono, monospace",
+            background: "white",
+            color: "var(--ink)",
+            cursor: "pointer",
+            minWidth: 110,
+          }}
+        >
+          {PAGE_SIZE_OPTIONS.map((n) => (
+            <option key={n} value={n}>{n} / página</option>
+          ))}
+        </select>
+
+        <button hidden className="btn-ghost">
           <Icons.download size={13} /> Exportar
         </button>
       </div>
 
       {view === "cards" ? (
-        <div className="card-grid">
-          {list.map((c) => (
-            <CotizacionCard key={c.id} cotizacion={c} onOpen={() => open(c)} />
-          ))}
-        </div>
+        <>
+          <div className="card-grid">
+            {list.map((c) => (
+              <CotizacionCard key={c.id} cotizacion={c} onOpen={() => open(c)} />
+            ))}
+            {list.length === 0 && (
+              <div style={{ padding: 32, color: "var(--muted)", gridColumn: "1/-1" }}>
+                Sin cotizaciones
+              </div>
+            )}
+          </div>
+          <Pager
+            page={page}
+            pageSize={pageSize}
+            totalPages={totalPages}
+            total={total}
+            canPrev={canPrev}
+            canNext={canNext}
+            isFetching={isFetching}
+            onPrev={() => setPage((p) => Math.max(1, p - 1))}
+            onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
+          />
+        </>
       ) : (
         <div className="panel" style={{ padding: 0 }}>
           <table className="ds-table">
@@ -104,8 +158,26 @@ export default function Cotizaciones() {
                   </td>
                 </tr>
               ))}
+              {list.length === 0 && (
+                <tr>
+                  <td colSpan={5} style={{ textAlign: "center", color: "var(--muted)", padding: 32 }}>
+                    Sin cotizaciones
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
+          <PagerRow
+            page={page}
+            pageSize={pageSize}
+            totalPages={totalPages}
+            total={total}
+            canPrev={canPrev}
+            canNext={canNext}
+            isFetching={isFetching}
+            onPrev={() => setPage((p) => Math.max(1, p - 1))}
+            onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
+          />
         </div>
       )}
 
@@ -124,6 +196,85 @@ export default function Cotizaciones() {
           {toast}
         </div>
       )}
+    </div>
+  );
+}
+
+interface PagerProps {
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  total: number;
+  canPrev: boolean;
+  canNext: boolean;
+  isFetching: boolean;
+  onPrev: () => void;
+  onNext: () => void;
+}
+
+function PagerRow({ page, pageSize, totalPages, total, canPrev, canNext, isFetching, onPrev, onNext }: PagerProps) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "12px 20px",
+        borderTop: "1px solid var(--line)",
+        gap: 12,
+      }}
+    >
+      <div className="mono" style={{ fontSize: 11, color: "var(--muted)", letterSpacing: "0.08em" }}>
+        {total > 0
+          ? `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, total)} de ${total}`
+          : "0 de 0"}
+        {isFetching && " · cargando…"}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <button className="btn-ghost" disabled={!canPrev} onClick={onPrev} style={{ opacity: canPrev ? 1 : 0.4 }}>
+          <Icons.chevronLeft size={13} /> Anterior
+        </button>
+        <span className="mono" style={{ fontSize: 11, color: "var(--muted)", letterSpacing: "0.08em" }}>
+          Página {page} de {totalPages}
+        </span>
+        <button className="btn-ghost" disabled={!canNext} onClick={onNext} style={{ opacity: canNext ? 1 : 0.4 }}>
+          Siguiente <Icons.chevronRight size={13} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Pager(props: PagerProps) {
+  const { page, pageSize, totalPages, total, canPrev, canNext, isFetching, onPrev, onNext } = props;
+  if (totalPages <= 1) return null;
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "12px 0",
+        gap: 12,
+      }}
+    >
+      <div className="mono" style={{ fontSize: 11, color: "var(--muted)", letterSpacing: "0.08em" }}>
+        {total > 0
+          ? `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, total)} de ${total}`
+          : "0 de 0"}
+        {isFetching && " · cargando…"}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <button className="btn-ghost" disabled={!canPrev} onClick={onPrev} style={{ opacity: canPrev ? 1 : 0.4 }}>
+          <Icons.chevronLeft size={13} /> Anterior
+        </button>
+        <span className="mono" style={{ fontSize: 11, color: "var(--muted)", letterSpacing: "0.08em" }}>
+          Página {page} de {totalPages}
+        </span>
+        <button className="btn-ghost" disabled={!canNext} onClick={onNext} style={{ opacity: canNext ? 1 : 0.4 }}>
+          Siguiente <Icons.chevronRight size={13} />
+        </button>
+      </div>
     </div>
   );
 }
