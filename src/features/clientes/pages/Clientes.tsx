@@ -4,18 +4,39 @@ import { PageMarks } from "@/shared/components/press/PageMarks";
 import { Icons } from "@/shared/components/press/PressIcons";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import { useClientesQuery } from "../hooks/useClientesQuery";
-import { getClientDisplayName, getClientPhone } from "../types";
+import { getClientDisplayName, getClientPhone, type Cliente } from "../types";
 import { CreateClienteModal } from "../components/CreateClienteModal";
+import { EditClienteModal } from "../components/EditClienteModal";
+import { DeleteConfirmModal } from "../components/DeleteConfirmModal";
+import { useDeleteCliente } from "../hooks/useDeleteCliente";
 
 export default function Clientes() {
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query, 400);
   const [createOpen, setCreateOpen] = useState(false);
+  const [editCliente, setEditCliente] = useState<Cliente | null>(null);
+  const [deleteCliente, setDeleteCliente] = useState<Cliente | null>(null);
+  const [deleteError, setDeleteError] = useState("");
   const [toast, setToast] = useState("");
+
+  const deleteMutation = useDeleteCliente();
 
   const { data } = useClientesQuery({ query: debouncedQuery, page: 1, pageSize: 50 });
   const list = data?.items ?? [];
   const total = data?.pagination?.total ?? list.length;
+
+  const confirmDelete = async () => {
+    if (!deleteCliente) return;
+    setDeleteError("");
+    try {
+      const message = await deleteMutation.mutateAsync(deleteCliente.id);
+      setToast(message || "Cliente eliminado");
+      window.setTimeout(() => setToast(""), 2500);
+      setDeleteCliente(null);
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "No se pudo eliminar el cliente.");
+    }
+  };
 
   return (
     <div className="content">
@@ -46,7 +67,7 @@ export default function Clientes() {
 
       <div className="panel" style={{ padding: "4px 16px" }}>
         {list.map((c) => (
-          <div key={c.id} className="client">
+          <div key={c.id} className="client" onClick={() => setEditCliente(c)}>
             <div className="client-num">#{String(c.id).padStart(4, "0")}</div>
             <div>
               <div className="client-name">{getClientDisplayName(c)}</div>
@@ -58,8 +79,30 @@ export default function Clientes() {
                 {getClientPhone(c) ?? ""}
               </div>
             </div>
-            <div>
-              <Icons.chevronRight size={14} style={{ color: "var(--muted)" }} />
+            <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "flex-end" }}>
+              <button
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 4,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "var(--muted)",
+                  transition: "color 0.12s",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "var(--bad)")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "var(--muted)")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDeleteError("");
+                  setDeleteCliente(c);
+                }}
+                title="Eliminar cliente"
+              >
+                <Icons.trash size={14} />
+              </button>
             </div>
           </div>
         ))}
@@ -75,6 +118,25 @@ export default function Clientes() {
           setToast(msg || "Cliente creado");
           window.setTimeout(() => setToast(""), 2500);
         }}
+      />
+
+      <EditClienteModal
+        cliente={editCliente}
+        open={!!editCliente}
+        onClose={() => setEditCliente(null)}
+        onUpdated={(msg) => {
+          setToast(msg || "Cliente actualizado");
+          window.setTimeout(() => setToast(""), 2500);
+        }}
+      />
+
+      <DeleteConfirmModal
+        open={!!deleteCliente}
+        clienteName={deleteCliente ? (getClientDisplayName(deleteCliente)) : ""}
+        isDeleting={deleteMutation.isPending}
+        error={deleteError}
+        onClose={() => setDeleteCliente(null)}
+        onConfirm={confirmDelete}
       />
 
       {toast && (

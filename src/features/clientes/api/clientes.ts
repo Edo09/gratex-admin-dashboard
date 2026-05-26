@@ -10,8 +10,9 @@ export const clientesApi = {
 
   create: (data: CreateClienteInput) => apiClient.post<Cliente | string>("/clients", data),
 
-  update: (id: number, data: Partial<CreateClienteInput>) =>
-    apiClient.put<Cliente>(`/clients/${id}`, data),
+  update: (id: number, data: Omit<CreateClienteInput, "sent_mail">) =>
+    apiClient.put<string>("/clients", { id, ...data }),
 
-  remove: (id: number) => apiClient.delete<void>(`/clients/${id}`),
+  remove: (id: number) =>
+    apiClient.delete<string>("/clients", { body: JSON.stringify({ id }) }),
 };
