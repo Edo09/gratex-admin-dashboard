@@ -30,7 +30,6 @@ export default function Home() {
         </div>
         <div className="seg">
           <button className="active">Mes</button>
-          <button>Trimestre</button>
           <button>Año</button>
         </div>
       </div>
