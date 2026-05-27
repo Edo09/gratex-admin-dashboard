@@ -28,7 +28,7 @@ interface PressSidebarProps {
 
 export function PressSidebar({ onClose }: PressSidebarProps) {
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   const { data: clientesCount } = useDashboardClientCount();
   const { data: cotizacionesCount } = useDashboardCotizacionCount();
@@ -95,6 +95,22 @@ export function PressSidebar({ onClose }: PressSidebarProps) {
             <div className="user-role">{(user?.role ?? "Administrador").toUpperCase()}</div>
           </div>
         </div>
+        <button
+          type="button"
+          className="btn-ghost"
+          onClick={logout}
+          style={{
+            width: "100%",
+            justifyContent: "center",
+            fontSize: 11,
+            color: "var(--muted)",
+            padding: "6px 0",
+            marginTop: 6,
+            gap: 6,
+          }}
+        >
+          <Icons.logout size={13} /> Cerrar sesión
+        </button>
       </div>
     </aside>
   );

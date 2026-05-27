@@ -11,10 +11,6 @@ export function useFacturaPdf() {
     else console.error("PDF response is not valid base64", response);
   }, []);
 
-  /**
-   * Hits /facturas/preview with the in-progress draft and opens the returned
-   * PDF in a new tab.
-   */
   const previewDraft = useCallback(async (payload: PreviewFacturaPayload) => {
     const result = await facturasApi.preview(payload);
     const base64 = pickPdfBase64(result.data);

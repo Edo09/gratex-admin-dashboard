@@ -5,23 +5,36 @@ import { Icons } from "@/shared/components/press/PressIcons";
 import { fmt } from "@/shared/utils/press-fmt";
 import { formatDisplayDate } from "@/shared/utils/format";
 import { openPdfFromBase64, pickPdfBase64 } from "@/shared/lib/pdf";
+import { ECF_TYPES, TIPO_PAGO_LABELS, type TipoEcf, type TipoPago } from "../constants";
+import {
+  parseFacturaAmount,
+  getFacturaNcf,
+  getFacturaClientName,
+  getItemName,
+  getItemPrice,
+  getItemQty,
+  getItemIndicador,
+  calculateItbisFromResponse,
+} from "../utils";
 import { useFacturaByIdQuery } from "../hooks/useFacturasQuery";
+import { useFacturaStatusQuery } from "../hooks/useFacturaStatus";
 import { facturasApi } from "../api/facturas";
-import { parseFacturaAmount } from "@/features/dashboard/hooks/useDashboardData";
+import { StatusBadge } from "../components/StatusBadge";
+import type { FacturaItem } from "../types";
 
-interface Line {
+interface DisplayLine {
   qty: number;
   desc: string;
   unit: number;
+  indicador: number;
 }
-
-const ITBIS_RATE = 0.18;
 
 export default function FacturaDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const facturaId = id ? Number(id) : null;
   const { data: factura, isLoading } = useFacturaByIdQuery(facturaId);
+  const { data: statusData } = useFacturaStatusQuery(facturaId);
 
   if (isLoading) {
     return (
@@ -43,27 +56,33 @@ export default function FacturaDetail() {
     );
   }
 
-  const lines: Line[] = (factura.items ?? []).map((it) => ({
-    qty: Number(it.quantity ?? 1),
-    desc: it.description,
-    unit: typeof it.amount === "string" ? parseFloat(String(it.amount)) : Number(it.amount),
+  const rawItems: FacturaItem[] = factura.items ?? [];
+  const lines: DisplayLine[] = rawItems.map((it) => ({
+    qty: getItemQty(it),
+    desc: getItemName(it),
+    unit: getItemPrice(it),
+    indicador: getItemIndicador(it),
   }));
 
   if (lines.length === 0) {
     const total = parseFacturaAmount(factura);
-    lines.push({
-      qty: 1,
-      desc: factura.description ?? "Servicio",
-      unit: total,
-    });
+    lines.push({ qty: 1, desc: factura.description ?? "Servicio", unit: total, indicador: 1 });
   }
 
-  const subtotal = lines.reduce((s, it) => s + it.qty * it.unit, 0);
-  const itbis = subtotal * ITBIS_RATE;
-  const total = subtotal + itbis;
+  const breakdown = rawItems.length > 0
+    ? calculateItbisFromResponse(rawItems)
+    : (() => {
+        const subtotal = lines.reduce((s, it) => s + it.qty * it.unit, 0);
+        const itbis18 = subtotal * 0.18;
+        return { subtotal, itbis18, itbis16: 0, totalItbis: itbis18, montoExento: 0, montoTasaCero: 0, total: subtotal + itbis18 };
+      })();
 
-  const ncfCode = factura.NCF ?? factura.no_factura ?? `#${factura.id}`;
+  const ncfCode = getFacturaNcf(factura);
+  const clientName = getFacturaClientName(factura);
   const dateLabel = formatDisplayDate(factura.date);
+  const tipoEcf = factura.tipo_ecf as TipoEcf | undefined;
+  const tipoPago = factura.tipo_pago as TipoPago | undefined;
+  const estado = statusData?.estado_dgii ?? factura.estado_dgii;
 
   const downloadPdf = async () => {
     const response = await facturasApi.pdf(factura.id);
@@ -81,8 +100,31 @@ export default function FacturaDetail() {
           <button className="btn-ghost" onClick={() => navigate("/facturas")} style={{ marginBottom: 10 }}>
             ← Volver
           </button>
-          <h1 className="page-title">{factura.client_name ?? factura.client ?? "—"}</h1>
-          <div className="page-sub">NCF {ncfCode}</div>
+          <h1 className="page-title">{clientName}</h1>
+          <div className="page-sub" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <span>NCF {ncfCode}</span>
+            {tipoEcf && (
+              <span
+                className="mono"
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  background: "var(--c-accent, #3b82f6)",
+                  color: "#fff",
+                  padding: "2px 6px",
+                  borderRadius: 4,
+                }}
+              >
+                E{tipoEcf}
+              </span>
+            )}
+            {tipoEcf && ECF_TYPES[tipoEcf] && (
+              <span className="mono" style={{ fontSize: 11, color: "var(--muted)" }}>
+                {ECF_TYPES[tipoEcf].short}
+              </span>
+            )}
+            {estado && <StatusBadge estado={estado} />}
+          </div>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button className="btn-ghost" onClick={() => window.print()}>
@@ -97,13 +139,21 @@ export default function FacturaDetail() {
       <div className="doc">
         <div className="doc-head">
           <div>
-            <div className="doc-num">Factura · NCF {ncfCode}</div>
-            <div className="doc-h1">{factura.client_name ?? factura.client ?? "—"}</div>
+            <div className="doc-num">
+              Factura · NCF {ncfCode}
+              {tipoEcf && <span style={{ marginLeft: 8, opacity: 0.6 }}>E{tipoEcf}</span>}
+            </div>
+            <div className="doc-h1">{clientName}</div>
           </div>
           <div style={{ textAlign: "right" }}>
             <div className="mono" style={{ fontSize: 11, color: "var(--muted)" }}>
               FECHA {dateLabel}
             </div>
+            {tipoPago && (
+              <div className="mono" style={{ fontSize: 11, color: "var(--muted)" }}>
+                PAGO: {TIPO_PAGO_LABELS[tipoPago]}
+              </div>
+            )}
           </div>
         </div>
 
@@ -138,15 +188,35 @@ export default function FacturaDetail() {
         <div className="doc-totals">
           <div className="doc-totals-row">
             <span>Subtotal</span>
-            <span>{fmt.money(subtotal)}</span>
+            <span>{fmt.money(breakdown.subtotal)}</span>
           </div>
-          <div className="doc-totals-row">
-            <span>ITBIS 18%</span>
-            <span>{fmt.money(itbis)}</span>
-          </div>
+          {breakdown.itbis18 > 0 && (
+            <div className="doc-totals-row">
+              <span>ITBIS 18%</span>
+              <span>{fmt.money(breakdown.itbis18)}</span>
+            </div>
+          )}
+          {breakdown.itbis16 > 0 && (
+            <div className="doc-totals-row">
+              <span>ITBIS 16%</span>
+              <span>{fmt.money(breakdown.itbis16)}</span>
+            </div>
+          )}
+          {breakdown.montoExento > 0 && (
+            <div className="doc-totals-row">
+              <span>Exento</span>
+              <span>{fmt.money(breakdown.montoExento)}</span>
+            </div>
+          )}
+          {breakdown.montoTasaCero > 0 && (
+            <div className="doc-totals-row">
+              <span>Tasa cero</span>
+              <span>{fmt.money(breakdown.montoTasaCero)}</span>
+            </div>
+          )}
           <div className="doc-totals-row total">
             <span>TOTAL</span>
-            <span>{fmt.money(total)}</span>
+            <span>{fmt.money(breakdown.total)}</span>
           </div>
         </div>
       </div>

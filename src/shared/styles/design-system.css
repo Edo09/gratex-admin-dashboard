@@ -748,6 +748,7 @@ html, body {
 
 .anim-in { animation: ds-slideUp .22s both; }
 @keyframes ds-slideUp { from { transform: translateY(6px); } to { transform: translateY(0); } }
+@keyframes error-shake { 0%,100% { transform: translateX(0); } 20%,60% { transform: translateX(-4px); } 40%,80% { transform: translateX(4px); } }
 
 .main::-webkit-scrollbar { width: 8px; }
 .main::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
@@ -779,6 +780,14 @@ html, body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+  margin-top: 6px;
+}
+
+/* e-CF type selector grid */
+.ecf-type-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
   margin-top: 6px;
 }
 
@@ -941,8 +950,9 @@ html, body {
   .date-ncf-grid { grid-template-columns: 1fr 1fr; }
   .date-ncf-grid > *:last-child { grid-column: 1 / -1; }
 
-  /* Flow chooser: 1 col */
+  /* Flow chooser + e-CF grid: 1 col */
   .flow-grid { grid-template-columns: 1fr; }
+  .ecf-type-grid { grid-template-columns: 1fr; }
 
   /* Modals: slide up from bottom as bottom sheet */
   .modal-bg { padding: 0; align-items: flex-end; }

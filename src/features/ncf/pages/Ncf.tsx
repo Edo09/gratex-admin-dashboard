@@ -4,7 +4,7 @@ import { fmt } from "@/shared/utils/press-fmt";
 import { formatDisplayDate } from "@/shared/utils/format";
 import { useNcfSequenceQuery } from "../hooks/useNcf";
 import { useFacturasQuery } from "@/features/facturas/hooks/useFacturasQuery";
-import { parseFacturaAmount } from "@/features/dashboard/hooks/useDashboardData";
+import { parseFacturaAmount, getFacturaNcf, getFacturaClientName } from "@/features/facturas/utils";
 
 const NAME_BY_TYPE: Record<string, string> = {
   B01: "Crédito Fiscal",
@@ -93,9 +93,9 @@ export default function Ncf() {
             {recentFacturas.map((f) => (
               <tr key={f.id}>
                 <td className="mono" style={{ fontSize: 11 }}>
-                  {f.no_factura ?? f.NCF ?? `#${f.id}`}
+                  {getFacturaNcf(f)}
                 </td>
-                <td style={{ fontWeight: 600 }}>{f.client_name ?? f.client ?? "—"}</td>
+                <td style={{ fontWeight: 600 }}>{getFacturaClientName(f)}</td>
                 <td className="mono" style={{ fontSize: 11 }}>
                   {formatDisplayDate(f.date)}
                 </td>

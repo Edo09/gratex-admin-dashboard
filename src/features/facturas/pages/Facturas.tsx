@@ -6,9 +6,11 @@ import { Icons } from "@/shared/components/press/PressIcons";
 import { fmt } from "@/shared/utils/press-fmt";
 import { formatDisplayDate } from "@/shared/utils/format";
 import { useDebounce } from "@/shared/hooks/useDebounce";
-import { parseFacturaAmount } from "@/features/dashboard/hooks/useDashboardData";
+import { ECF_TYPES, type TipoEcf } from "../constants";
+import { parseFacturaAmount, getFacturaNcf, getFacturaClientName } from "../utils";
 import { useFacturasQuery } from "../hooks/useFacturasQuery";
 import { CreateFacturaModal } from "../components/CreateFacturaModal";
+import { StatusBadge } from "../components/StatusBadge";
 import type { Factura } from "../types";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
@@ -96,33 +98,58 @@ export default function Facturas() {
             <tr>
               <th style={{ paddingLeft: 20 }}>NCF</th>
               <th>Cliente</th>
+              <th style={{ width: 90 }}>Tipo</th>
               <th>Fecha</th>
+              <th style={{ width: 110 }}>Estado</th>
               <th style={{ textAlign: "right", paddingRight: 20 }}>Total</th>
             </tr>
           </thead>
           <tbody>
-            {list.map((f) => (
-              <tr key={f.id} onClick={() => open(f)}>
-                <td style={{ paddingLeft: 20 }}>
-                  <span className="mono" style={{ fontSize: 11 }}>
-                    {f.no_factura ?? f.NCF ?? `#${f.id}`}
-                  </span>
-                </td>
-                <td style={{ fontWeight: 600 }}>{f.client_name ?? f.client ?? "—"}</td>
-                <td className="mono" style={{ fontSize: 11 }}>
-                  {formatDisplayDate(f.date)}
-                </td>
-                <td
-                  className="mono"
-                  style={{ textAlign: "right", paddingRight: 20, fontWeight: 600, fontSize: 14 }}
-                >
-                  {fmt.money(parseFacturaAmount(f))}
-                </td>
-              </tr>
-            ))}
+            {list.map((f) => {
+              const tipoEcf = f.tipo_ecf as TipoEcf | undefined;
+              return (
+                <tr key={f.id} onClick={() => open(f)}>
+                  <td style={{ paddingLeft: 20 }}>
+                    <span className="mono" style={{ fontSize: 11 }}>
+                      {getFacturaNcf(f)}
+                    </span>
+                  </td>
+                  <td style={{ fontWeight: 600 }}>{getFacturaClientName(f)}</td>
+                  <td>
+                    {tipoEcf && (
+                      <span
+                        className="mono"
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 600,
+                          background: "var(--bg)",
+                          padding: "2px 5px",
+                          borderRadius: 3,
+                          letterSpacing: "0.03em",
+                        }}
+                      >
+                        E{tipoEcf}
+                      </span>
+                    )}
+                  </td>
+                  <td className="mono" style={{ fontSize: 11 }}>
+                    {formatDisplayDate(f.date)}
+                  </td>
+                  <td>
+                    <StatusBadge estado={f.estado_dgii} />
+                  </td>
+                  <td
+                    className="mono"
+                    style={{ textAlign: "right", paddingRight: 20, fontWeight: 600, fontSize: 14 }}
+                  >
+                    {fmt.money(parseFacturaAmount(f))}
+                  </td>
+                </tr>
+              );
+            })}
             {list.length === 0 && (
               <tr>
-                <td colSpan={4} style={{ textAlign: "center", color: "var(--muted)", padding: 32 }}>
+                <td colSpan={6} style={{ textAlign: "center", color: "var(--muted)", padding: 32 }}>
                   {isFetching ? "Cargando…" : "Sin facturas"}
                 </td>
               </tr>

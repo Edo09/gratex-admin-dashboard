@@ -4,6 +4,7 @@ import { cotizacionesApi } from "@/features/cotizaciones/api/cotizaciones";
 import { clientesApi } from "@/features/clientes/api/clientes";
 import { unwrapList } from "@/shared/api/envelope";
 import type { Factura } from "@/features/facturas/types";
+import { parseFacturaAmount } from "@/features/facturas/utils";
 import type { Cotizacion } from "@/features/cotizaciones/types";
 
 /**
@@ -88,12 +89,6 @@ export function useRecentCotizacionesQuery(limit = 6) {
   });
 }
 
-/** Safely parse a factura amount (handles string or number form). */
-export function parseFacturaAmount(item: Factura): number {
-  const raw = (item.amount ?? item.total) ?? 0;
-  const val = typeof raw === "string" ? parseFloat(raw) : raw;
-  return isNaN(val) ? 0 : val;
-}
 
 /** Safely parse a cotización total (handles string or number form). */
 export function parseCotizacionAmount(item: Cotizacion): number {

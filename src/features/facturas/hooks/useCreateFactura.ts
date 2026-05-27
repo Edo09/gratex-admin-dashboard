@@ -8,8 +8,6 @@ export function useCreateFactura() {
   return useMutation({
     mutationFn: async (data: CreateFacturaPayload) => {
       const response = await facturasApi.create(data);
-      // Some backends return 200 OK with status:false on validation errors —
-      // treat that as a thrown error so the modal can surface it.
       if (response?.success === false || response?.status === false) {
         throw new Error(extractErrorMessage(response) ?? "No se pudo guardar la factura.");
       }
