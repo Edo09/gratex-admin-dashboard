@@ -9,6 +9,7 @@ import { useDebounce } from "@/shared/hooks/useDebounce";
 import { useCotizacionesQuery } from "../hooks/useCotizacionesQuery";
 import { parseCotizacionAmount } from "@/features/dashboard/hooks/useDashboardData";
 import { CreateQuoteModal } from "../components/CreateQuoteModal";
+import { DuplicateQuoteModal } from "../components/DuplicateQuoteModal";
 import type { Cotizacion } from "../types";
 
 type ViewMode = "cards" | "table";
@@ -22,6 +23,7 @@ export default function Cotizaciones() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [createOpen, setCreateOpen] = useState(false);
+  const [duplicateOpen, setDuplicateOpen] = useState(false);
   const [toast, setToast] = useState("");
 
   const debouncedQuery = useDebounce(query, 400);
@@ -55,10 +57,14 @@ export default function Cotizaciones() {
           <div className="page-sub">{total} registros · ord. fecha desc.</div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <div className="seg">
-            <button className={view === "cards" ? "active" : ""} onClick={() => setView("cards")}>Cards</button>
-            <button className={view === "table" ? "active" : ""} onClick={() => setView("table")}>Tabla</button>
-          </div>
+          <button
+            type="button"
+            className="btn btn-green"
+            onClick={() => setDuplicateOpen(true)}
+            title="Duplicar una cotización existente con la fecha de hoy"
+          >
+            <Icons.copy size={14} sw={2.5} /> Duplicar cotización
+          </button>
           <button className="btn btn-accent" onClick={() => setCreateOpen(true)}>
             <Icons.plus size={13} /> Crear cotización
           </button>
@@ -95,6 +101,11 @@ export default function Cotizaciones() {
             <option key={n} value={n}>{n} / página</option>
           ))}
         </select>
+
+        <div className="seg">
+          <button className={view === "cards" ? "active" : ""} onClick={() => setView("cards")}>Cards</button>
+          <button className={view === "table" ? "active" : ""} onClick={() => setView("table")}>Tabla</button>
+        </div>
 
         <button hidden className="btn-ghost">
           <Icons.download size={13} /> Exportar
@@ -184,6 +195,15 @@ export default function Cotizaciones() {
       <CreateQuoteModal
         open={createOpen}
         onClose={() => setCreateOpen(false)}
+        onCreated={(msg) => {
+          setToast(msg);
+          window.setTimeout(() => setToast(""), 2500);
+        }}
+      />
+
+      <DuplicateQuoteModal
+        open={duplicateOpen}
+        onClose={() => setDuplicateOpen(false)}
         onCreated={(msg) => {
           setToast(msg);
           window.setTimeout(() => setToast(""), 2500);

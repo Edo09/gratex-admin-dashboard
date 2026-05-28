@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { facturasApi } from "../api/facturas";
+import { facturasApi, type FacturasStats } from "../api/facturas";
 import { unwrapList, unwrapOne } from "@/shared/api/envelope";
 import type { Factura } from "../types";
 
@@ -17,6 +17,19 @@ export function useFacturasQuery({ query = "", page, pageSize }: UseFacturasQuer
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000,
     placeholderData: (previous) => previous,
+  });
+}
+
+export function useFacturasStatsQuery() {
+  return useQuery({
+    queryKey: ["facturas", "stats"],
+    queryFn: async (): Promise<FacturasStats | null> => {
+      const response = await facturasApi.stats();
+      if (!response.status || !response.data) return null;
+      return response.data;
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 }
 

@@ -4,7 +4,7 @@ import { PageMarks } from "@/shared/components/press/PageMarks";
 import { Icons } from "@/shared/components/press/PressIcons";
 import { fmt } from "@/shared/utils/press-fmt";
 import { formatDisplayDate } from "@/shared/utils/format";
-import { openPdfFromBase64, pickPdfBase64 } from "@/shared/lib/pdf";
+import { downloadPdfFromBase64, pickPdfBase64 } from "@/shared/lib/pdf";
 import { ECF_TYPES, TIPO_PAGO_LABELS, type TipoEcf, type TipoPago } from "../constants";
 import {
   parseFacturaAmount,
@@ -78,7 +78,14 @@ export default function FacturaDetail() {
       })();
 
   const ncfCode = getFacturaNcf(factura);
+  const isEcf = !!factura.tipo_ecf || ncfCode.startsWith("E");
+  const ncfLabel = isEcf ? "e-NCF" : "NCF";
   const clientName = getFacturaClientName(factura);
+  const companyName = factura.company_name?.trim() || null;
+  const headerTitle = clientName !== "—" ? clientName : (companyName ?? "—");
+  const headerSubName =
+    companyName && companyName !== headerTitle ? companyName : null;
+  const docHeading = companyName ?? clientName;
   const dateLabel = formatDisplayDate(factura.date);
   const tipoEcf = factura.tipo_ecf as TipoEcf | undefined;
   const tipoPago = factura.tipo_pago as TipoPago | undefined;
@@ -87,7 +94,7 @@ export default function FacturaDetail() {
   const downloadPdf = async () => {
     const response = await facturasApi.pdf(factura.id);
     const base64 = pickPdfBase64(response);
-    if (base64) openPdfFromBase64(base64);
+    if (base64) downloadPdfFromBase64(base64, `factura-${ncfCode}`);
   };
 
   return (
@@ -100,9 +107,17 @@ export default function FacturaDetail() {
           <button className="btn-ghost" onClick={() => navigate("/facturas")} style={{ marginBottom: 10 }}>
             ← Volver
           </button>
-          <h1 className="page-title">{clientName}</h1>
+          <h1 className="page-title">{headerTitle}</h1>
+          {headerSubName && (
+            <div
+              className="mono"
+              style={{ fontSize: 12, color: "var(--muted)", marginTop: 2, marginBottom: 6 }}
+            >
+              {headerSubName}
+            </div>
+          )}
           <div className="page-sub" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-            <span>NCF {ncfCode}</span>
+            <span>{ncfLabel} {ncfCode}</span>
             {tipoEcf && (
               <span
                 className="mono"
@@ -127,11 +142,8 @@ export default function FacturaDetail() {
           </div>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <button className="btn-ghost" onClick={() => window.print()}>
-            <Icons.print size={13} /> Imprimir
-          </button>
           <button className="btn" onClick={downloadPdf}>
-            Enviar al cliente
+            <Icons.download size={13} /> Descargar
           </button>
         </div>
       </div>
@@ -140,10 +152,15 @@ export default function FacturaDetail() {
         <div className="doc-head">
           <div>
             <div className="doc-num">
-              Factura · NCF {ncfCode}
+              Factura · {ncfLabel} {ncfCode}
               {tipoEcf && <span style={{ marginLeft: 8, opacity: 0.6 }}>E{tipoEcf}</span>}
             </div>
-            <div className="doc-h1">{clientName}</div>
+            <div className="doc-h1">{docHeading}</div>
+            {companyName && clientName !== "—" && companyName !== clientName && (
+              <div className="mono" style={{ fontSize: 12, color: "var(--muted)", marginTop: 4 }}>
+                {clientName}
+              </div>
+            )}
           </div>
           <div style={{ textAlign: "right" }}>
             <div className="mono" style={{ fontSize: 11, color: "var(--muted)" }}>

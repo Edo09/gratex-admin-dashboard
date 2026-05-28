@@ -31,6 +31,53 @@ export interface EstadoResponse {
   consulta?: DgiiConsulta;
 }
 
+export interface StatsResumen {
+  total_ecf: number;
+  monto_total: number;
+  tipos_distintos: number;
+  primer_ecf?: string;
+  ultimo_ecf?: string;
+}
+
+export interface StatsByTipo {
+  tipo_ecf: string;
+  nombre: string;
+  total: number;
+  monto_total: number;
+  aceptados: number;
+  rfce: number;
+  rechazados: number;
+  enviados: number;
+  ultimo_emitido?: string;
+}
+
+export interface StatsByEstado {
+  estado: string;
+  total: number;
+  monto_total: number;
+}
+
+export interface StatsByMes {
+  mes: string;
+  total: number;
+  monto_total: number;
+}
+
+export interface StatsSecuencia {
+  type: string;
+  nombre: string;
+  secuencia_actual: number;
+  total_emitidos: number;
+}
+
+export interface FacturasStats {
+  resumen: StatsResumen;
+  por_tipo: StatsByTipo[];
+  por_estado: StatsByEstado[];
+  por_mes: StatsByMes[];
+  secuencias: StatsSecuencia[];
+}
+
 function apiKeyHeaders(): RequestOptions {
   return {
     skipAuth: true,
@@ -65,6 +112,8 @@ export const facturasApi = {
 
   estado: (id: number) =>
     apiClient.get<EstadoResponse>(`/facturas/${id}/estado`, apiKeyHeaders()),
+
+  stats: () => apiClient.get<FacturasStats>("/facturas/stats", apiKeyHeaders()),
 
   xml: (id: number, rfce = false) => {
     const qs = buildQueryString({ format: "base64", type: rfce ? "rfce" : undefined });

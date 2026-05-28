@@ -15,7 +15,7 @@ const CotizacionDetail = lazy(() => import("@/features/cotizaciones/pages/Cotiza
 const Facturas = lazy(() => import("@/features/facturas/pages/Facturas"));
 const FacturaDetail = lazy(() => import("@/features/facturas/pages/FacturaDetail"));
 const Clientes = lazy(() => import("@/features/clientes/pages/Clientes"));
-const Ncf = lazy(() => import("@/features/ncf/pages/Ncf"));
+const Comprobantes = lazy(() => import("@/features/ncf/pages/Ncf"));
 const Configuracion = lazy(() => import("@/features/configuracion/pages/Configuracion"));
 
 export function AppRoutes() {
@@ -41,7 +41,8 @@ export function AppRoutes() {
           <Route path="/facturas" element={<Facturas />} />
           <Route path="/facturas/:id" element={<FacturaDetail />} />
           <Route path="/clientes" element={<Clientes />} />
-          <Route path="/ncf" element={<Ncf />} />
+          <Route path="/comprobantes" element={<Comprobantes />} />
+          <Route path="/ncf" element={<Comprobantes />} />
           <Route path="/configuracion" element={<Configuracion />} />
         </Route>
 

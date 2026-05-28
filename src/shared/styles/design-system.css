@@ -377,6 +377,10 @@ html, body {
 .ds-table tbody tr { cursor: pointer; transition: background .1s; }
 .ds-table tbody tr:hover { background: #f5f3ed; }
 
+.search-row { background: transparent; transition: background .1s; }
+.search-row:hover { background: #f5f3ed; }
+.search-row:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+
 /* status pills */
 .pill {
   display: inline-flex;
@@ -658,12 +662,19 @@ html, body {
 .client-mono { font-family: 'Geist Mono', monospace; font-size: 11px; }
 
 /* NCF */
-.ncf-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.ncf-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+@media (max-width: 900px) {
+  .ncf-grid { grid-template-columns: repeat(2, 1fr); }
+}
 .ncf-card {
   background: #fff;
   border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 18px 20px;
+  border-radius: 8px;
+  padding: 12px 14px;
   position: relative;
 }
 .ncf-card .strip {
@@ -671,28 +682,28 @@ html, body {
   left: 0;
   top: 0;
   bottom: 0;
-  width: 5px;
-  border-radius: 10px 0 0 10px;
+  width: 4px;
+  border-radius: 8px 0 0 8px;
 }
 .ncf-type {
   font-family: 'Geist Mono', monospace;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--ink);
   background: var(--bg);
-  padding: 3px 8px;
+  padding: 2px 6px;
   border-radius: 4px;
   display: inline-block;
 }
-.ncf-name { font-size: 16px; font-weight: 600; margin-top: 10px; }
-.ncf-big { font-family: 'Geist Mono', monospace; font-size: 30px; font-weight: 600; line-height: 1; }
-.ncf-big small { font-size: 14px; color: var(--muted); font-weight: 400; }
-.ncf-bar { height: 6px; background: var(--line-2); border-radius: 3px; margin-top: 12px; overflow: hidden; }
+.ncf-name { font-size: 13px; font-weight: 600; margin-top: 6px; line-height: 1.25; }
+.ncf-big { font-family: 'Geist Mono', monospace; font-size: 22px; font-weight: 600; line-height: 1; }
+.ncf-big small { font-size: 12px; color: var(--muted); font-weight: 400; }
+.ncf-bar { height: 5px; background: var(--line-2); border-radius: 3px; margin-top: 10px; overflow: hidden; }
 .ncf-bar-fill { height: 100%; border-radius: 3px; }
 .ncf-meta {
   display: flex;
   justify-content: space-between;
-  margin-top: 8px;
+  margin-top: 6px;
   font-family: 'Geist Mono', monospace;
   font-size: 10px;
   color: var(--muted);
@@ -786,9 +797,12 @@ html, body {
 /* e-CF type selector grid */
 .ecf-type-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
   margin-top: 6px;
+}
+@media (max-width: 900px) {
+  .ecf-type-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 /* Items list table wrapper — allows horizontal scroll on small screens */

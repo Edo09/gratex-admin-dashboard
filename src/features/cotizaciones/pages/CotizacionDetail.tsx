@@ -8,6 +8,7 @@ import { formatDisplayDate } from "@/shared/utils/format";
 import { useCotizacionByIdQuery } from "../hooks/useCotizacionesQuery";
 import { useCotizacionPdf } from "../hooks/useCotizacionPdf";
 import { CreateQuoteModal } from "../components/CreateQuoteModal";
+import { DuplicateQuoteModal } from "../components/DuplicateQuoteModal";
 import { parseCotizacionAmount } from "@/features/dashboard/hooks/useDashboardData";
 
 interface Line {
@@ -25,6 +26,7 @@ export default function CotizacionDetail() {
   const { data: cotizacion, isLoading } = useCotizacionByIdQuery(cotizacionId);
   const { openSavedPdf, downloadSavedPdf } = useCotizacionPdf();
   const [editOpen, setEditOpen] = useState(false);
+  const [duplicateOpen, setDuplicateOpen] = useState(false);
   const [toast, setToast] = useState("");
 
   if (isLoading) {
@@ -89,6 +91,9 @@ export default function CotizacionDetail() {
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button className="btn-ghost" onClick={() => setEditOpen(true)}>
             <Icons.edit size={13} /> Editar
+          </button>
+          <button className="btn-ghost" onClick={() => setDuplicateOpen(true)}>
+            <Icons.copy size={13} /> Duplicar
           </button>
           <button className="btn-ghost" onClick={() => openSavedPdf(cotizacion.id)}>
             <Icons.external size={13} /> Preview
@@ -182,6 +187,16 @@ export default function CotizacionDetail() {
         open={editOpen}
         editingCotizacion={cotizacion}
         onClose={() => setEditOpen(false)}
+        onCreated={(msg) => {
+          setToast(msg);
+          window.setTimeout(() => setToast(""), 2500);
+        }}
+      />
+
+      <DuplicateQuoteModal
+        open={duplicateOpen}
+        initialCotizacion={cotizacion}
+        onClose={() => setDuplicateOpen(false)}
         onCreated={(msg) => {
           setToast(msg);
           window.setTimeout(() => setToast(""), 2500);

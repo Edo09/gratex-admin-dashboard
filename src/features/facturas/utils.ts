@@ -46,6 +46,17 @@ export function getFacturaClientName(f: Factura): string {
   return f.client_name ?? f.client ?? "—";
 }
 
+export function getFacturaDescription(f: Factura): string {
+  if (f.description && f.description.trim()) return f.description;
+  if (Array.isArray(f.items) && f.items.length > 0) {
+    const names = f.items
+      .map((it) => getItemName(it))
+      .filter((s) => s && s.trim());
+    if (names.length > 0) return names.join(" · ");
+  }
+  return "—";
+}
+
 export interface ItbisBreakdown {
   subtotal: number;
   itbis18: number;

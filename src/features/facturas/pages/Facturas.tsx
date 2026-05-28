@@ -6,17 +6,25 @@ import { Icons } from "@/shared/components/press/PressIcons";
 import { fmt } from "@/shared/utils/press-fmt";
 import { formatDisplayDate } from "@/shared/utils/format";
 import { useDebounce } from "@/shared/hooks/useDebounce";
-import { ECF_TYPES, type TipoEcf } from "../constants";
-import { parseFacturaAmount, getFacturaNcf, getFacturaClientName } from "../utils";
+import { type TipoEcf } from "../constants";
+import {
+  parseFacturaAmount,
+  getFacturaNcf,
+  getFacturaClientName,
+  getFacturaDescription,
+} from "../utils";
 import { useFacturasQuery } from "../hooks/useFacturasQuery";
 import { CreateFacturaModal } from "../components/CreateFacturaModal";
 import { StatusBadge } from "../components/StatusBadge";
 import type { Factura } from "../types";
 
+type ViewMode = "cards" | "table";
+
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 export default function Facturas() {
   const navigate = useNavigate();
+  const [view, setView] = useState<ViewMode>("cards");
   const [createOpen, setCreateOpen] = useState(false);
   const [toast, setToast] = useState("");
   const [query, setQuery] = useState("");
@@ -55,9 +63,15 @@ export default function Facturas() {
             {total} emisiones · año {new Date().getFullYear()}
           </div>
         </div>
-        <button className="btn btn-accent" onClick={() => setCreateOpen(true)}>
-          <Icons.plus size={13} /> Nueva factura
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <div className="seg">
+            <button className={view === "cards" ? "active" : ""} onClick={() => setView("cards")}>Cards</button>
+            <button className={view === "table" ? "active" : ""} onClick={() => setView("table")}>Tabla</button>
+          </div>
+          <button className="btn btn-accent" onClick={() => setCreateOpen(true)}>
+            <Icons.plus size={13} /> Nueva factura
+          </button>
+        </div>
       </div>
 
       <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
@@ -92,110 +106,113 @@ export default function Facturas() {
         </select>
       </div>
 
-      <div className="panel" style={{ padding: 0 }}>
-        <table className="ds-table">
-          <thead>
-            <tr>
-              <th style={{ paddingLeft: 20 }}>NCF</th>
-              <th>Cliente</th>
-              <th style={{ width: 90 }}>Tipo</th>
-              <th>Fecha</th>
-              <th style={{ width: 110 }}>Estado</th>
-              <th style={{ textAlign: "right", paddingRight: 20 }}>Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {list.map((f) => {
-              const tipoEcf = f.tipo_ecf as TipoEcf | undefined;
-              return (
-                <tr key={f.id} onClick={() => open(f)}>
-                  <td style={{ paddingLeft: 20 }}>
-                    <span className="mono" style={{ fontSize: 11 }}>
-                      {getFacturaNcf(f)}
-                    </span>
-                  </td>
-                  <td style={{ fontWeight: 600 }}>{getFacturaClientName(f)}</td>
-                  <td>
-                    {tipoEcf && (
-                      <span
-                        className="mono"
-                        style={{
-                          fontSize: 10,
-                          fontWeight: 600,
-                          background: "var(--bg)",
-                          padding: "2px 5px",
-                          borderRadius: 3,
-                          letterSpacing: "0.03em",
-                        }}
-                      >
-                        E{tipoEcf}
+      {view === "cards" ? (
+        <>
+          <div className="card-grid">
+            {list.map((f) => (
+              <FacturaCard key={f.id} factura={f} onOpen={() => open(f)} />
+            ))}
+            {list.length === 0 && (
+              <div style={{ padding: 32, color: "var(--muted)", gridColumn: "1/-1" }}>
+                {isFetching ? "Cargando…" : "Sin facturas"}
+              </div>
+            )}
+          </div>
+          <Pager
+            page={page}
+            pageSize={pageSize}
+            totalPages={totalPages}
+            total={total}
+            canPrev={canPrev}
+            canNext={canNext}
+            isFetching={isFetching}
+            onPrev={() => setPage((p) => Math.max(1, p - 1))}
+            onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
+          />
+        </>
+      ) : (
+        <div className="panel" style={{ padding: 0 }}>
+          <table className="ds-table">
+            <thead>
+              <tr>
+                <th style={{ paddingLeft: 20 }}>NCF</th>
+                <th>Cliente</th>
+                <th>Descripción</th>
+                <th style={{ width: 90 }}>Tipo</th>
+                <th>Fecha</th>
+                <th style={{ width: 110 }}>Estado</th>
+                <th style={{ textAlign: "right", paddingRight: 20 }}>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {list.map((f) => {
+                const tipoEcf = f.tipo_ecf as TipoEcf | undefined;
+                return (
+                  <tr key={f.id} onClick={() => open(f)}>
+                    <td style={{ paddingLeft: 20 }}>
+                      <span className="mono" style={{ fontSize: 11 }}>
+                        {getFacturaNcf(f)}
                       </span>
-                    )}
-                  </td>
-                  <td className="mono" style={{ fontSize: 11 }}>
-                    {formatDisplayDate(f.date)}
-                  </td>
-                  <td>
-                    <StatusBadge estado={f.estado_dgii} />
-                  </td>
-                  <td
-                    className="mono"
-                    style={{ textAlign: "right", paddingRight: 20, fontWeight: 600, fontSize: 14 }}
-                  >
-                    {fmt.money(parseFacturaAmount(f))}
+                    </td>
+                    <td style={{ fontWeight: 600 }}>{getFacturaClientName(f)}</td>
+                    <td style={{ color: "var(--ink-2)", maxWidth: 320 }}>
+                      {getFacturaDescription(f)}
+                    </td>
+                    <td>
+                      {tipoEcf && (
+                        <span
+                          className="mono"
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 600,
+                            background: "var(--bg)",
+                            padding: "2px 5px",
+                            borderRadius: 3,
+                            letterSpacing: "0.03em",
+                          }}
+                        >
+                          E{tipoEcf}
+                        </span>
+                      )}
+                    </td>
+                    <td className="mono" style={{ fontSize: 11 }}>
+                      {formatDisplayDate(f.date)}
+                    </td>
+                    <td>
+                      <StatusBadge estado={f.estado_dgii} />
+                    </td>
+                    <td
+                      className="mono"
+                      style={{ textAlign: "right", paddingRight: 20, fontWeight: 600, fontSize: 14 }}
+                    >
+                      {fmt.money(parseFacturaAmount(f))}
+                    </td>
+                  </tr>
+                );
+              })}
+              {list.length === 0 && (
+                <tr>
+                  <td colSpan={7} style={{ textAlign: "center", color: "var(--muted)", padding: 32 }}>
+                    {isFetching ? "Cargando…" : "Sin facturas"}
                   </td>
                 </tr>
-              );
-            })}
-            {list.length === 0 && (
-              <tr>
-                <td colSpan={6} style={{ textAlign: "center", color: "var(--muted)", padding: 32 }}>
-                  {isFetching ? "Cargando…" : "Sin facturas"}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
 
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "12px 20px",
-            borderTop: "1px solid var(--line)",
-            gap: 12,
-          }}
-        >
-          <div className="mono" style={{ fontSize: 11, color: "var(--muted)", letterSpacing: "0.08em" }}>
-            {total > 0
-              ? `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, total)} de ${total}`
-              : "0 de 0"}
-            {isFetching && " · cargando…"}
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <button
-              className="btn-ghost"
-              disabled={!canPrev}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              style={{ opacity: canPrev ? 1 : 0.4 }}
-            >
-              <Icons.chevronLeft size={13} /> Anterior
-            </button>
-            <span className="mono" style={{ fontSize: 11, color: "var(--muted)", letterSpacing: "0.08em" }}>
-              Página {page} de {totalPages}
-            </span>
-            <button
-              className="btn-ghost"
-              disabled={!canNext}
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              style={{ opacity: canNext ? 1 : 0.4 }}
-            >
-              Siguiente <Icons.chevronRight size={13} />
-            </button>
-          </div>
+          <PagerRow
+            page={page}
+            pageSize={pageSize}
+            totalPages={totalPages}
+            total={total}
+            canPrev={canPrev}
+            canNext={canNext}
+            isFetching={isFetching}
+            onPrev={() => setPage((p) => Math.max(1, p - 1))}
+            onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
+          />
         </div>
-      </div>
+      )}
 
       <CreateFacturaModal
         open={createOpen}
@@ -212,6 +229,151 @@ export default function Facturas() {
           {toast}
         </div>
       )}
+    </div>
+  );
+}
+
+interface PagerProps {
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  total: number;
+  canPrev: boolean;
+  canNext: boolean;
+  isFetching: boolean;
+  onPrev: () => void;
+  onNext: () => void;
+}
+
+function PagerRow({ page, pageSize, totalPages, total, canPrev, canNext, isFetching, onPrev, onNext }: PagerProps) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "12px 20px",
+        borderTop: "1px solid var(--line)",
+        gap: 12,
+      }}
+    >
+      <div className="mono" style={{ fontSize: 11, color: "var(--muted)", letterSpacing: "0.08em" }}>
+        {total > 0
+          ? `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, total)} de ${total}`
+          : "0 de 0"}
+        {isFetching && " · cargando…"}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <button className="btn-ghost" disabled={!canPrev} onClick={onPrev} style={{ opacity: canPrev ? 1 : 0.4 }}>
+          <Icons.chevronLeft size={13} /> Anterior
+        </button>
+        <span className="mono" style={{ fontSize: 11, color: "var(--muted)", letterSpacing: "0.08em" }}>
+          Página {page} de {totalPages}
+        </span>
+        <button className="btn-ghost" disabled={!canNext} onClick={onNext} style={{ opacity: canNext ? 1 : 0.4 }}>
+          Siguiente <Icons.chevronRight size={13} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Pager(props: PagerProps) {
+  const { page, pageSize, totalPages, total, canPrev, canNext, isFetching, onPrev, onNext } = props;
+  if (totalPages <= 1) return null;
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "12px 0",
+        gap: 12,
+      }}
+    >
+      <div className="mono" style={{ fontSize: 11, color: "var(--muted)", letterSpacing: "0.08em" }}>
+        {total > 0
+          ? `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, total)} de ${total}`
+          : "0 de 0"}
+        {isFetching && " · cargando…"}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <button className="btn-ghost" disabled={!canPrev} onClick={onPrev} style={{ opacity: canPrev ? 1 : 0.4 }}>
+          <Icons.chevronLeft size={13} /> Anterior
+        </button>
+        <span className="mono" style={{ fontSize: 11, color: "var(--muted)", letterSpacing: "0.08em" }}>
+          Página {page} de {totalPages}
+        </span>
+        <button className="btn-ghost" disabled={!canNext} onClick={onNext} style={{ opacity: canNext ? 1 : 0.4 }}>
+          Siguiente <Icons.chevronRight size={13} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function FacturaCard({ factura, onOpen }: { factura: Factura; onOpen: () => void }) {
+  const tipoEcf = factura.tipo_ecf as TipoEcf | undefined;
+  const ncf = getFacturaNcf(factura);
+  const isEcf = !!tipoEcf || ncf.startsWith("E");
+  return (
+    <div className="quote-card" onClick={onOpen}>
+      <div className="quote-card-top">
+        <div>
+          <div className="quote-client">{getFacturaClientName(factura)}</div>
+          <div className="quote-company">{factura.company_name ?? ""}</div>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <span className="quote-code">{ncf}</span>
+          <div
+            className="mono"
+            style={{ fontSize: 9, color: "var(--muted)", marginTop: 2 }}
+          >
+            {isEcf ? "e-NCF" : "NCF"}
+          </div>
+          <div className="quote-date">{formatDisplayDate(factura.date)}</div>
+        </div>
+      </div>
+      <div className="quote-divider" />
+      <div className="quote-body">
+        <div className="quote-desc">{getFacturaDescription(factura)}</div>
+        <div>
+          <div className="quote-amt-value">{fmt.money(parseFacturaAmount(factura))}</div>
+          <div className="quote-amt-label">Total</div>
+        </div>
+      </div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginTop: 12,
+          gap: 8,
+          flexWrap: "wrap",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {tipoEcf && (
+            <span
+              className="mono"
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                background: "var(--c-accent, #3b82f6)",
+                color: "#fff",
+                padding: "2px 6px",
+                borderRadius: 4,
+              }}
+            >
+              E{tipoEcf}
+            </span>
+          )}
+          <StatusBadge estado={factura.estado_dgii} />
+        </div>
+        <span style={{ color: "var(--muted)", fontSize: 11, fontFamily: "Geist Mono" }}>
+          Ver detalle →
+        </span>
+      </div>
     </div>
   );
 }

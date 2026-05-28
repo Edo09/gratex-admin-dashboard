@@ -40,7 +40,7 @@ export function PressSidebar({ onClose }: PressSidebarProps) {
     { to: "/cotizaciones", icon: <Icons.fileText size={ICON_SIZE} />, label: "Cotizaciones", badge: cotizacionesCount },
     { to: "/facturas", icon: <Icons.receipt size={ICON_SIZE} />, label: "Facturas", badge: facturasCount },
     { to: "/clientes", icon: <Icons.users size={ICON_SIZE} />, label: "Clientes", badge: clientesCount },
-    { to: "/ncf", icon: <Icons.hash size={ICON_SIZE} />, label: "NCF" },
+    { to: "/comprobantes", icon: <Icons.hash size={ICON_SIZE} />, label: "Comprobantes" },
     { to: "/configuracion", icon: <Icons.settings size={ICON_SIZE} />, label: "Configuración" },
   ];
 

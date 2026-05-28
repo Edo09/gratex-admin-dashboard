@@ -12,7 +12,7 @@ import {
   getClientPhone,
   type Cliente,
 } from "@/features/clientes/types";
-import { useNextNcf } from "@/features/ncf/hooks/useNcf";
+import { useFacturasStatsQuery } from "../hooks/useFacturasQuery";
 import { fetchCotizacionById, useCotizacionesQuery } from "@/features/cotizaciones/hooks/useCotizacionesQuery";
 import type { Cotizacion } from "@/features/cotizaciones/types";
 import type {
@@ -76,7 +76,17 @@ const EMPTY_ITEM_FORM: ItemFormState = {
 export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaModalProps) {
   const { user } = useAuth();
   const createMutation = useCreateFactura();
-  const { fetchNextNCF } = useNextNcf();
+  const { data: stats } = useFacturasStatsQuery();
+  const computeNextEncf = useCallback(
+    (tipo: TipoEcf): string => {
+      const code = `E${tipo}`;
+      const seq = stats?.secuencias?.find((s) => s.type === code);
+      if (!seq) return "";
+      const next = seq.secuencia_actual + 1;
+      return `${seq.type}${String(next).padStart(10, "0")}`;
+    },
+    [stats],
+  );
   const { openSavedPdf, previewDraft } = useFacturaPdf();
 
   const [step, setStep] = useState<Step>("flow");
@@ -116,6 +126,12 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
   const allowedIndicadores = ecfAllowedIndicadores(tipoEcf);
   const forcedBienServicio = ecfForcedBienServicio(tipoEcf);
 
+  // Recompute next e-NCF whenever tipo changes (or stats first load).
+  useEffect(() => {
+    const next = computeNextEncf(tipoEcf);
+    if (next) setNcf(next);
+  }, [tipoEcf, computeNextEncf]);
+
   const reset = () => {
     setStep("flow");
     setFlow(null);
@@ -146,7 +162,26 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
     onClose();
   };
 
+  const resetFlowData = () => {
+    setSelectedCliente(null);
+    setSelectedCotizacion(null);
+    setItems([]);
+    setItemForm(EMPTY_ITEM_FORM);
+    setComprador({ rnc: "", nombre: "" });
+    setDate(getTodayDate());
+    setTipoPago(1);
+    setReferencia({
+      ncf_modificado: "",
+      rnc_otro_contribuyente: null,
+      fecha_ncf_modificado: getTodayDate(),
+      codigo_modificacion: "3",
+      razon_modificacion: "",
+    });
+    setApiError("");
+  };
+
   const handleFlowPick = (f: Flow) => {
+    resetFlowData();
     setFlow(f);
     setStep("ecf-type");
   };
@@ -167,6 +202,7 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
     } else if (step === "ecf-type") {
       setStep("flow");
       setFlow(null);
+      resetFlowData();
     }
   };
 
@@ -203,7 +239,7 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
       setComprador({ rnc: cliente.rnc, nombre: getClientDisplayName(cliente) });
     }
     if (!ncf) {
-      const next = await fetchNextNCF();
+      const next = computeNextEncf(tipoEcf);
       if (next) setNcf(next);
     }
   };
@@ -262,7 +298,7 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
     }
 
     if (!ncf) {
-      const next = await fetchNextNCF();
+      const next = computeNextEncf(tipoEcf);
       if (next) setNcf(next);
     }
   };
