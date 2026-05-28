@@ -6,6 +6,7 @@ import { Icons } from "@/shared/components/press/PressIcons";
 import { fmt } from "@/shared/utils/press-fmt";
 import { formatDisplayDate } from "@/shared/utils/format";
 import { useDebounce } from "@/shared/hooks/useDebounce";
+import { useStoredState } from "@/shared/hooks/useStoredState";
 import { type TipoEcf } from "../constants";
 import {
   parseFacturaAmount,
@@ -24,7 +25,7 @@ const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 export default function Facturas() {
   const navigate = useNavigate();
-  const [view, setView] = useState<ViewMode>("cards");
+  const [view, setView] = useStoredState<ViewMode>("facturas:view", "cards");
   const [createOpen, setCreateOpen] = useState(false);
   const [toast, setToast] = useState("");
   const [query, setQuery] = useState("");
@@ -64,10 +65,6 @@ export default function Facturas() {
           </div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <div className="seg">
-            <button className={view === "cards" ? "active" : ""} onClick={() => setView("cards")}>Cards</button>
-            <button className={view === "table" ? "active" : ""} onClick={() => setView("table")}>Tabla</button>
-          </div>
           <button className="btn btn-accent" onClick={() => setCreateOpen(true)}>
             <Icons.plus size={13} /> Nueva factura
           </button>
@@ -104,6 +101,11 @@ export default function Facturas() {
             <option key={n} value={n}>{n} / página</option>
           ))}
         </select>
+
+        <div className="seg">
+          <button className={view === "cards" ? "active" : ""} onClick={() => setView("cards")}>Cards</button>
+          <button className={view === "table" ? "active" : ""} onClick={() => setView("table")}>Tabla</button>
+        </div>
       </div>
 
       {view === "cards" ? (

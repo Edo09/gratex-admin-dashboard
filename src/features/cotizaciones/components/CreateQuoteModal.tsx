@@ -432,12 +432,17 @@ function ClientePicker({ selected, onSelect, onClear, total }: ClientePickerProp
   return (
     <div className="field" style={{ position: "relative" }}>
       <label>Cliente</label>
-      <input
-        autoComplete="off"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Buscar por nombre, empresa, email o teléfono…"
-      />
+      <div className="search" style={{ maxWidth: "none" }}>
+        <span className="search-icon">
+          <Icons.search size={14} />
+        </span>
+        <input
+          autoComplete="off"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Buscar por nombre, empresa, email o teléfono…"
+        />
+      </div>
       {query.trim() && (
         <div
           style={{

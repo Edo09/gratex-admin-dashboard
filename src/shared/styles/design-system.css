@@ -529,6 +529,12 @@ html, body {
   color: var(--ink);
 }
 .field input:focus, .field textarea:focus, .field select:focus { border-color: var(--ink); }
+.field .search input {
+  padding: 9px 12px 9px 34px;
+  background: var(--bg);
+  transition: border-color .15s, background .15s;
+}
+.field .search input:focus { background: #fff; }
 .field.error input, .field.error textarea, .field.error select { border-color: var(--bad); }
 .field-error {
   color: var(--bad);

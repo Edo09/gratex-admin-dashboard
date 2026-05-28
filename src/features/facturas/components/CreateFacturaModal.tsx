@@ -1211,11 +1211,16 @@ function CotizacionSearch({ onSelect }: { onSelect: (cot: Cotizacion) => void })
   return (
     <div className="field">
       <label>Buscar cotización</label>
-      <input
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Código, cliente o descripción…"
-      />
+      <div className="search" style={{ maxWidth: "none" }}>
+        <span className="search-icon">
+          <Icons.search size={14} />
+        </span>
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Código, cliente o descripción…"
+        />
+      </div>
       {query.trim() && (
         <div
           style={{

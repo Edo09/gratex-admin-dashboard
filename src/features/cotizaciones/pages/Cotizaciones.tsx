@@ -6,6 +6,7 @@ import { Icons } from "@/shared/components/press/PressIcons";
 import { fmt } from "@/shared/utils/press-fmt";
 import { formatDisplayDate } from "@/shared/utils/format";
 import { useDebounce } from "@/shared/hooks/useDebounce";
+import { useStoredState } from "@/shared/hooks/useStoredState";
 import { useCotizacionesQuery } from "../hooks/useCotizacionesQuery";
 import { parseCotizacionAmount } from "@/features/dashboard/hooks/useDashboardData";
 import { CreateQuoteModal } from "../components/CreateQuoteModal";
@@ -18,7 +19,7 @@ const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 export default function Cotizaciones() {
   const navigate = useNavigate();
-  const [view, setView] = useState<ViewMode>("cards");
+  const [view, setView] = useStoredState<ViewMode>("cotizaciones:view", "cards");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);

@@ -70,7 +70,38 @@ export default function Clientes() {
           <div key={c.id} className="client" onClick={() => setEditCliente(c)}>
             <div className="client-num">#{String(c.id).padStart(4, "0")}</div>
             <div>
-              <div className="client-name">{getClientDisplayName(c)}</div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  flexWrap: "wrap",
+                }}
+              >
+                <div className="client-name">{getClientDisplayName(c)}</div>
+                {c.rnc && (
+                  <span
+                    className="mono"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      fontSize: 10,
+                      fontWeight: 600,
+                      letterSpacing: "0.06em",
+                      padding: "2px 7px",
+                      background: "var(--bg)",
+                      border: "1px solid var(--line)",
+                      borderRadius: 999,
+                      color: "var(--ink-2)",
+                    }}
+                    title="RNC del cliente"
+                  >
+                    <span style={{ color: "var(--muted)", fontWeight: 700 }}>RNC</span>
+                    {c.rnc}
+                  </span>
+                )}
+              </div>
               <div className="client-company">{c.company_name ?? ""}</div>
             </div>
             <div className="client-meta">
@@ -82,18 +113,26 @@ export default function Clientes() {
             <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "flex-end" }}>
               <button
                 style={{
-                  background: "transparent",
-                  border: "none",
+                  background: "#fdecec",
+                  border: "1.5px solid var(--bad)",
+                  borderRadius: 6,
                   cursor: "pointer",
-                  padding: 4,
+                  width: 32,
+                  height: 32,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  color: "var(--muted)",
-                  transition: "color 0.12s",
+                  color: "var(--bad)",
+                  transition: "background 0.12s, color 0.12s",
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = "var(--bad)")}
-                onMouseLeave={(e) => (e.currentTarget.style.color = "var(--muted)")}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "var(--bad)";
+                  e.currentTarget.style.color = "#fff";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "#fdecec";
+                  e.currentTarget.style.color = "var(--bad)";
+                }}
                 onClick={(e) => {
                   e.stopPropagation();
                   setDeleteError("");
@@ -101,7 +140,7 @@ export default function Clientes() {
                 }}
                 title="Eliminar cliente"
               >
-                <Icons.trash size={14} />
+                <Icons.trash size={14} sw={2} />
               </button>
             </div>
           </div>

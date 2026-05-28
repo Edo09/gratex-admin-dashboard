@@ -327,12 +327,17 @@ function SearchList({ query, onQueryChange, isFetching, matches, onPick }: Searc
   return (
     <div className="field">
       <label>Buscar cotización</label>
-      <input
-        autoComplete="off"
-        value={query}
-        onChange={(e) => onQueryChange(e.target.value)}
-        placeholder="Buscar por código, cliente o descripción…"
-      />
+      <div className="search" style={{ maxWidth: "none" }}>
+        <span className="search-icon">
+          <Icons.search size={14} />
+        </span>
+        <input
+          autoComplete="off"
+          value={query}
+          onChange={(e) => onQueryChange(e.target.value)}
+          placeholder="Buscar por código, cliente o descripción…"
+        />
+      </div>
       <div
         style={{
           marginTop: 10,
@@ -462,7 +467,7 @@ function SelectedPreview({
             <tr>
               <th style={{ width: 40, paddingLeft: 16 }}>#</th>
               <th>Descripción</th>
-              <th style={{ width: 140, textAlign: "right" }}>Cantidad × Monto</th>
+              <th style={{ width: 140, textAlign: "right" }}>Cant × Monto</th>
               <th style={{ width: 110, textAlign: "right", paddingRight: 16 }}>Subtotal</th>
             </tr>
           </thead>
@@ -724,7 +729,7 @@ function AddItemsModal({ existing, onAdd, onRemove, onClose }: AddItemsModalProp
                     <tr>
                       <th style={{ width: 40, paddingLeft: 16 }}>#</th>
                       <th>Descripción</th>
-                      <th style={{ width: 140, textAlign: "right" }}>Cantidad × Monto</th>
+                      <th style={{ width: 140, textAlign: "right" }}>Cant. × Monto</th>
                       <th style={{ width: 110, textAlign: "right" }}>Subtotal</th>
                       <th style={{ width: 90, paddingRight: 16 }} />
                     </tr>
