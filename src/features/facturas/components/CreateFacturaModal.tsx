@@ -109,6 +109,26 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
   });
   const [apiError, setApiError] = useState("");
   const [busy, setBusy] = useState<null | "preview" | "save">(null);
+  const [payloadPreview, setPayloadPreview] = useState<string | null>(null);
+  const showDebugPayload = import.meta.env.VITE_SHOW_DEBUG_PAYLOAD === "true";
+
+  const handleShowPayload = () => {
+    try {
+      const payload = buildPayload();
+      setPayloadPreview(JSON.stringify(payload, null, 2));
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : "No se pudo construir el payload.");
+    }
+  };
+
+  const handleCopyPayload = async () => {
+    if (!payloadPreview) return;
+    try {
+      await navigator.clipboard.writeText(payloadPreview);
+    } catch {
+      /* ignore clipboard failures */
+    }
+  };
   const [errorFlash, setErrorFlash] = useState(false);
   const errorRef = useRef<HTMLDivElement>(null);
 
@@ -152,6 +172,7 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
       razon_modificacion: "",
     });
     setApiError("");
+    setPayloadPreview(null);
   };
 
   if (!open) return null;
@@ -557,6 +578,83 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
                 )}
               </>
             )}
+
+            {step === "form" && payloadPreview && (
+              <div
+                style={{
+                  marginTop: 16,
+                  border: "1px solid var(--line)",
+                  borderRadius: 8,
+                  background: "#0b1020",
+                  color: "#d8e1ff",
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 8,
+                    padding: "8px 12px",
+                    background: "#161b30",
+                    borderBottom: "1px solid #232943",
+                  }}
+                >
+                  <div
+                    className="mono"
+                    style={{
+                      fontSize: 10,
+                      letterSpacing: "0.16em",
+                      textTransform: "uppercase",
+                      color: "#8fa1d6",
+                    }}
+                  >
+                    Payload (debug) — POST /api/facturas
+                  </div>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button
+                      type="button"
+                      className="btn-ghost"
+                      onClick={handleCopyPayload}
+                      style={{
+                        color: "#d8e1ff",
+                        borderColor: "#232943",
+                        background: "transparent",
+                      }}
+                    >
+                      Copiar
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-ghost"
+                      onClick={() => setPayloadPreview(null)}
+                      style={{
+                        color: "#d8e1ff",
+                        borderColor: "#232943",
+                        background: "transparent",
+                      }}
+                    >
+                      Cerrar
+                    </button>
+                  </div>
+                </div>
+                <pre
+                  className="mono"
+                  style={{
+                    margin: 0,
+                    padding: "12px 14px",
+                    fontSize: 11,
+                    lineHeight: 1.5,
+                    maxHeight: 360,
+                    overflow: "auto",
+                    whiteSpace: "pre",
+                  }}
+                >
+                  {payloadPreview}
+                </pre>
+              </div>
+            )}
           </div>
 
           {step === "ecf-type" && (
@@ -583,6 +681,17 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
               <button type="button" className="btn-ghost" onClick={close} disabled={anyBusy}>
                 Cancelar
               </button>
+              {showDebugPayload && (
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={handleShowPayload}
+                  disabled={anyBusy}
+                  title="Mostrar el JSON que se enviará al API sin emitir"
+                >
+                  Ver payload
+                </button>
+              )}
               <button
                 type="button"
                 className="btn btn-gray"
