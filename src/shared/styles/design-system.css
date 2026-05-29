@@ -779,10 +779,11 @@ html, body {
 /* Item add-form grid (desc / amount / qty / add-btn) */
 .item-add-form {
   display: grid;
-  grid-template-columns: 1fr 120px 90px auto;
-  gap: 10px;
+  grid-template-columns: 120px 90px 140px minmax(140px, 1fr) auto;
   align-items: end;
+  gap: 10px;
 }
+.item-add-form .item-desc { grid-column: 1 / -1; }
 
 /* Date + NCF + Total grid */
 .date-ncf-grid {

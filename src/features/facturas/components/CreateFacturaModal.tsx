@@ -3,7 +3,7 @@ import { Icons } from "@/shared/components/press/PressIcons";
 import { ModalPortal } from "@/shared/components/press/ModalPortal";
 import { extractErrorMessage } from "@/shared/api/errors";
 import { fmt } from "@/shared/utils/press-fmt";
-import { formatDisplayDate, getTodayDate, toIsoDateOnly } from "@/shared/utils/format";
+import { formatDisplayDate, getTodayDate } from "@/shared/utils/format";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useClientesQuery } from "@/features/clientes/hooks/useClientesQuery";
@@ -273,7 +273,8 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
       if (fetched) full = fetched;
     } catch { /* best-effort */ }
     setSelectedCotizacion(full);
-    setDate(toIsoDateOnly(full?.date));
+    // Factura siempre se emite con la fecha actual, no la de la cotización.
+    setDate(getTodayDate());
 
     const cotItems = Array.isArray(full?.items) ? full.items : [];
     if (cotItems.length > 0) {
@@ -516,7 +517,6 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
                   <CompradorFields comprador={comprador} onChange={setComprador} />
                 )}
                 <FormFields
-                  date={date} onDateChange={setDate}
                   ncf={ncf} onNcfChange={setNcf}
                   tipoPago={tipoPago} onTipoPagoChange={setTipoPago}
                   breakdown={breakdown}
@@ -556,7 +556,6 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
                       <CompradorFields comprador={comprador} onChange={setComprador} />
                     )}
                     <FormFields
-                      date={date} onDateChange={setDate}
                       ncf={ncf} onNcfChange={setNcf}
                       tipoPago={tipoPago} onTipoPagoChange={setTipoPago}
                       breakdown={breakdown}
@@ -1021,16 +1020,12 @@ interface ItbisBreakdown {
 }
 
 function FormFields({
-  date,
-  onDateChange,
   ncf,
   onNcfChange,
   tipoPago,
   onTipoPagoChange,
   breakdown,
 }: {
-  date: string;
-  onDateChange: (v: string) => void;
   ncf: string;
   onNcfChange: (v: string) => void;
   tipoPago: TipoPago;
@@ -1039,11 +1034,7 @@ function FormFields({
 }) {
   return (
     <>
-      <div className="date-ncf-grid">
-        <div className="field" style={{ margin: 0 }}>
-          <label>Fecha</label>
-          <input type="date" value={date} onChange={(e) => onDateChange(e.target.value)} />
-        </div>
+      <div className="date-ncf-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
         <div className="field" style={{ margin: 0 }}>
           <label>NCF</label>
           <input value={ncf} onChange={(e) => onNcfChange(e.target.value)} placeholder="E31…" />
@@ -1220,27 +1211,50 @@ function ItemsSection({
           {!forcedBienServicio && (
             <div className="field" style={{ margin: 0 }}>
               <label>Tipo</label>
-              <select
-                value={itemForm.indicador_bien_servicio}
-                onChange={(e) => onItemFormChange({ ...itemForm, indicador_bien_servicio: Number(e.target.value) as IndicadorBienServicio })}
-                style={{
-                  width: "100%",
-                  padding: "8px 10px",
-                  border: "1px solid var(--line)",
-                  borderRadius: 6,
-                  font: "inherit",
-                  fontSize: 12,
-                  background: "#fff",
-                }}
+              <div
+                className="seg"
+                role="tablist"
+                style={{ height: 36, display: "inline-flex" }}
               >
-                {([1, 2] as IndicadorBienServicio[]).map((ind) => (
-                  <option key={ind} value={ind}>{BIEN_SERVICIO_LABELS[ind]}</option>
-                ))}
-              </select>
+                {([1, 2] as IndicadorBienServicio[]).map((ind) => {
+                  const active = itemForm.indicador_bien_servicio === ind;
+                  // Bien = green, Servicio = blue
+                  const activeBg = ind === 1 ? "#16a34a" : "#2563eb";
+                  return (
+                    <button
+                      key={ind}
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      className={active ? "active" : ""}
+                      onClick={() =>
+                        onItemFormChange({ ...itemForm, indicador_bien_servicio: ind })
+                      }
+                      style={
+                        active
+                          ? { flex: 1, background: activeBg, color: "#fff" }
+                          : { flex: 1 }
+                      }
+                    >
+                      {BIEN_SERVICIO_LABELS[ind]}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
-          <button type="button" className="btn btn-accent item-add-btn" onClick={onAddItem} style={{ height: 36 }}>
-            Agregar
+          <button
+            type="button"
+            className="btn btn-accent item-add-btn"
+            onClick={onAddItem}
+            style={{
+              height: 36,
+              minWidth: 120,
+              alignSelf: "end",
+              justifyContent: "center",
+            }}
+          >
+            <Icons.plus size={13} sw={2} /> Agregar
           </button>
         </div>
       </div>
