@@ -19,6 +19,8 @@ export interface DgiiConsulta {
   estado?: string;
   rnc?: string;
   encf?: string;
+  /** DGII: indica si la secuencia fue consumida (relevante en rechazo). */
+  secuenciaUtilizada?: boolean | null;
   fechaRecepcion?: string;
   mensajes?: Array<{ valor: string; codigo: number }>;
 }
@@ -28,6 +30,13 @@ export interface EstadoResponse {
   e_ncf?: string;
   track_id?: string;
   estado_dgii: string;
+  /**
+   * Cuando `estado_dgii === "RECHAZADO"`:
+   * - `false` → e-NCF reusable, reemitir con el mismo `e_ncf`.
+   * - `true`  → secuencia consumida, reemitir sin `e_ncf`.
+   * - `null` / undefined → aún no consultado o no aplica.
+   */
+  secuencia_utilizada?: boolean | null;
   consulta?: DgiiConsulta;
 }
 

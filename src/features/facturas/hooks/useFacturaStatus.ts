@@ -12,7 +12,8 @@ export function useFacturaStatusQuery(facturaId: number | null) {
     enabled: facturaId != null,
     refetchInterval: (query) => {
       const estado = query.state.data?.estado_dgii;
-      if (estado === "ENVIADO") return 15_000;
+      // Pending states — keep polling until DGII finalizes.
+      if (estado === "ENVIADO" || estado === "EN_PROCESO") return 15_000;
       return false;
     },
     staleTime: 30_000,

@@ -45,6 +45,10 @@ export interface Factura {
   rfce_track_id?: string;
   estado_dgii?: EstadoDgii;
   codigo_seguridad?: string;
+  fecha_emision_dgii?: string;
+  dgii_response?: unknown;
+  /** Indica si la secuencia NCF fue consumida (relevante en RECHAZADO). */
+  secuencia_utilizada?: boolean | null;
   tipo_pago?: TipoPago;
   ambiente?: string;
   tipo_ingresos?: string;
@@ -110,8 +114,17 @@ export interface ItemFormState {
 /* ------------------------------------------------------------------ */
 
 export interface Comprador {
-  rnc: string;
-  nombre: string;
+  /** RNC (11 o 9 dígitos). Para no residentes usar `identificador_extranjero`. */
+  rnc?: string;
+  /** Identificador extranjero — para comprador no residente (E46/E47). */
+  identificador_extranjero?: string;
+  /** Nombre / razón social del comprador. */
+  razon_social: string;
+  direccion?: string;
+  municipio?: string;
+  provincia?: string;
+  correo?: string;
+  contacto?: string;
 }
 
 export interface InformacionReferencia {
@@ -153,17 +166,33 @@ export interface FacturaItemPayload {
 
 export interface CreateFacturaPayload {
   client_id: number;
-  user_id?: number;
   tipo_ecf: TipoEcf;
-  fecha_emision: string;
-  tipo_pago: TipoPago;
+  items: FacturaItemPayload[];
+  user_id?: number;
+  /** Formato `DD-MM-YYYY`. Omitir → backend usa hoy. */
+  fecha_emision?: string;
+  /** Fecha de registro `YYYY-MM-DD H:i:s`. Omitir → backend usa ahora. */
+  date?: string;
+  tipo_pago?: TipoPago;
   tipo_ingresos?: string;
   indicador_monto_gravado?: string;
   indicador_nota_credito?: string;
   comprador?: Comprador;
-  items: FacturaItemPayload[];
   informacion_referencia?: InformacionReferencia;
   totales?: FacturaTotales;
+  /** Forzar e-NCF específico — solo usar para reemitir tras RECHAZADO con `secuencia_utilizada=false`. */
+  e_ncf?: string;
+  /** Si `true`, usar `totales`/`comprador` literales sin merge. */
+  strict_input?: boolean;
+  // Pago a crédito (opcional)
+  fecha_limite_pago?: string;
+  termino_pago?: string;
+  tipo_cuenta_pago?: string;
+  numero_cuenta_pago?: string;
+  banco_pago?: string;
+  fecha_desde?: string;
+  fecha_hasta?: string;
+  total_paginas?: number;
 }
 
 export interface PreviewFacturaPayload {

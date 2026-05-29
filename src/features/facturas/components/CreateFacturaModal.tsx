@@ -99,7 +99,7 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
   const [ncf, setNcf] = useState<string>("");
   const [items, setItems] = useState<ItemDraft[]>([]);
   const [itemForm, setItemForm] = useState<ItemFormState>(EMPTY_ITEM_FORM);
-  const [comprador, setComprador] = useState<Comprador>({ rnc: "", nombre: "" });
+  const [comprador, setComprador] = useState<Comprador>({ rnc: "", razon_social: "" });
   const [referencia, setReferencia] = useState<InformacionReferencia>({
     ncf_modificado: "",
     rnc_otro_contribuyente: null,
@@ -143,7 +143,7 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
     setNcf("");
     setItems([]);
     setItemForm(EMPTY_ITEM_FORM);
-    setComprador({ rnc: "", nombre: "" });
+    setComprador({ rnc: "", razon_social: "" });
     setReferencia({
       ncf_modificado: "",
       rnc_otro_contribuyente: null,
@@ -167,7 +167,7 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
     setSelectedCotizacion(null);
     setItems([]);
     setItemForm(EMPTY_ITEM_FORM);
-    setComprador({ rnc: "", nombre: "" });
+    setComprador({ rnc: "", razon_social: "" });
     setDate(getTodayDate());
     setTipoPago(1);
     setReferencia({
@@ -236,7 +236,7 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
     setSelectedCliente(cliente);
     setApiError("");
     if (needsComprador && cliente.rnc) {
-      setComprador({ rnc: cliente.rnc, nombre: getClientDisplayName(cliente) });
+      setComprador({ rnc: cliente.rnc, razon_social: getClientDisplayName(cliente) });
     }
     if (!ncf) {
       const next = computeNextEncf(tipoEcf);
@@ -294,7 +294,7 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
     });
 
     if (needsComprador && full?.rnc) {
-      setComprador({ rnc: full.rnc, nombre: full.client_name ?? "" });
+      setComprador({ rnc: full.rnc, razon_social: full.client_name ?? "" });
     }
 
     if (!ncf) {
@@ -358,8 +358,8 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
   const requireValid = (): string | null => {
     if (!selectedCliente?.id) return "Selecciona un cliente";
     if (items.length === 0) return "Agrega al menos un item";
-    if (needsComprador && !comprador.rnc.trim()) return "RNC del comprador es requerido para E31";
-    if (needsComprador && !comprador.nombre.trim()) return "Nombre del comprador es requerido para E31";
+    if (needsComprador && !comprador.rnc?.trim()) return "RNC del comprador es requerido para E31";
+    if (needsComprador && !comprador.razon_social.trim()) return "Nombre del comprador es requerido para E31";
     if (needsReferencia && !referencia.ncf_modificado.trim()) return "NCF modificado es requerido";
     if (needsReferencia && !referencia.razon_modificacion.trim()) return "Razón de modificación es requerida";
     return null;
@@ -489,7 +489,7 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
                 <ClientePicker
                   selected={selectedCliente}
                   onSelect={handleClientSelect}
-                  onClear={() => { setSelectedCliente(null); setComprador({ rnc: "", nombre: "" }); }}
+                  onClear={() => { setSelectedCliente(null); setComprador({ rnc: "", razon_social: "" }); }}
                 />
                 {needsComprador && (
                   <CompradorFields comprador={comprador} onChange={setComprador} />
@@ -528,7 +528,7 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
                         setSelectedCotizacion(null);
                         setSelectedCliente(null);
                         setItems([]);
-                        setComprador({ rnc: "", nombre: "" });
+                        setComprador({ rnc: "", razon_social: "" });
                       }}
                     />
                     {needsComprador && (
@@ -799,7 +799,7 @@ function CompradorFields({
       <div className="field" style={{ margin: 0 }}>
         <label>RNC Comprador *</label>
         <input
-          value={comprador.rnc}
+          value={comprador.rnc ?? ""}
           onChange={(e) => onChange({ ...comprador, rnc: e.target.value })}
           placeholder="131880681"
         />
@@ -807,8 +807,8 @@ function CompradorFields({
       <div className="field" style={{ margin: 0 }}>
         <label>Nombre Comprador *</label>
         <input
-          value={comprador.nombre}
-          onChange={(e) => onChange({ ...comprador, nombre: e.target.value })}
+          value={comprador.razon_social}
+          onChange={(e) => onChange({ ...comprador, razon_social: e.target.value })}
           placeholder="EMPRESA SRL"
         />
       </div>

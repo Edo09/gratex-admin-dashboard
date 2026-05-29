@@ -89,23 +89,32 @@ export default function CotizacionDetail() {
           </div>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <button className="btn-ghost" onClick={() => setEditOpen(true)}>
-            <Icons.edit size={13} /> Editar
+          <button className="btn btn-blue" onClick={() => setEditOpen(true)}>
+            <Icons.edit size={13} sw={2} /> Editar
           </button>
-          <button className="btn-ghost" onClick={() => setDuplicateOpen(true)}>
-            <Icons.copy size={13} /> Duplicar
-          </button>
-          <button className="btn-ghost" onClick={() => openSavedPdf(cotizacion.id)}>
-            <Icons.external size={13} /> Preview
+          <button className="btn btn-green" onClick={() => setDuplicateOpen(true)}>
+            <Icons.copy size={13} sw={2} /> Duplicar
           </button>
           <button
-            className="btn-ghost"
-            onClick={() => downloadSavedPdf(cotizacion.id, `cotizacion-${code}`)}
+            className="btn"
+            onClick={() => openSavedPdf(cotizacion.id)}
+            style={{
+              background: "#4a4a4a",
+              borderColor: "#4a4a4a",
+            }}
           >
-            <Icons.download size={13} /> PDF
+            <Icons.external size={13} sw={2} /> Preview
           </button>
-          <button className="btn btn-accent" onClick={() => navigate("/facturas")}>
-            Convertir a factura
+          <button
+            className="btn"
+            onClick={() => downloadSavedPdf(cotizacion.id, `cotizacion-${code}`)}
+            style={{
+              background: "#fff",
+              borderColor: "var(--bad)",
+              color: "var(--bad)",
+            }}
+          >
+            <Icons.download size={13} sw={2} /> PDF
           </button>
         </div>
       </div>

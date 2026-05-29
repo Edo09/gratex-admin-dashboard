@@ -10,10 +10,14 @@ export type CodigoModificacion = "1" | "2" | "3" | "4";
 
 export type EstadoDgii =
   | "ENVIADO"
+  | "EN_PROCESO"
   | "ACEPTADO"
-  | "ACEPTADO CONDICIONAL"
+  | "ACEPTADO_CONDICIONAL"
   | "RECHAZADO"
-  | "RFCE_ACEPTADO";
+  | "NO_ENCONTRADO"
+  | "RFCE_ACEPTADO"
+  | "RFCE_RECHAZADO"
+  | "RFCE_NO_ENCONTRADO";
 
 export const ECF_TYPES: Record<TipoEcf, { name: string; short: string; description: string }> = {
   "31": { name: "Factura de Crédito Fiscal", short: "Crédito Fiscal", description: "B2B — requiere RNC del comprador" },
@@ -64,10 +68,14 @@ export const CODIGO_MODIFICACION_LABELS: Record<CodigoModificacion, string> = {
 
 export const ESTADO_DGII_COLORS: Record<EstadoDgii, string> = {
   ENVIADO: "var(--c-amber, #f59e0b)",
+  EN_PROCESO: "var(--c-amber, #f59e0b)",
   ACEPTADO: "var(--c-green, #22c55e)",
-  "ACEPTADO CONDICIONAL": "var(--c-amber, #f59e0b)",
+  ACEPTADO_CONDICIONAL: "var(--c-amber, #f59e0b)",
   RECHAZADO: "var(--bad, #ef4444)",
+  NO_ENCONTRADO: "var(--muted, #6b7280)",
   RFCE_ACEPTADO: "var(--c-green, #22c55e)",
+  RFCE_RECHAZADO: "var(--bad, #ef4444)",
+  RFCE_NO_ENCONTRADO: "var(--muted, #6b7280)",
 };
 
 export function ecfRequiresComprador(tipo: TipoEcf): boolean {
