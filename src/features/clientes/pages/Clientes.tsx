@@ -113,7 +113,7 @@ export default function Clientes() {
             <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "flex-end" }}>
               <button
                 style={{
-                  background: "#fdecec",
+                  background: "var(--bad-soft)",
                   border: "1.5px solid var(--bad)",
                   borderRadius: 6,
                   cursor: "pointer",

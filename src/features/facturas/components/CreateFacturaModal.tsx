@@ -489,8 +489,8 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
                 ref={errorRef}
                 className="field-error"
                 style={{
-                  background: "#f7e9e9",
-                  border: "1px solid #e8c3c3",
+                  background: "var(--bad-soft)",
+                  border: "1px solid var(--bad-line)",
                   padding: "8px 10px",
                   borderRadius: 6,
                   marginBottom: 14,
@@ -729,7 +729,7 @@ function FlowChooser({ onPick }: { onPick: (flow: Flow) => void }) {
         onClick={() => onPick("client")}
         style={{
           textAlign: "left",
-          background: "#fff",
+          background: "var(--surface)",
           border: "1px solid var(--line)",
           borderRadius: 8,
           padding: 18,
@@ -747,7 +747,7 @@ function FlowChooser({ onPick }: { onPick: (flow: Flow) => void }) {
         onClick={() => onPick("cotizacion")}
         style={{
           textAlign: "left",
-          background: "#fff",
+          background: "var(--surface)",
           border: "1px solid var(--line)",
           borderRadius: 8,
           padding: 18,
@@ -789,8 +789,8 @@ function ClientePicker({ selected, onSelect, onClear }: ClientePickerProps) {
         <label>Cliente</label>
         <div
           style={{
-            border: "1px solid #bcd9c5",
-            background: "#eaf5ed",
+            border: "1px solid var(--good-line)",
+            background: "var(--good-soft)",
             borderRadius: 6,
             padding: "12px 14px",
             display: "flex",
@@ -841,7 +841,7 @@ function ClientePicker({ selected, onSelect, onClear }: ClientePickerProps) {
             marginTop: 4,
             maxHeight: 220,
             overflowY: "auto",
-            background: "#fff",
+            background: "var(--surface)",
             border: "1px solid var(--line)",
             borderRadius: 6,
             boxShadow: "0 12px 30px rgba(12,12,12,0.08)",
@@ -986,7 +986,7 @@ function ReferenciaFields({
               borderRadius: 6,
               font: "inherit",
               fontSize: 13,
-              background: "#fff",
+              background: "var(--surface)",
             }}
           >
             {(Object.entries(CODIGO_MODIFICACION_LABELS) as [CodigoModificacion, string][]).map(([code, label]) => (
@@ -1051,7 +1051,7 @@ function FormFields({
               borderRadius: 6,
               font: "inherit",
               fontSize: 13,
-              background: "#fff",
+              background: "var(--surface)",
             }}
           >
             {(Object.entries(TIPO_PAGO_LABELS) as [string, string][]).map(([code, label]) => (
@@ -1200,7 +1200,7 @@ function ItemsSection({
                 borderRadius: 6,
                 font: "inherit",
                 fontSize: 12,
-                background: "#fff",
+                background: "var(--surface)",
               }}
             >
               {allowedIndicadores.map((ind) => (
@@ -1301,7 +1301,7 @@ function ItemsSection({
                       <button
                         type="button"
                         className="btn-ghost"
-                        style={{ color: "var(--bad)", borderColor: "#e8c3c3" }}
+                        style={{ color: "var(--bad)", borderColor: "var(--bad-line)" }}
                         onClick={() => onRemoveItem(it.id)}
                       >
                         Quitar
@@ -1352,7 +1352,7 @@ function CotizacionSearch({ onSelect }: { onSelect: (cot: Cotizacion) => void })
             overflowY: "auto",
             border: "1px solid var(--line)",
             borderRadius: 6,
-            background: "#fff",
+            background: "var(--surface)",
           }}
         >
           {isLoading && (
@@ -1411,8 +1411,8 @@ function SelectedCotizacionBanner({
       <label>Cotización</label>
       <div
         style={{
-          border: "1px solid #bcd9c5",
-          background: "#eaf5ed",
+          border: "1px solid var(--good-line)",
+          background: "var(--good-soft)",
           borderRadius: 6,
           padding: "12px 14px",
           display: "flex",

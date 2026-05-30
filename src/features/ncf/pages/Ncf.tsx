@@ -265,7 +265,7 @@ function KpiCard({ label, value, accent, mono }: KpiCardProps) {
     <div
       style={{
         position: "relative",
-        background: "white",
+        background: "var(--surface)",
         border: "1px solid var(--line)",
         borderRadius: 8,
         padding: "14px 16px",

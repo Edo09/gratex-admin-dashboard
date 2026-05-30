@@ -49,7 +49,7 @@ export function EcfTypeSelector({ value, onChange }: EcfTypeSelectorProps) {
                     fontSize: 11,
                     fontWeight: 800,
                     background: active ? "var(--c-accent, #3b82f6)" : "var(--ink)",
-                    color: "#fff",
+                    color: active ? "#fff" : "var(--paper)",
                     padding: "3px 7px",
                     borderRadius: 4,
                     letterSpacing: "0.06em",

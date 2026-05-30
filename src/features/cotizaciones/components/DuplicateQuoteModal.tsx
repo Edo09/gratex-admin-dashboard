@@ -232,8 +232,8 @@ export function DuplicateQuoteModal({
               <div
                 className="field-error"
                 style={{
-                  background: "#f7e9e9",
-                  border: "1px solid #e8c3c3",
+                  background: "var(--bad-soft)",
+                  border: "1px solid var(--bad-line)",
                   padding: "8px 10px",
                   borderRadius: 6,
                   marginBottom: 14,
@@ -430,8 +430,8 @@ function SelectedPreview({
       <label>Cotización seleccionada</label>
       <div
         style={{
-          border: "1px solid #bcd9c5",
-          background: "#eaf5ed",
+          border: "1px solid var(--good-line)",
+          background: "var(--good-soft)",
           borderRadius: 8,
           padding: "14px 16px",
         }}
@@ -499,7 +499,7 @@ function SelectedPreview({
               );
             })}
             {extraItems.map((it, idx) => (
-              <tr key={`x-${it.id}`} style={{ background: "#fffaeb" }}>
+              <tr key={`x-${it.id}`} style={{ background: "var(--warn-soft)" }}>
                 <td className="mono" style={{ paddingLeft: 16 }}>{originalCount + idx + 1}</td>
                 <td>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -631,8 +631,8 @@ function AddItemsModal({ existing, onAdd, onRemove, onClose }: AddItemsModalProp
               <div
                 className="field-error"
                 style={{
-                  background: "#f7e9e9",
-                  border: "1px solid #e8c3c3",
+                  background: "var(--bad-soft)",
+                  border: "1px solid var(--bad-line)",
                   padding: "8px 10px",
                   borderRadius: 6,
                   marginBottom: 14,
@@ -752,7 +752,7 @@ function AddItemsModal({ existing, onAdd, onRemove, onClose }: AddItemsModalProp
                           <button
                             type="button"
                             className="btn-ghost"
-                            style={{ color: "var(--bad)", borderColor: "#e8c3c3" }}
+                            style={{ color: "var(--bad)", borderColor: "var(--bad-line)" }}
                             onClick={() => onRemove(it.id)}
                           >
                             Quitar

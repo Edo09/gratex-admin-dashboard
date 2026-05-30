@@ -105,8 +105,8 @@ export function CreateClienteModal({ open, onClose, onCreated }: CreateClienteMo
             <div
               className="field-error"
               style={{
-                background: "#f7e9e9",
-                border: "1px solid #e8c3c3",
+                background: "var(--bad-soft)",
+                border: "1px solid var(--bad-line)",
                 padding: "8px 10px",
                 borderRadius: 6,
                 marginBottom: 14,

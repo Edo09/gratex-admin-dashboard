@@ -22,7 +22,87 @@
   --good: #1d7a3e;
   --warn: #a35a00;
   --bad: #b91c1c;
+
+  /* soft status tints (banners / alert rows) */
+  --good-soft: #eaf5ed;
+  --good-line: #bcd9c5;
+  --warn-soft: #fffaeb;
+  --bad-soft: #f7e9e9;
+  --bad-line: #e8c3c3;
 }
+
+/* =====================================================
+   DARK THEME — soft charcoal
+   Toggled by `.dark` on <html> (see ThemeContext). Redefines
+   the design tokens, then overrides the handful of hardcoded
+   light literals so the whole Press UI follows the theme.
+   ===================================================== */
+.dark {
+  color-scheme: dark;
+
+  --bg: #161b24;        /* sidebar / inset surfaces */
+  --paper: #10141c;     /* page background (darkest) */
+  --surface: #1a2231;   /* cards, panels, modals */
+  --ink: #e8eaee;       /* primary text + inverted fills */
+  --ink-2: #c3c8d2;     /* secondary text */
+  --muted: #8b93a3;     /* muted text */
+  --line: #2b3445;      /* borders */
+  --line-2: #232b39;    /* subtle dividers */
+  --c-key: #e8eaee;     /* doc CMYK strip "key" swatch */
+  --accent: #6d75f5;
+  --accent-soft: #20264a;
+  --good: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+
+  --good-soft: rgba(74, 222, 128, 0.12);
+  --good-line: rgba(74, 222, 128, 0.32);
+  --warn-soft: rgba(251, 191, 36, 0.12);
+  --bad-soft: rgba(248, 113, 113, 0.12);
+  --bad-line: rgba(248, 113, 113, 0.32);
+
+  --hover: #232c3b;     /* row / nav hover (dark-only) */
+}
+
+/* hardcoded white surfaces → elevated dark surface */
+.dark .sidebar-cta,
+.dark .btn-ghost,
+.dark .icon-btn,
+.dark .kbd,
+.dark .chip,
+.dark .seg,
+.dark .modal,
+.dark .doc,
+.dark .ncf-card,
+.dark .slide-row,
+.dark .nav-item.active,
+.dark .field input,
+.dark .field textarea,
+.dark .field select { background: var(--surface); }
+
+.dark .search input:focus,
+.dark .field .search input:focus,
+.dark .upload:hover { background: var(--surface); }
+
+/* hover fills (were warm off-whites) */
+.dark .nav-item:hover,
+.dark .ds-table tbody tr:hover,
+.dark .search-row:hover,
+.dark .client:hover { background: var(--hover); }
+
+/* ink-filled controls invert: light fill (var(--ink)) needs dark text.
+   Color variants (.btn-blue etc.) keep their own fill + white text. */
+.dark .btn:not(.btn-accent):not(.btn-gray):not(.btn-blue):not(.btn-green) { color: var(--paper); }
+.dark .btn:not(.btn-accent):not(.btn-gray):not(.btn-blue):not(.btn-green):hover { background: #cdd2db; }
+.dark .chip.active,
+.dark .seg button.active,
+.dark .quote-code { color: var(--paper); }
+.dark .toast { color: var(--paper); border-color: var(--line); }
+
+/* status pills → translucent dark tints */
+.dark .pill.good { background: rgba(74, 222, 128, 0.12); border-color: rgba(74, 222, 128, 0.32); }
+.dark .pill.warn { background: rgba(251, 191, 36, 0.12); border-color: rgba(251, 191, 36, 0.32); }
+.dark .pill.bad  { background: rgba(248, 113, 113, 0.12); border-color: rgba(248, 113, 113, 0.32); }
 
 html, body {
   margin: 0;
@@ -148,6 +228,16 @@ html, body {
   transition: border-color .12s, color .12s;
 }
 .sidebar-cta:hover { border-color: var(--ink); }
+.sidebar-cta-row { display: flex; gap: 8px; margin: 0 0 12px; }
+.sidebar-cta-row .sidebar-cta {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 9px 8px;
+  font-size: 11px;
+  gap: 6px;
+  white-space: nowrap;
+}
 .user-row { display: grid; grid-template-columns: 32px 1fr; gap: 10px; padding: 6px; align-items: center; }
 .avatar {
   width: 32px;

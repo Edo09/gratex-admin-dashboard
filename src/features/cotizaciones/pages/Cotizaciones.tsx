@@ -92,7 +92,7 @@ export default function Cotizaciones() {
             padding: "0 10px",
             fontSize: 12,
             fontFamily: "Geist Mono, monospace",
-            background: "white",
+            background: "var(--surface)",
             color: "var(--ink)",
             cursor: "pointer",
             minWidth: 110,

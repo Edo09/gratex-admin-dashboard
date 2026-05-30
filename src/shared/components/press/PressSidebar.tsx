@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useDashboardClientCount, useDashboardCotizacionCount } from "@/features/dashboard/hooks/useDashboardData";
 import { useFacturasQuery } from "@/features/facturas/hooks/useFacturasQuery";
 import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useTheme } from "@/shared/context/ThemeContext";
 import { Icons } from "./PressIcons";
 
 interface NavItem {
@@ -29,6 +30,7 @@ interface PressSidebarProps {
 export function PressSidebar({ onClose }: PressSidebarProps) {
   const location = useLocation();
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   const { data: clientesCount } = useDashboardClientCount();
   const { data: cotizacionesCount } = useDashboardCotizacionCount();
@@ -76,16 +78,28 @@ export function PressSidebar({ onClose }: PressSidebarProps) {
         </Link>
       ))}
       <div className="sidebar-foot">
-        <a
-          href="https://gratex.net/"
-          target="_blank"
-          rel="noreferrer"
-          className="sidebar-cta"
-          onClick={onClose}
-        >
-          <Icons.external size={13} />
-          <span>Ver sitio</span>
-        </a>
+        <div className="sidebar-cta-row">
+          <a
+            href="https://gratex.net/"
+            target="_blank"
+            rel="noreferrer"
+            className="sidebar-cta"
+            onClick={onClose}
+          >
+            <Icons.external size={12} />
+            <span>Ver sitio</span>
+          </a>
+
+          <button
+            type="button"
+            className="sidebar-cta"
+            onClick={toggleTheme}
+            aria-label={theme === "dark" ? "Activar modo claro" : "Activar modo oscuro"}
+          >
+            {theme === "dark" ? <Icons.sun size={12} /> : <Icons.moon size={12} />}
+            <span>{theme === "dark" ? "Modo claro" : "Modo oscuro"}</span>
+          </button>
+        </div>
 
         <div className="nav-h">Sesión</div>
         <div className="user-row">

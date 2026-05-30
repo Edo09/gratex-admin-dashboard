@@ -5,7 +5,8 @@
       "Bash(npm install *)",
       "Bash(npx vite *)",
       "Bash(npx eslint *)",
-      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\edgarcia\\\\Documents\\\\grat\\\\gratex-admin-dashboard\\\\src\" -Directory | ForEach-Object { $_.Name })"
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\edgarcia\\\\Documents\\\\grat\\\\gratex-admin-dashboard\\\\src\" -Directory | ForEach-Object { $_.Name })",
+      "PowerShell(npx vite build 2>&1)"
     ]
   }
 }

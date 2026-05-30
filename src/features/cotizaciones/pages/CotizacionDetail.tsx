@@ -109,7 +109,7 @@ export default function CotizacionDetail() {
             className="btn"
             onClick={() => downloadSavedPdf(cotizacion.id, `cotizacion-${code}`)}
             style={{
-              background: "#fff",
+              background: "var(--surface)",
               borderColor: "var(--bad)",
               color: "var(--bad)",
             }}
