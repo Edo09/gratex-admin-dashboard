@@ -359,7 +359,7 @@ html, body {
 }
 .icon-btn:hover { border-color: var(--ink); }
 
-.content { padding: 28px 36px 72px; max-width: 1200px; }
+.content { padding: 28px 36px 72px; max-width: 2400px; margin-inline: auto; }
 
 .page-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; gap: 24px; }
 .page-marks {
