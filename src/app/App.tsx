@@ -4,7 +4,7 @@ import { AppRoutes } from "./routes";
 
 export default function App() {
   return (
-    <Router basename="/admin">
+    <Router basename="/admin/">
       <ScrollToTop />
       <AppRoutes />
     </Router>
