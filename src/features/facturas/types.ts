@@ -37,6 +37,12 @@ export interface Factura {
   company_name?: string;
   total?: string | number;
   amount?: string | number;
+  // Totales calculados por el backend (GET por ID). Tienen prioridad sobre el
+  // cálculo local: el precio del item incluye ITBIS si indicador_monto_gravado="0".
+  monto_gravado?: string | number;
+  monto_exento?: string | number;
+  monto_tasa_cero?: string | number;
+  total_itbis?: string | number;
   items?: FacturaItem[];
   // e-CF fields
   tipo_ecf?: TipoEcf;

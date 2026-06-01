@@ -104,6 +104,52 @@ export function calculateItbisBreakdown(items: ItemDraft[]): ItbisBreakdown {
   };
 }
 
+function toNumber(v: unknown): number {
+  if (v == null) return 0;
+  const n = typeof v === "string" ? parseFloat(v) : Number(v);
+  return isNaN(n) ? 0 : n;
+}
+
+/**
+ * Breakdown para mostrar en el detalle. Prioriza los totales que devuelve el
+ * backend (monto_gravado / total_itbis / total), porque el precio del item
+ * incluye ITBIS cuando indicador_monto_gravado="0" y recalcular en el front lo
+ * sumaría de nuevo. Cae al cálculo desde items solo para registros sin totales.
+ */
+export function getFacturaBreakdown(f: Factura): ItbisBreakdown {
+  const hasServerTotals = f.total_itbis != null || f.monto_gravado != null;
+  if (hasServerTotals) {
+    const subtotal = toNumber(f.monto_gravado);
+    const totalItbis = toNumber(f.total_itbis);
+    const montoExento = toNumber(f.monto_exento);
+    const montoTasaCero = toNumber(f.monto_tasa_cero);
+    const total = toNumber(f.total) || subtotal + totalItbis + montoExento + montoTasaCero;
+    return {
+      subtotal,
+      itbis18: totalItbis,
+      itbis16: 0,
+      totalItbis,
+      montoExento,
+      montoTasaCero,
+      total,
+    };
+  }
+
+  const items = f.items ?? [];
+  if (items.length > 0) return calculateItbisFromResponse(items);
+
+  const amount = parseFacturaAmount(f);
+  return {
+    subtotal: amount,
+    itbis18: 0,
+    itbis16: 0,
+    totalItbis: 0,
+    montoExento: 0,
+    montoTasaCero: 0,
+    total: amount,
+  };
+}
+
 export function calculateItbisFromResponse(items: FacturaItem[]): ItbisBreakdown {
   const drafts: ItemDraft[] = items.map((it, i) => ({
     id: i,

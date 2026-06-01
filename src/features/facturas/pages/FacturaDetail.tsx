@@ -14,7 +14,7 @@ import {
   getItemPrice,
   getItemQty,
   getItemIndicador,
-  calculateItbisFromResponse,
+  getFacturaBreakdown,
 } from "../utils";
 import { useFacturaByIdQuery } from "../hooks/useFacturasQuery";
 import { useFacturaStatusQuery } from "../hooks/useFacturaStatus";
@@ -69,13 +69,7 @@ export default function FacturaDetail() {
     lines.push({ qty: 1, desc: factura.description ?? "Servicio", unit: total, indicador: 1 });
   }
 
-  const breakdown = rawItems.length > 0
-    ? calculateItbisFromResponse(rawItems)
-    : (() => {
-        const subtotal = lines.reduce((s, it) => s + it.qty * it.unit, 0);
-        const itbis18 = subtotal * 0.18;
-        return { subtotal, itbis18, itbis16: 0, totalItbis: itbis18, montoExento: 0, montoTasaCero: 0, total: subtotal + itbis18 };
-      })();
+  const breakdown = getFacturaBreakdown(factura);
 
   const ncfCode = getFacturaNcf(factura);
   const isEcf = !!factura.tipo_ecf || ncfCode.startsWith("E");
