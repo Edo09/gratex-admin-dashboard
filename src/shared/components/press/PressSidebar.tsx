@@ -55,7 +55,7 @@ export function PressSidebar({ onClose }: PressSidebarProps) {
         <Link to="/" className="brand" onClick={onClose}>
           <img
             className="brand-logo"
-            src="/admin/images/logo/logo-gratex-gray.svg"
+            src={`/admin/images/logo/logo-gratex-${theme === "dark" ? "white" : "gray"}.svg`}
             alt="Gratex"
           />
         </Link>
@@ -92,12 +92,12 @@ export function PressSidebar({ onClose }: PressSidebarProps) {
 
           <button
             type="button"
-            className="sidebar-cta"
+            className="sidebar-cta sidebar-cta-icon"
             onClick={toggleTheme}
             aria-label={theme === "dark" ? "Activar modo claro" : "Activar modo oscuro"}
+            title={theme === "dark" ? "Modo claro" : "Modo oscuro"}
           >
-            {theme === "dark" ? <Icons.sun size={12} /> : <Icons.moon size={12} />}
-            <span>{theme === "dark" ? "Modo claro" : "Modo oscuro"}</span>
+            {theme === "dark" ? <Icons.sun size={16} /> : <Icons.moon size={16} />}
           </button>
         </div>
 

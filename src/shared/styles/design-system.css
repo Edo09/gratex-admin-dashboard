@@ -238,6 +238,12 @@ html, body {
   gap: 6px;
   white-space: nowrap;
 }
+.sidebar-cta-row .sidebar-cta-icon {
+  flex: 0 0 auto;
+  width: 38px;
+  padding-left: 0;
+  padding-right: 0;
+}
 .user-row { display: grid; grid-template-columns: 32px 1fr; gap: 10px; padding: 6px; align-items: center; }
 .avatar {
   width: 32px;
