@@ -26,7 +26,7 @@ interface DuplicateQuoteModalProps {
   initialCotizacion?: Cotizacion | null;
 }
 
-interface ExtraItem {
+interface DraftItem {
   id: number;
   description: string;
   amount: number;
@@ -40,6 +40,23 @@ interface ItemFormState {
 }
 
 const EMPTY_ITEM_FORM: ItemFormState = { description: "", amount: "", quantity: "1" };
+
+function cotizacionToDraftItems(c: Cotizacion): DraftItem[] {
+  const items = Array.isArray(c.items) ? c.items : [];
+  if (items.length > 0) {
+    return items.map((it, idx) => ({
+      id: Date.now() + idx,
+      description: it.description,
+      amount: typeof it.amount === "string" ? parseFloat(it.amount) : Number(it.amount),
+      quantity: Number(it.quantity ?? 1),
+    }));
+  }
+  if (c.description) {
+    const t = parseCotizacionAmount(c);
+    return [{ id: Date.now(), description: c.description, amount: t, quantity: 1 }];
+  }
+  return [];
+}
 
 export function DuplicateQuoteModal({
   open,
@@ -64,8 +81,10 @@ export function DuplicateQuoteModal({
   const [selected, setSelected] = useState<Cotizacion | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [apiError, setApiError] = useState("");
-  const [busy, setBusy] = useState<null | "preview" | "save">(null);
-  const [extraItems, setExtraItems] = useState<ExtraItem[]>([]);
+  const [busy, setBusy] = useState<null | "preview" | "save" | "send">(null);
+  const [draftItems, setDraftItems] = useState<DraftItem[]>([]);
+  const [editingItemId, setEditingItemId] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState<ItemFormState>(EMPTY_ITEM_FORM);
   const [addItemsOpen, setAddItemsOpen] = useState(false);
 
   useEffect(() => {
@@ -78,11 +97,16 @@ export function DuplicateQuoteModal({
     (async () => {
       try {
         const full = await fetchCotizacionById(initialCotizacion.id);
-        if (!cancelled) setSelected(full ?? initialCotizacion);
+        const finalCot = full ?? initialCotizacion;
+        if (!cancelled) {
+          setSelected(finalCot);
+          setDraftItems(cotizacionToDraftItems(finalCot));
+        }
       } catch (err) {
         if (!cancelled) {
           setApiError(extractErrorMessage(err) ?? "No se pudo cargar la cotización.");
           setSelected(initialCotizacion);
+          setDraftItems(cotizacionToDraftItems(initialCotizacion));
         }
       } finally {
         if (!cancelled) setLoadingDetail(false);
@@ -100,12 +124,53 @@ export function DuplicateQuoteModal({
     setSelected(null);
     setApiError("");
     setBusy(null);
-    setExtraItems([]);
+    setDraftItems([]);
+    setEditingItemId(null);
+    setEditForm(EMPTY_ITEM_FORM);
     setAddItemsOpen(false);
   };
 
-  const removeExtraItem = (id: number) =>
-    setExtraItems((prev) => prev.filter((it) => it.id !== id));
+  const removeDraftItem = (id: number) => {
+    setDraftItems((prev) => prev.filter((it) => it.id !== id));
+    if (editingItemId === id) {
+      setEditingItemId(null);
+      setEditForm(EMPTY_ITEM_FORM);
+    }
+  };
+
+  const startEditItem = (id: number) => {
+    const item = draftItems.find((i) => i.id === id);
+    if (!item) return;
+    setEditingItemId(id);
+    setEditForm({
+      description: item.description,
+      amount: item.amount.toString(),
+      quantity: item.quantity.toString(),
+    });
+  };
+
+  const cancelEditItem = () => {
+    setEditingItemId(null);
+    setEditForm(EMPTY_ITEM_FORM);
+  };
+
+  const saveEditItem = () => {
+    if (editingItemId == null) return;
+    const description = editForm.description.trim();
+    const amount = parseFloat(editForm.amount);
+    const quantity = parseFloat(editForm.quantity);
+    if (!description || isNaN(amount) || isNaN(quantity) || amount <= 0 || quantity <= 0) {
+      setApiError("Item inválido — descripción, monto y cantidad son requeridos.");
+      return;
+    }
+    setApiError("");
+    setDraftItems((prev) =>
+      prev.map((it) =>
+        it.id === editingItemId ? { ...it, description, amount, quantity } : it,
+      ),
+    );
+    cancelEditItem();
+  };
 
   const close = () => {
     if (busy || saveMutation.isPending) return;
@@ -118,7 +183,9 @@ export function DuplicateQuoteModal({
     setLoadingDetail(true);
     try {
       const full = await fetchCotizacionById(c.id);
-      setSelected(full ?? c);
+      const finalCot = full ?? c;
+      setSelected(finalCot);
+      setDraftItems(cotizacionToDraftItems(finalCot));
     } catch (err) {
       setApiError(extractErrorMessage(err) ?? "No se pudo cargar la cotización.");
     } finally {
@@ -128,28 +195,17 @@ export function DuplicateQuoteModal({
 
   const buildPayload = () => {
     if (!selected) return null;
-    let items = (selected.items ?? []).map((it) => {
-      const amount = typeof it.amount === "string" ? parseFloat(it.amount) : Number(it.amount);
-      const quantity = Number(it.quantity ?? 1);
-      return {
-        description: it.description,
-        amount,
-        quantity,
-        subtotal: amount * quantity,
-      };
-    });
-    if (items.length === 0 && selected.description) {
-      const t = parseCotizacionAmount(selected);
-      items = [{ description: selected.description, amount: t, quantity: 1, subtotal: t }];
+    if (editingItemId != null) {
+      setApiError("Termina de editar el item antes de continuar.");
+      return null;
     }
-    const extras = extraItems.map((it) => ({
+    if (draftItems.length === 0) return null;
+    const items = draftItems.map((it) => ({
       description: it.description,
       amount: it.amount,
       quantity: it.quantity,
       subtotal: it.amount * it.quantity,
     }));
-    items = [...items, ...extras];
-    if (items.length === 0) return null;
     const total = items.reduce((s, it) => s + it.subtotal, 0);
     return {
       client_id: selected.client_id ?? null,
@@ -178,17 +234,20 @@ export function DuplicateQuoteModal({
     }
   };
 
-  const duplicate = async () => {
+  const duplicate = async (sendEmail: boolean) => {
     const payload = buildPayload();
     if (!payload) {
       setApiError("La cotización seleccionada no tiene items para duplicar.");
       return;
     }
     setApiError("");
-    setBusy("save");
+    setBusy(sendEmail ? "send" : "save");
     try {
-      const id = await saveMutation.mutateAsync({ editingId: null, payload });
-      onCreated?.("Cotización duplicada");
+      const id = await saveMutation.mutateAsync({
+        editingId: null,
+        payload: { ...payload, sent_email: sendEmail },
+      });
+      onCreated?.(sendEmail ? "Cotización duplicada y enviada" : "Cotización duplicada");
       reset();
       onClose();
       if (id) await openSavedPdf(id);
@@ -199,15 +258,7 @@ export function DuplicateQuoteModal({
     }
   };
 
-  const originalTotal = selected
-    ? (selected.items ?? []).reduce((s, it) => {
-        const a = typeof it.amount === "string" ? parseFloat(it.amount) : Number(it.amount);
-        const q = Number(it.quantity ?? 1);
-        return s + a * q;
-      }, 0) || parseCotizacionAmount(selected)
-    : 0;
-  const extrasTotal = extraItems.reduce((s, it) => s + it.amount * it.quantity, 0);
-  const selectedTotal = originalTotal + extrasTotal;
+  const selectedTotal = draftItems.reduce((s, it) => s + it.amount * it.quantity, 0);
 
   const anyBusy = busy != null || saveMutation.isPending;
 
@@ -247,11 +298,19 @@ export function DuplicateQuoteModal({
               <SelectedPreview
                 cotizacion={selected}
                 total={selectedTotal}
-                extraItems={extraItems}
-                onRemoveExtra={removeExtraItem}
+                draftItems={draftItems}
+                editingItemId={editingItemId}
+                editForm={editForm}
+                onEditFormChange={setEditForm}
+                onStartEdit={startEditItem}
+                onCancelEdit={cancelEditItem}
+                onSaveEdit={saveEditItem}
+                onRemoveItem={removeDraftItem}
                 onClear={() => {
                   setSelected(null);
-                  setExtraItems([]);
+                  setDraftItems([]);
+                  setEditingItemId(null);
+                  setEditForm(EMPTY_ITEM_FORM);
                 }}
               />
             ) : (
@@ -275,10 +334,9 @@ export function DuplicateQuoteModal({
                   onClick={() => setAddItemsOpen(true)}
                   disabled={anyBusy}
                   type="button"
-                  title="Agregar items adicionales antes de duplicar"
+                  title="Agregar items nuevos a la cotización duplicada"
                 >
                   <Icons.plus size={13} /> Agregar items
-                  {extraItems.length > 0 ? ` (${extraItems.length})` : ""}
                 </button>
                 <button
                   className="btn btn-gray"
@@ -291,11 +349,20 @@ export function DuplicateQuoteModal({
                 </button>
                 <button
                   className="btn btn-accent"
-                  onClick={duplicate}
+                  onClick={() => duplicate(false)}
                   disabled={anyBusy}
                   type="button"
                 >
                   {busy === "save" ? "Duplicando…" : "Duplicar con fecha de hoy"}
+                </button>
+                <button
+                  className="btn btn-green"
+                  onClick={() => duplicate(true)}
+                  disabled={anyBusy}
+                  type="button"
+                  title="Guarda la cotización duplicada y envía el correo al cliente"
+                >
+                  {busy === "send" ? "Enviando…" : "Enviar con fecha de hoy"}
                 </button>
               </>
             )}
@@ -305,9 +372,7 @@ export function DuplicateQuoteModal({
 
       {addItemsOpen && (
         <AddItemsModal
-          existing={extraItems}
-          onAdd={(it) => setExtraItems((prev) => [...prev, it])}
-          onRemove={removeExtraItem}
+          onAdd={(it) => setDraftItems((prev) => [...prev, it])}
           onClose={() => setAddItemsOpen(false)}
         />
       )}
@@ -411,20 +476,30 @@ function SearchList({ query, onQueryChange, isFetching, matches, onPick }: Searc
 interface SelectedPreviewProps {
   cotizacion: Cotizacion;
   total: number;
-  extraItems: ExtraItem[];
-  onRemoveExtra: (id: number) => void;
+  draftItems: DraftItem[];
+  editingItemId: number | null;
+  editForm: ItemFormState;
+  onEditFormChange: (form: ItemFormState) => void;
+  onStartEdit: (id: number) => void;
+  onCancelEdit: () => void;
+  onSaveEdit: () => void;
+  onRemoveItem: (id: number) => void;
   onClear: () => void;
 }
 
 function SelectedPreview({
   cotizacion,
   total,
-  extraItems,
-  onRemoveExtra,
+  draftItems,
+  editingItemId,
+  editForm,
+  onEditFormChange,
+  onStartEdit,
+  onCancelEdit,
+  onSaveEdit,
+  onRemoveItem,
   onClear,
 }: SelectedPreviewProps) {
-  const items = cotizacion.items ?? [];
-  const originalCount = items.length;
   return (
     <div className="field">
       <label>Cotización seleccionada</label>
@@ -447,6 +522,12 @@ function SelectedPreview({
             <div className="mono" style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>
               {cotizacion.company_name ?? ""} · emitida {formatDisplayDate(cotizacion.date)}
             </div>
+            <div
+              className="mono"
+              style={{ fontSize: 10, color: "var(--muted)", marginTop: 6, letterSpacing: "0.04em" }}
+            >
+              "Duplicar" guarda sin enviar email. "Enviar" guarda y envía al cliente.
+            </div>
           </div>
           <button type="button" className="btn-ghost" onClick={onClear}>
             Cambiar
@@ -465,82 +546,132 @@ function SelectedPreview({
         <table className="ds-table" style={{ margin: 0 }}>
           <thead>
             <tr>
-              <th style={{ width: 40, paddingLeft: 16 }}>#</th>
+              <th style={{ width: 36, paddingLeft: 16 }}>#</th>
               <th>Descripción</th>
-              <th style={{ width: 140, textAlign: "right" }}>Cant × Monto</th>
-              <th style={{ width: 110, textAlign: "right", paddingRight: 16 }}>Subtotal</th>
+              <th style={{ width: 160, textAlign: "right" }}>Cant × Monto</th>
+              <th style={{ width: 110, textAlign: "right" }}>Subtotal</th>
+              <th style={{ width: 150, textAlign: "right", paddingRight: 16 }} />
             </tr>
           </thead>
           <tbody>
-            {items.length === 0 && (
+            {draftItems.length === 0 && (
               <tr>
-                <td colSpan={4} style={{ padding: "14px 16px", color: "var(--muted)", fontSize: 12 }}>
-                  Sin items detallados — se duplicará la descripción y el total.
+                <td colSpan={5} style={{ padding: "14px 16px", color: "var(--muted)", fontSize: 12 }}>
+                  Sin items — agrega al menos uno antes de duplicar.
                 </td>
               </tr>
             )}
-            {items.map((it, idx) => {
-              const amount = typeof it.amount === "string" ? parseFloat(it.amount) : Number(it.amount);
-              const qty = Number(it.quantity ?? 1);
+            {draftItems.map((it, idx) => {
+              const isEditing = editingItemId === it.id;
               return (
-                <tr key={`o-${idx}`}>
+                <tr key={it.id} style={{ cursor: "default" }}>
                   <td className="mono" style={{ paddingLeft: 16 }}>{idx + 1}</td>
-                  <td>{it.description}</td>
-                  <td className="mono" style={{ textAlign: "right" }}>
-                    {qty} × {fmt.money(amount)}
+                  <td>
+                    {isEditing ? (
+                      <textarea
+                        rows={2}
+                        value={editForm.description}
+                        onChange={(e) =>
+                          onEditFormChange({ ...editForm, description: e.target.value })
+                        }
+                        style={{
+                          width: "100%",
+                          border: "1px solid var(--line)",
+                          borderRadius: 6,
+                          padding: "6px 8px",
+                          fontFamily: "inherit",
+                          fontSize: 13,
+                        }}
+                      />
+                    ) : (
+                      <div style={{ whiteSpace: "pre-line", maxWidth: 360 }}>{it.description}</div>
+                    )}
                   </td>
-                  <td
-                    className="mono"
-                    style={{ textAlign: "right", paddingRight: 16, fontWeight: 600 }}
-                  >
-                    {fmt.money(amount * qty)}
+                  <td className="mono" style={{ textAlign: "right" }}>
+                    {isEditing ? (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                        <input
+                          type="number"
+                          step="1"
+                          min="1"
+                          value={editForm.quantity}
+                          onChange={(e) =>
+                            onEditFormChange({ ...editForm, quantity: e.target.value })
+                          }
+                          style={{
+                            width: "100%",
+                            border: "1px solid var(--line)",
+                            borderRadius: 6,
+                            padding: "4px 8px",
+                            textAlign: "right",
+                            fontFamily: "inherit",
+                            fontSize: 12,
+                          }}
+                        />
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={editForm.amount}
+                          onChange={(e) =>
+                            onEditFormChange({ ...editForm, amount: e.target.value })
+                          }
+                          style={{
+                            width: "100%",
+                            border: "1px solid var(--line)",
+                            borderRadius: 6,
+                            padding: "4px 8px",
+                            textAlign: "right",
+                            fontFamily: "inherit",
+                            fontSize: 12,
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <>{it.quantity} × {fmt.money(it.amount)}</>
+                    )}
+                  </td>
+                  <td className="mono" style={{ textAlign: "right", fontWeight: 600 }}>
+                    {fmt.money(
+                      isEditing
+                        ? (parseFloat(editForm.amount) || 0) *
+                            (parseFloat(editForm.quantity) || 0)
+                        : it.amount * it.quantity,
+                    )}
+                  </td>
+                  <td style={{ textAlign: "right", paddingRight: 16 }}>
+                    {isEditing ? (
+                      <div style={{ display: "inline-flex", gap: 6 }}>
+                        <button type="button" className="btn-ghost" onClick={onCancelEdit}>
+                          Cancelar
+                        </button>
+                        <button type="button" className="btn btn-green" onClick={onSaveEdit}>
+                          Guardar
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{ display: "inline-flex", gap: 6 }}>
+                        <button
+                          type="button"
+                          className="btn-ghost"
+                          style={{ color: "var(--bad)", borderColor: "var(--bad-line)" }}
+                          onClick={() => onRemoveItem(it.id)}
+                        >
+                          Quitar
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-ghost"
+                          onClick={() => onStartEdit(it.id)}
+                        >
+                          Editar
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               );
             })}
-            {extraItems.map((it, idx) => (
-              <tr key={`x-${it.id}`} style={{ background: "var(--warn-soft)" }}>
-                <td className="mono" style={{ paddingLeft: 16 }}>{originalCount + idx + 1}</td>
-                <td>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span
-                      className="mono"
-                      style={{
-                        fontSize: 9,
-                        letterSpacing: "0.14em",
-                        textTransform: "uppercase",
-                        padding: "2px 6px",
-                        border: "1px solid #e6c878",
-                        borderRadius: 4,
-                        color: "#8a6a1c",
-                      }}
-                    >
-                      Nuevo
-                    </span>
-                    <span>{it.description}</span>
-                  </div>
-                </td>
-                <td className="mono" style={{ textAlign: "right" }}>
-                  {it.quantity} × {fmt.money(it.amount)}
-                </td>
-                <td
-                  className="mono"
-                  style={{ textAlign: "right", paddingRight: 16, fontWeight: 600 }}
-                >
-                  <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                    {fmt.money(it.amount * it.quantity)}
-                    <button
-                      type="button"
-                      className="btn-ghost"
-                      onClick={() => onRemoveExtra(it.id)}
-                      style={{ padding: "2px 8px", fontSize: 11 }}
-                    >
-                      Quitar
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
           </tbody>
         </table>
       </div>
@@ -577,17 +708,15 @@ function SelectedPreview({
 }
 
 interface AddItemsModalProps {
-  existing: ExtraItem[];
-  onAdd: (item: ExtraItem) => void;
-  onRemove: (id: number) => void;
+  onAdd: (item: DraftItem) => void;
   onClose: () => void;
 }
 
-function AddItemsModal({ existing, onAdd, onRemove, onClose }: AddItemsModalProps) {
+function AddItemsModal({ onAdd, onClose }: AddItemsModalProps) {
   const [form, setForm] = useState<ItemFormState>(EMPTY_ITEM_FORM);
   const [formError, setFormError] = useState("");
 
-  const submit = () => {
+  const submitAndClose = () => {
     const description = form.description.trim();
     const amount = parseFloat(form.amount);
     const quantity = parseFloat(form.quantity);
@@ -605,10 +734,8 @@ function AddItemsModal({ existing, onAdd, onRemove, onClose }: AddItemsModalProp
     }
     setFormError("");
     onAdd({ id: Date.now(), description, amount, quantity });
-    setForm(EMPTY_ITEM_FORM);
+    onClose();
   };
-
-  const runningTotal = existing.reduce((s, it) => s + it.amount * it.quantity, 0);
 
   return (
     <ModalPortal>
@@ -617,9 +744,9 @@ function AddItemsModal({ existing, onAdd, onRemove, onClose }: AddItemsModalProp
           <div className="modal-pad">
             <div className="modal-head">
               <div>
-                <h2 className="modal-title">Agregar items</h2>
+                <h2 className="modal-title">Agregar item</h2>
                 <div className="modal-sub">
-                  Items adicionales que se agregarán a la cotización duplicada.
+                  Se agregará a la cotización duplicada.
                 </div>
               </div>
               <button className="close-x" onClick={onClose} aria-label="Cerrar">
@@ -650,18 +777,6 @@ function AddItemsModal({ existing, onAdd, onRemove, onClose }: AddItemsModalProp
                 background: "var(--bg)",
               }}
             >
-              <div
-                className="mono"
-                style={{
-                  fontSize: 10,
-                  color: "var(--muted)",
-                  letterSpacing: "0.18em",
-                  textTransform: "uppercase",
-                  marginBottom: 10,
-                }}
-              >
-                Nuevo item
-              </div>
               <div className="item-add-form">
                 <div className="field item-desc" style={{ margin: 0 }}>
                   <label>Descripción</label>
@@ -693,111 +808,15 @@ function AddItemsModal({ existing, onAdd, onRemove, onClose }: AddItemsModalProp
                     onChange={(e) => setForm({ ...form, quantity: e.target.value })}
                   />
                 </div>
-                <button
-                  type="button"
-                  className="btn btn-accent item-add-btn"
-                  onClick={submit}
-                  style={{ height: 36 }}
-                >
-                  Agregar
-                </button>
               </div>
             </div>
-
-            <div
-              style={{
-                marginTop: 12,
-                border: "1px solid var(--line)",
-                borderRadius: 8,
-                overflow: "hidden",
-              }}
-            >
-              {existing.length === 0 ? (
-                <div
-                  style={{
-                    padding: "18px 16px",
-                    textAlign: "center",
-                    color: "var(--muted)",
-                    fontSize: 13,
-                  }}
-                >
-                  No has agregado items adicionales.
-                </div>
-              ) : (
-                <table className="ds-table" style={{ margin: 0 }}>
-                  <thead>
-                    <tr>
-                      <th style={{ width: 40, paddingLeft: 16 }}>#</th>
-                      <th>Descripción</th>
-                      <th style={{ width: 140, textAlign: "right" }}>Cant. × Monto</th>
-                      <th style={{ width: 110, textAlign: "right" }}>Subtotal</th>
-                      <th style={{ width: 90, paddingRight: 16 }} />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {existing.map((it, idx) => (
-                      <tr key={it.id}>
-                        <td className="mono" style={{ paddingLeft: 16 }}>{idx + 1}</td>
-                        <td>{it.description}</td>
-                        <td className="mono" style={{ textAlign: "right" }}>
-                          {it.quantity} × {fmt.money(it.amount)}
-                        </td>
-                        <td
-                          className="mono"
-                          style={{ textAlign: "right", fontWeight: 600 }}
-                        >
-                          {fmt.money(it.amount * it.quantity)}
-                        </td>
-                        <td style={{ textAlign: "right", paddingRight: 16 }}>
-                          <button
-                            type="button"
-                            className="btn-ghost"
-                            style={{ color: "var(--bad)", borderColor: "var(--bad-line)" }}
-                            onClick={() => onRemove(it.id)}
-                          >
-                            Quitar
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-
-            {existing.length > 0 && (
-              <div
-                style={{
-                  marginTop: 10,
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: "10px 14px",
-                  background: "var(--bg)",
-                  border: "1px solid var(--line)",
-                  borderRadius: 8,
-                }}
-              >
-                <div
-                  className="mono"
-                  style={{
-                    fontSize: 10,
-                    letterSpacing: "0.18em",
-                    textTransform: "uppercase",
-                    color: "var(--muted)",
-                  }}
-                >
-                  Subtotal items nuevos
-                </div>
-                <div className="mono" style={{ fontSize: 14, fontWeight: 600 }}>
-                  {fmt.money(runningTotal)}
-                </div>
-              </div>
-            )}
           </div>
           <div className="modal-foot">
-            <button className="btn btn-blue" type="button" onClick={onClose}>
-              Listo
+            <button className="btn-ghost" type="button" onClick={onClose}>
+              Cancelar
+            </button>
+            <button className="btn btn-accent" type="button" onClick={submitAndClose}>
+              Agregar
             </button>
           </div>
         </div>
