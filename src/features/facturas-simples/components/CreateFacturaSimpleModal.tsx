@@ -9,6 +9,8 @@ import { getClientDisplayName, getClientPhone, type Cliente } from "@/features/c
 import { fetchCotizacionById, useCotizacionesQuery } from "@/features/cotizaciones/hooks/useCotizacionesQuery";
 import type { Cotizacion } from "@/features/cotizaciones/types";
 import { useNextNcf } from "@/features/ncf/hooks/useNcf";
+import { openPdfFromBase64, pickPdfBase64 } from "@/shared/lib/pdf";
+import { facturasSimplesApi } from "../api/facturasSimples";
 import { useCreateFacturaSimple } from "../hooks/useCreateFacturaSimple";
 import type { CreateFacturaSimplePayload } from "../types";
 
@@ -47,6 +49,7 @@ export function CreateFacturaSimpleModal({ open, onClose, onCreated }: CreateFac
   const [ncf, setNcf] = useState("");
   const [items, setItems] = useState<ItemRow[]>([]);
   const [apiError, setApiError] = useState("");
+  const [previewing, setPreviewing] = useState(false);
 
   // Add-item form
   const [desc, setDesc] = useState("");
@@ -85,6 +88,7 @@ export function CreateFacturaSimpleModal({ open, onClose, onCreated }: CreateFac
   const subtotal = items.reduce((s, it) => s + it.amount * it.quantity, 0);
   const totalItbis = items.reduce((s, it) => s + it.itbis_amount, 0);
   const total = subtotal + totalItbis;
+  const anyBusy = createFactura.isPending || previewing;
 
   const backToFlow = () => {
     setFlow(null);
@@ -175,32 +179,55 @@ export function CreateFacturaSimpleModal({ open, onClose, onCreated }: CreateFac
 
   const removeItem = (id: number) => setItems((prev) => prev.filter((it) => it.id !== id));
 
-  const submit = async () => {
-    setApiError("");
-    if (!selectedCliente && !clientName.trim()) {
-      setApiError("Selecciona un cliente o ingresa un nombre.");
-      return;
-    }
-    if (items.length === 0) {
-      setApiError("Agrega al menos un concepto.");
-      return;
-    }
+  const validate = (): string | null => {
+    if (!selectedCliente && !clientName.trim()) return "Selecciona un cliente o ingresa un nombre.";
+    if (items.length === 0) return "Agrega al menos un concepto.";
+    return null;
+  };
 
-    const payload: CreateFacturaSimplePayload = {
-      client_id: selectedCliente?.id,
-      client_name: selectedCliente ? undefined : clientName.trim(),
-      date: todayISO(),
-      NCF: ncf.trim() || undefined,
-      items: items.map((it) => ({
-        description: it.description,
-        quantity: it.quantity,
-        amount: it.amount,
-        itbis_amount: it.itbis_amount || undefined,
-      })),
-    };
+  const buildPayload = (): CreateFacturaSimplePayload => ({
+    client_id: selectedCliente?.id,
+    client_name: selectedCliente ? undefined : clientName.trim(),
+    date: todayISO(),
+    NCF: ncf.trim() || undefined,
+    items: items.map((it) => ({
+      description: it.description,
+      quantity: it.quantity,
+      amount: it.amount,
+      itbis_amount: it.itbis_amount || undefined,
+    })),
+  });
+
+  const handlePreview = async () => {
+    const invalid = validate();
+    if (invalid) {
+      setApiError(invalid);
+      return;
+    }
+    setApiError("");
+    setPreviewing(true);
+    try {
+      const res = await facturasSimplesApi.preview(buildPayload());
+      const base64 = pickPdfBase64(res.data);
+      if (base64) openPdfFromBase64(base64);
+      else setApiError("No se pudo generar el preview.");
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : "No se pudo generar el preview.");
+    } finally {
+      setPreviewing(false);
+    }
+  };
+
+  const submit = async () => {
+    const invalid = validate();
+    if (invalid) {
+      setApiError(invalid);
+      return;
+    }
+    setApiError("");
 
     try {
-      await createFactura.mutateAsync(payload);
+      await createFactura.mutateAsync(buildPayload());
       onCreated(ncf.trim() ? `Factura ${ncf.trim()} creada` : "Factura creada");
       onClose();
     } catch (err) {
@@ -210,7 +237,7 @@ export function CreateFacturaSimpleModal({ open, onClose, onCreated }: CreateFac
 
   return (
     <ModalPortal>
-    <div className="modal-bg" onClick={() => !createFactura.isPending && onClose()}>
+    <div className="modal-bg" onClick={() => !anyBusy && onClose()}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-pad">
           <div className="modal-head">
@@ -364,10 +391,13 @@ export function CreateFacturaSimpleModal({ open, onClose, onCreated }: CreateFac
               Total: {fmt.money(total)}
             </div>
             <div className="modal-foot-spacer" />
-            <button className="btn-ghost" onClick={onClose} disabled={createFactura.isPending}>
+            <button className="btn-ghost" onClick={onClose} disabled={anyBusy}>
               Cancelar
             </button>
-            <button className="btn btn-accent" onClick={submit} disabled={createFactura.isPending}>
+            <button className="btn btn-gray" onClick={handlePreview} disabled={anyBusy}>
+              {previewing ? "Generando…" : "Ver Preview"}
+            </button>
+            <button className="btn btn-accent" onClick={submit} disabled={anyBusy}>
               {createFactura.isPending ? "Guardando…" : "Crear factura"}
             </button>
           </div>

@@ -25,9 +25,12 @@ type ViewMode = "cards" | "table";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
+const REJECTED_ESTADOS = new Set(["RECHAZADO", "RFCE_RECHAZADO"]);
+
 export default function Facturas() {
   const navigate = useNavigate();
   const [view, setView] = useStoredState<ViewMode>("facturas:view", "cards");
+  const [hideRejected, setHideRejected] = useStoredState<boolean>("facturas:hideRejected", true);
   const [createOpen, setCreateOpen] = useState(false);
   const [toast, setToast] = useState("");
   const [query, setQuery] = useState("");
@@ -36,9 +39,12 @@ export default function Facturas() {
 
   const debouncedQuery = useDebounce(query, 400);
   const { data, isFetching } = useFacturasQuery({ query: debouncedQuery, page, pageSize });
-  const list = data?.items ?? [];
+  const rawList = data?.items ?? [];
+  const list = hideRejected
+    ? rawList.filter((f) => !REJECTED_ESTADOS.has(String(f.estado_dgii ?? "")))
+    : rawList;
   const pagination = data?.pagination;
-  const total = pagination?.total ?? list.length;
+  const total = pagination?.total ?? rawList.length;
   const totalPages = pagination?.totalPages ?? Math.max(1, Math.ceil(total / pageSize));
   const canPrev = page > 1;
   const canNext = page < totalPages;
@@ -105,6 +111,35 @@ export default function Facturas() {
             <option key={n} value={n}>{n} / página</option>
           ))}
         </select>
+
+        <label
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 7,
+            border: "1px solid var(--line)",
+            borderRadius: 6,
+            padding: "0 12px",
+            fontSize: 12,
+            fontFamily: "Geist Mono, monospace",
+            background: "var(--surface)",
+            color: "var(--ink)",
+            cursor: "pointer",
+            userSelect: "none",
+            whiteSpace: "nowrap",
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={hideRejected}
+            onChange={(e) => {
+              setHideRejected(e.target.checked);
+              setPage(1);
+            }}
+            style={{ accentColor: "var(--ink)", cursor: "pointer", margin: 0 }}
+          />
+          Ocultar rechazadas
+        </label>
 
         <div className="seg">
           <button className={view === "cards" ? "active" : ""} onClick={() => setView("cards")}>Cards</button>
