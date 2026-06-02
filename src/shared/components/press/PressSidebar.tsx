@@ -4,6 +4,7 @@ import { useDashboardClientCount, useDashboardCotizacionCount } from "@/features
 import { useFacturasQuery } from "@/features/facturas/hooks/useFacturasQuery";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useTheme } from "@/shared/context/ThemeContext";
+import { ComprobanteBadge, type ComprobanteType } from "@/shared/components/ui/ComprobanteBadge";
 import { Icons } from "./PressIcons";
 
 interface NavItem {
@@ -11,6 +12,8 @@ interface NavItem {
   icon: ReactElement;
   label: string;
   badge?: number;
+  /** Renders an e-CF / NCF pill in the item's trailing slot. */
+  tag?: ComprobanteType;
 }
 
 const ICON_SIZE = 16;
@@ -40,14 +43,17 @@ export function PressSidebar({ onClose }: PressSidebarProps) {
   const items: NavItem[] = [
     { to: "/", icon: <Icons.dashboard size={ICON_SIZE} />, label: "Dashboard" },
     { to: "/cotizaciones", icon: <Icons.fileText size={ICON_SIZE} />, label: "Cotizaciones", badge: cotizacionesCount },
-    { to: "/facturas", icon: <Icons.receipt size={ICON_SIZE} />, label: "Facturas", badge: facturasCount },
+    { to: "/facturas", icon: <Icons.receipt size={ICON_SIZE} />, label: "Facturas", badge: facturasCount, tag: "ecf" },
+    { to: "/facturas-ncf", icon: <Icons.receipt size={ICON_SIZE} />, label: "Facturas", tag: "ncf" },
     { to: "/clientes", icon: <Icons.users size={ICON_SIZE} />, label: "Clientes", badge: clientesCount },
     { to: "/comprobantes", icon: <Icons.hash size={ICON_SIZE} />, label: "Comprobantes" },
     { to: "/configuracion", icon: <Icons.settings size={ICON_SIZE} />, label: "Configuración" },
   ];
 
   const isActive = (to: string) =>
-    to === "/" ? location.pathname === "/" : location.pathname.startsWith(to);
+    to === "/"
+      ? location.pathname === "/"
+      : location.pathname === to || location.pathname.startsWith(`${to}/`);
 
   return (
     <aside className="sidebar">
@@ -74,7 +80,11 @@ export function PressSidebar({ onClose }: PressSidebarProps) {
         >
           <span className="nav-icon">{it.icon}</span>
           <span>{it.label}</span>
-          {it.badge !== undefined && <span className="nav-badge">{it.badge}</span>}
+          {it.tag ? (
+            <ComprobanteBadge type={it.tag} size={9} style={{ padding: "1px 6px" }} />
+          ) : (
+            it.badge !== undefined && <span className="nav-badge">{it.badge}</span>
+          )}
         </Link>
       ))}
       <div className="sidebar-foot">

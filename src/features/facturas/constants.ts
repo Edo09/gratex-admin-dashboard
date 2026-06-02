@@ -82,6 +82,14 @@ export function ecfRequiresComprador(tipo: TipoEcf): boolean {
   return tipo === "31";
 }
 
+/**
+ * Whether a client must be selected. E32 (Consumo) and E43 (Gastos Menores)
+ * have no identified buyer, so they are emitted without client_id / comprador.
+ */
+export function ecfRequiresCliente(tipo: TipoEcf): boolean {
+  return tipo !== "32" && tipo !== "43";
+}
+
 export function ecfRequiresReferencia(tipo: TipoEcf): boolean {
   return tipo === "33" || tipo === "34";
 }

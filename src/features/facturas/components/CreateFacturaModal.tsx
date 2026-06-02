@@ -29,6 +29,7 @@ import {
   BIEN_SERVICIO_LABELS,
   CODIGO_MODIFICACION_LABELS,
   ecfRequiresComprador,
+  ecfRequiresCliente,
   ecfRequiresReferencia,
   ecfRequiresRetencion,
   ecfRequiresTotales,
@@ -141,6 +142,7 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
 
   const breakdown = useMemo(() => calculateItbisBreakdown(items), [items]);
   const needsComprador = ecfRequiresComprador(tipoEcf);
+  const requiresCliente = ecfRequiresCliente(tipoEcf);
   const needsReferencia = ecfRequiresReferencia(tipoEcf);
   const needsRetencion = ecfRequiresRetencion(tipoEcf);
   const allowedIndicadores = ecfAllowedIndicadores(tipoEcf);
@@ -327,7 +329,6 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
 
   const buildPayload = (): CreateFacturaPayload => {
     const payload: CreateFacturaPayload = {
-      client_id: selectedCliente?.id ?? 0,
       user_id: user?.id,
       tipo_ecf: tipoEcf,
       fecha_emision: toEcfDate(date),
@@ -351,6 +352,12 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
         return item;
       }),
     };
+
+    // Client is optional for E32/E43, required for the rest — but always send
+    // it when one is selected.
+    if (selectedCliente?.id) {
+      payload.client_id = selectedCliente.id;
+    }
 
     if (ecfRequiresTipoIngresos(tipoEcf)) {
       payload.tipo_ingresos = "01";
@@ -378,7 +385,7 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
   };
 
   const requireValid = (): string | null => {
-    if (!selectedCliente?.id) return "Selecciona un cliente";
+    if (requiresCliente && !selectedCliente?.id) return "Selecciona un cliente";
     if (items.length === 0) return "Agrega al menos un item";
     if (needsComprador && !comprador.rnc?.trim()) return "RNC del comprador es requerido para E31";
     if (needsComprador && !comprador.razon_social.trim()) return "Nombre del comprador es requerido para E31";
@@ -394,7 +401,7 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
     setBusy("preview");
     try {
       await previewDraft({
-        client_id: selectedCliente?.id ?? 0,
+        client_id: selectedCliente?.id,
         items: items.map((it, idx) => ({
           numero_linea: idx + 1,
           indicador_facturacion: it.indicador_facturacion,
@@ -513,6 +520,14 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
                   onSelect={handleClientSelect}
                   onClear={() => { setSelectedCliente(null); setComprador({ rnc: "", razon_social: "" }); }}
                 />
+                {!requiresCliente && !selectedCliente && (
+                  <div
+                    className="mono"
+                    style={{ fontSize: 11, color: "var(--muted)", marginTop: -8, marginBottom: 14 }}
+                  >
+                    Cliente opcional para {ECF_TYPES[tipoEcf].short} (E{tipoEcf}).
+                  </div>
+                )}
                 {needsComprador && (
                   <CompradorFields comprador={comprador} onChange={setComprador} />
                 )}

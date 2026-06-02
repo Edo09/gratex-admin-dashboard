@@ -171,7 +171,8 @@ export interface FacturaItemPayload {
 }
 
 export interface CreateFacturaPayload {
-  client_id: number;
+  /** Omitted for E32/E43 (no identified buyer). */
+  client_id?: number;
   tipo_ecf: TipoEcf;
   items: FacturaItemPayload[];
   user_id?: number;
@@ -202,7 +203,7 @@ export interface CreateFacturaPayload {
 }
 
 export interface PreviewFacturaPayload {
-  client_id: number;
+  client_id?: number;
   items: FacturaItemPayload[];
   ncf?: string;
   date?: string;

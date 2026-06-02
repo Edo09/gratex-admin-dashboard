@@ -19,6 +19,8 @@
   --c-key: #0c0c0c;
   --accent: #4f46e5;
   --accent-soft: #ecedfd;
+  --c-accent: #3b82f6;        /* e-CF selector blue accent */
+  --c-accent-bg: #eef4ff;     /* e-CF active card tint */
   --good: #1d7a3e;
   --warn: #a35a00;
   --bad: #b91c1c;
@@ -51,6 +53,8 @@
   --c-key: #e8eaee;     /* doc CMYK strip "key" swatch */
   --accent: #6d75f5;
   --accent-soft: #20264a;
+  --c-accent: #5e9bff;                 /* e-CF accent — brighter blue for dark */
+  --c-accent-bg: rgba(94, 155, 255, 0.12); /* e-CF active card tint on dark */
   --good: #4ade80;
   --warn: #fbbf24;
   --bad: #f87171;

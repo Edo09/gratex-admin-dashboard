@@ -33,8 +33,8 @@ export function EcfTypeSelector({ value, onChange }: EcfTypeSelectorProps) {
               className={active ? "ecf-type-btn active" : "ecf-type-btn"}
               style={{
                 textAlign: "left",
-                background: active ? "var(--c-accent-bg, #eef4ff)" : "#fff",
-                border: `1.5px solid ${active ? "var(--c-accent, #3b82f6)" : "var(--line)"}`,
+                background: active ? "var(--c-accent-bg)" : "var(--surface)",
+                border: `1.5px solid ${active ? "var(--c-accent)" : "var(--line)"}`,
                 borderRadius: 6,
                 padding: "7px 9px",
                 cursor: "pointer",

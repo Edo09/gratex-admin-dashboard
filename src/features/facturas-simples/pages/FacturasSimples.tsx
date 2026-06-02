@@ -9,25 +9,23 @@ import { fmt } from "@/shared/utils/press-fmt";
 import { formatDisplayDate } from "@/shared/utils/format";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import { useStoredState } from "@/shared/hooks/useStoredState";
-import { type TipoEcf } from "../constants";
 import {
   parseFacturaAmount,
   getFacturaNcf,
   getFacturaClientName,
   getFacturaDescription,
-} from "../utils";
-import { useFacturasQuery } from "../hooks/useFacturasQuery";
-import { CreateFacturaModal } from "../components/CreateFacturaModal";
-import { StatusBadge } from "../components/StatusBadge";
-import type { Factura } from "../types";
+} from "@/features/facturas/utils";
+import type { Factura } from "@/features/facturas/types";
+import { useFacturasSimplesQuery } from "../hooks/useFacturasSimplesQuery";
+import { CreateFacturaSimpleModal } from "../components/CreateFacturaSimpleModal";
 
 type ViewMode = "cards" | "table";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
-export default function Facturas() {
+export default function FacturasSimples() {
   const navigate = useNavigate();
-  const [view, setView] = useStoredState<ViewMode>("facturas:view", "cards");
+  const [view, setView] = useStoredState<ViewMode>("facturas-ncf:view", "cards");
   const [createOpen, setCreateOpen] = useState(false);
   const [toast, setToast] = useState("");
   const [query, setQuery] = useState("");
@@ -35,7 +33,7 @@ export default function Facturas() {
   const [pageSize, setPageSize] = useState(10);
 
   const debouncedQuery = useDebounce(query, 400);
-  const { data, isFetching } = useFacturasQuery({ query: debouncedQuery, page, pageSize });
+  const { data, isFetching } = useFacturasSimplesQuery({ query: debouncedQuery, page, pageSize });
   const list = data?.items ?? [];
   const pagination = data?.pagination;
   const total = pagination?.total ?? list.length;
@@ -53,19 +51,19 @@ export default function Facturas() {
     setPage(1);
   };
 
-  const open = (f: Factura) => navigate(`/facturas/${f.id}`);
+  const open = (f: Factura) => navigate(`/facturas-ncf/${f.id}`);
 
   return (
     <div className="content">
-      <PageMeta title="Facturas e-CF · Gratex" description="Listado de facturas electrónicas (e-CF)" />
-      <PageMarks label="FACTURAS e-CF / 03" />
+      <PageMeta title="Facturas NCF · Gratex" description="Listado de facturas NCF (no electrónicas)" />
+      <PageMarks label="FACTURAS NCF / 04" />
       <div className="page-head">
         <div>
           <h1 className="page-title" style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            Facturas <ComprobanteBadge type="ecf" size={13} />
+            Facturas <ComprobanteBadge type="ncf" size={13} />
           </h1>
           <div className="page-sub">
-            {total} emisiones · año {new Date().getFullYear()}
+            {total} facturas · año {new Date().getFullYear()}
           </div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
@@ -83,7 +81,7 @@ export default function Facturas() {
           <input
             value={query}
             onChange={(e) => handleQueryChange(e.target.value)}
-            placeholder="Buscar por NCF, cliente, fecha…"
+            placeholder="Buscar por NCF, no. factura, cliente…"
           />
         </div>
         <select
@@ -116,7 +114,7 @@ export default function Facturas() {
         <>
           <div className="card-grid">
             {list.map((f) => (
-              <FacturaCard key={f.id} factura={f} onOpen={() => open(f)} />
+              <FacturaSimpleCard key={f.id} factura={f} onOpen={() => open(f)} />
             ))}
             {list.length === 0 && (
               <div style={{ padding: 32, color: "var(--muted)", gridColumn: "1/-1" }}>
@@ -142,63 +140,40 @@ export default function Facturas() {
             <thead>
               <tr>
                 <th style={{ paddingLeft: 20 }}>NCF</th>
+                <th>No. Factura</th>
                 <th>Cliente</th>
                 <th>Descripción</th>
-                <th style={{ width: 90 }}>Tipo</th>
                 <th>Fecha</th>
-                <th style={{ width: 110 }}>Estado</th>
                 <th style={{ textAlign: "right", paddingRight: 20 }}>Total</th>
               </tr>
             </thead>
             <tbody>
-              {list.map((f) => {
-                const tipoEcf = f.tipo_ecf as TipoEcf | undefined;
-                return (
-                  <tr key={f.id} onClick={() => open(f)}>
-                    <td style={{ paddingLeft: 20 }}>
-                      <span className="mono" style={{ fontSize: 11 }}>
-                        {getFacturaNcf(f)}
-                      </span>
-                    </td>
-                    <td style={{ fontWeight: 600 }}>{getFacturaClientName(f)}</td>
-                    <td style={{ color: "var(--ink-2)", maxWidth: 320 }}>
-                      {getFacturaDescription(f)}
-                    </td>
-                    <td>
-                      {tipoEcf && (
-                        <span
-                          className="mono"
-                          style={{
-                            fontSize: 10,
-                            fontWeight: 600,
-                            background: "var(--bg)",
-                            padding: "2px 5px",
-                            borderRadius: 3,
-                            letterSpacing: "0.03em",
-                          }}
-                        >
-                          E{tipoEcf}
-                        </span>
-                      )}
-                    </td>
-                    <td className="mono" style={{ fontSize: 11 }}>
-                      {formatDisplayDate(f.date)}
-                    </td>
-                    <td>
-                      <StatusBadge estado={f.estado_dgii} />
-                    </td>
-                    <td
-                      className="mono"
-                      style={{ textAlign: "right", paddingRight: 20, fontWeight: 600, fontSize: 14 }}
-                    >
-                      {fmt.money(parseFacturaAmount(f))}
-                    </td>
-                  </tr>
-                );
-              })}
+              {list.map((f) => (
+                <tr key={f.id} onClick={() => open(f)}>
+                  <td style={{ paddingLeft: 20 }}>
+                    <span className="mono" style={{ fontSize: 11 }}>
+                      {f.NCF || "—"}
+                    </span>
+                  </td>
+                  <td className="mono" style={{ fontSize: 11 }}>{f.no_factura || `#${f.id}`}</td>
+                  <td style={{ fontWeight: 600 }}>{getFacturaClientName(f)}</td>
+                  <td style={{ color: "var(--ink-2)", maxWidth: 320 }}>
+                    {getFacturaDescription(f)}
+                  </td>
+                  <td className="mono" style={{ fontSize: 11 }}>
+                    {formatDisplayDate(f.date)}
+                  </td>
+                  <td
+                    className="mono"
+                    style={{ textAlign: "right", paddingRight: 20, fontWeight: 600, fontSize: 14 }}
+                  >
+                    {fmt.money(parseFacturaAmount(f))}
+                  </td>
+                </tr>
+              ))}
               {list.length === 0 && (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: "center", color: "var(--muted)", padding: 32 }}>
+                  <td colSpan={6} style={{ textAlign: "center", color: "var(--muted)", padding: 32 }}>
                     {isFetching ? "Cargando…" : "Sin facturas"}
                   </td>
                 </tr>
@@ -220,7 +195,7 @@ export default function Facturas() {
         </div>
       )}
 
-      <CreateFacturaModal
+      <CreateFacturaSimpleModal
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         onCreated={(msg) => {
@@ -239,10 +214,8 @@ export default function Facturas() {
   );
 }
 
-function FacturaCard({ factura, onOpen }: { factura: Factura; onOpen: () => void }) {
-  const tipoEcf = factura.tipo_ecf as TipoEcf | undefined;
+function FacturaSimpleCard({ factura, onOpen }: { factura: Factura; onOpen: () => void }) {
   const ncf = getFacturaNcf(factura);
-  const isEcf = !!tipoEcf || ncf.startsWith("E");
   return (
     <div className="quote-card" onClick={onOpen}>
       <div className="quote-card-top">
@@ -252,11 +225,8 @@ function FacturaCard({ factura, onOpen }: { factura: Factura; onOpen: () => void
         </div>
         <div style={{ textAlign: "right" }}>
           <span className="quote-code">{ncf}</span>
-          <div
-            className="mono"
-            style={{ fontSize: 9, color: "var(--muted)", marginTop: 2 }}
-          >
-            {isEcf ? "e-NCF" : "NCF"}
+          <div className="mono" style={{ fontSize: 9, color: "var(--muted)", marginTop: 2 }}>
+            {factura.no_factura ?? ""}
           </div>
           <div className="quote-date">{formatDisplayDate(factura.date)}</div>
         </div>
@@ -279,25 +249,7 @@ function FacturaCard({ factura, onOpen }: { factura: Factura; onOpen: () => void
           flexWrap: "wrap",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <ComprobanteBadge type="ecf" />
-          {tipoEcf && (
-            <span
-              className="mono"
-              style={{
-                fontSize: 10,
-                fontWeight: 700,
-                background: "var(--c-accent, #3b82f6)",
-                color: "#fff",
-                padding: "2px 6px",
-                borderRadius: 4,
-              }}
-            >
-              E{tipoEcf}
-            </span>
-          )}
-          <StatusBadge estado={factura.estado_dgii} />
-        </div>
+        <ComprobanteBadge type="ncf" />
         <span style={{ color: "var(--muted)", fontSize: 11, fontFamily: "Geist Mono" }}>
           Ver detalle →
         </span>
