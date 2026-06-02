@@ -547,7 +547,6 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
                   onRemoveItem={removeItem}
                   allowedIndicadores={allowedIndicadores}
                   forcedBienServicio={forcedBienServicio}
-                  showRetencion={needsRetencion}
                 />
               </form>
             )}
@@ -586,7 +585,6 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
                       onRemoveItem={removeItem}
                       allowedIndicadores={allowedIndicadores}
                       forcedBienServicio={forcedBienServicio}
-                      showRetencion={needsRetencion}
                     />
                   </form>
                 )}
@@ -1134,7 +1132,6 @@ interface ItemsSectionProps {
   onRemoveItem: (id: number) => void;
   allowedIndicadores: IndicadorFacturacion[];
   forcedBienServicio: IndicadorBienServicio | null;
-  showRetencion: boolean;
 }
 
 function ItemsSection({
@@ -1145,7 +1142,6 @@ function ItemsSection({
   onRemoveItem,
   allowedIndicadores,
   forcedBienServicio,
-  showRetencion,
 }: ItemsSectionProps) {
   return (
     <>
