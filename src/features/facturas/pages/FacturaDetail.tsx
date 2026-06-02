@@ -4,7 +4,7 @@ import { PageMarks } from "@/shared/components/press/PageMarks";
 import { Icons } from "@/shared/components/press/PressIcons";
 import { fmt } from "@/shared/utils/press-fmt";
 import { formatDisplayDate } from "@/shared/utils/format";
-import { downloadPdfFromBase64, pickPdfBase64 } from "@/shared/lib/pdf";
+import { downloadPdfFromBase64, openPdfFromBase64, pickPdfBase64 } from "@/shared/lib/pdf";
 import { ECF_TYPES, TIPO_PAGO_LABELS, type TipoEcf, type TipoPago } from "../constants";
 import {
   parseFacturaAmount,
@@ -91,6 +91,12 @@ export default function FacturaDetail() {
     if (base64) downloadPdfFromBase64(base64, `factura-${ncfCode}`);
   };
 
+  const viewPdf = async () => {
+    const response = await facturasApi.pdf(factura.id);
+    const base64 = pickPdfBase64(response);
+    if (base64) openPdfFromBase64(base64);
+  };
+
   return (
     <div className="content">
       <PageMeta title={`Factura ${ncfCode} · Gratex`} description="Detalle de factura" />
@@ -136,6 +142,9 @@ export default function FacturaDetail() {
           </div>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button className="btn" onClick={viewPdf}>
+            <Icons.external size={13} /> Ver
+          </button>
           <button className="btn" onClick={downloadPdf}>
             <Icons.download size={13} /> Descargar
           </button>
