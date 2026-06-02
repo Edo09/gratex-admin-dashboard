@@ -364,7 +364,11 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
     }
 
     if (needsComprador) {
-      payload.comprador = comprador;
+      // Con cliente registrado, el backend resuelve la razón social desde la BD
+      // (por RNC); solo enviamos el RNC. En captura manual enviamos lo tecleado.
+      payload.comprador = selectedCliente?.id
+        ? { rnc: comprador.rnc }
+        : comprador;
     }
 
     if (needsReferencia) {
@@ -388,7 +392,7 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
     if (requiresCliente && !selectedCliente?.id) return "Selecciona un cliente";
     if (items.length === 0) return "Agrega al menos un item";
     if (needsComprador && !comprador.rnc?.trim()) return "RNC del comprador es requerido para E31";
-    if (needsComprador && !comprador.razon_social.trim()) return "Nombre del comprador es requerido para E31";
+    if (needsComprador && !selectedCliente?.id && !comprador.razon_social?.trim()) return "Nombre del comprador es requerido para E31";
     if (needsReferencia && !referencia.ncf_modificado.trim()) return "NCF modificado es requerido";
     if (needsReferencia && !referencia.razon_modificacion.trim()) return "Razón de modificación es requerida";
     return null;
@@ -928,7 +932,7 @@ function CompradorFields({
       <div className="field" style={{ margin: 0 }}>
         <label>Nombre Comprador *</label>
         <input
-          value={comprador.razon_social}
+          value={comprador.razon_social ?? ""}
           onChange={(e) => onChange({ ...comprador, razon_social: e.target.value })}
           placeholder="EMPRESA SRL"
         />

@@ -124,8 +124,9 @@ export interface Comprador {
   rnc?: string;
   /** Identificador extranjero — para comprador no residente (E46/E47). */
   identificador_extranjero?: string;
-  /** Nombre / razón social del comprador. */
-  razon_social: string;
+  /** Nombre / razón social del comprador. Opcional: si hay `client_id`, el
+   *  backend la resuelve desde la BD por RNC. */
+  razon_social?: string;
   direccion?: string;
   municipio?: string;
   provincia?: string;
