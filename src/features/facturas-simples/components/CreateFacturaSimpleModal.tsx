@@ -42,10 +42,8 @@ export function CreateFacturaSimpleModal({ open, onClose, onCreated }: CreateFac
 
   const [flow, setFlow] = useState<Flow>(null);
   const [selectedCotizacion, setSelectedCotizacion] = useState<Cotizacion | null>(null);
-  const [noFactura, setNoFactura] = useState("");
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   const [clientName, setClientName] = useState("");
-  const [date, setDate] = useState(todayISO());
   const [ncf, setNcf] = useState("");
   const [items, setItems] = useState<ItemRow[]>([]);
   const [apiError, setApiError] = useState("");
@@ -65,10 +63,8 @@ export function CreateFacturaSimpleModal({ open, onClose, onCreated }: CreateFac
     if (!open) return;
     setFlow(null);
     setSelectedCotizacion(null);
-    setNoFactura("");
     setSelectedCliente(null);
     setClientName("");
-    setDate(todayISO());
     setNcf("");
     setItems([]);
     setApiError("");
@@ -181,10 +177,6 @@ export function CreateFacturaSimpleModal({ open, onClose, onCreated }: CreateFac
 
   const submit = async () => {
     setApiError("");
-    if (!noFactura.trim()) {
-      setApiError("El número de factura es requerido.");
-      return;
-    }
     if (!selectedCliente && !clientName.trim()) {
       setApiError("Selecciona un cliente o ingresa un nombre.");
       return;
@@ -195,10 +187,9 @@ export function CreateFacturaSimpleModal({ open, onClose, onCreated }: CreateFac
     }
 
     const payload: CreateFacturaSimplePayload = {
-      no_factura: noFactura.trim(),
       client_id: selectedCliente?.id,
       client_name: selectedCliente ? undefined : clientName.trim(),
-      date: date || undefined,
+      date: todayISO(),
       NCF: ncf.trim() || undefined,
       items: items.map((it) => ({
         description: it.description,
@@ -210,7 +201,7 @@ export function CreateFacturaSimpleModal({ open, onClose, onCreated }: CreateFac
 
     try {
       await createFactura.mutateAsync(payload);
-      onCreated(`Factura ${ncf.trim() || noFactura.trim()} creada`);
+      onCreated(ncf.trim() ? `Factura ${ncf.trim()} creada` : "Factura creada");
       onClose();
     } catch (err) {
       setApiError(err instanceof Error ? err.message : "No se pudo guardar la factura.");
@@ -282,20 +273,9 @@ export function CreateFacturaSimpleModal({ open, onClose, onCreated }: CreateFac
                 </div>
               )}
 
-              <div className="field-row">
-                <div className="field">
-                  <label>No. Factura *</label>
-                  <input value={noFactura} onChange={(e) => setNoFactura(e.target.value)} placeholder="0001-2026" />
-                </div>
-                <div className="field">
-                  <label>NCF (opcional)</label>
-                  <input value={ncf} onChange={(e) => setNcf(e.target.value)} placeholder="B0100000123" />
-                </div>
-              </div>
-
               <div className="field">
-                <label>Fecha</label>
-                <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                <label>NCF (opcional)</label>
+                <input value={ncf} onChange={(e) => setNcf(e.target.value)} placeholder="B0100000123" />
               </div>
 
               {/* Items */}

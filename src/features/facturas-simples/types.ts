@@ -21,8 +21,8 @@ export interface FacturaSimpleItemPayload {
 }
 
 export interface CreateFacturaSimplePayload {
-  /** Invoice number (required). */
-  no_factura: string;
+  /** Invoice number. Omitted — the backend generates it automatically. */
+  no_factura?: string;
   /** Registered client id. Provide this OR `client_name`. */
   client_id?: number;
   /** Walk-in client name when there is no registered client. */
