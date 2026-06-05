@@ -9,7 +9,7 @@ import { fmt } from "@/shared/utils/press-fmt";
 import { formatDisplayDate } from "@/shared/utils/format";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import { useStoredState } from "@/shared/hooks/useStoredState";
-import { type TipoEcf } from "../constants";
+import { type TipoEcf, isFacturaRejected } from "../constants";
 import {
   parseFacturaAmount,
   getFacturaNcf,
@@ -24,8 +24,6 @@ import type { Factura } from "../types";
 type ViewMode = "cards" | "table";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
-
-const REJECTED_ESTADOS = new Set(["RECHAZADO", "RFCE_RECHAZADO"]);
 
 export default function Facturas() {
   const navigate = useNavigate();
@@ -42,7 +40,7 @@ export default function Facturas() {
   const rawList = data?.items ?? [];
   const list = showRejected
     ? rawList
-    : rawList.filter((f) => !REJECTED_ESTADOS.has(String(f.estado_dgii ?? "")));
+    : rawList.filter((f) => !isFacturaRejected(f.estado_dgii));
   const pagination = data?.pagination;
   const total = pagination?.total ?? rawList.length;
   const totalPages = pagination?.totalPages ?? Math.max(1, Math.ceil(total / pageSize));

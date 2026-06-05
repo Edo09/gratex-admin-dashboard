@@ -16,6 +16,9 @@ const Facturas = lazy(() => import("@/features/facturas/pages/Facturas"));
 const FacturaDetail = lazy(() => import("@/features/facturas/pages/FacturaDetail"));
 const FacturasSimples = lazy(() => import("@/features/facturas-simples/pages/FacturasSimples"));
 const FacturaSimpleDetail = lazy(() => import("@/features/facturas-simples/pages/FacturaSimpleDetail"));
+const AprobarEcf = lazy(() => import("@/features/aprobar-ecf/pages/AprobarEcf"));
+const Gastos = lazy(() => import("@/features/gastos/pages/Gastos"));
+const GastoDetail = lazy(() => import("@/features/gastos/pages/GastoDetail"));
 const Clientes = lazy(() => import("@/features/clientes/pages/Clientes"));
 const Comprobantes = lazy(() => import("@/features/ncf/pages/Ncf"));
 const Configuracion = lazy(() => import("@/features/configuracion/pages/Configuracion"));
@@ -44,6 +47,9 @@ export function AppRoutes() {
           <Route path="/facturas/:id" element={<FacturaDetail />} />
           <Route path="/facturas-ncf" element={<FacturasSimples />} />
           <Route path="/facturas-ncf/:id" element={<FacturaSimpleDetail />} />
+          <Route path="/aprobar-ecf" element={<AprobarEcf />} />
+          <Route path="/gastos" element={<Gastos />} />
+          <Route path="/gastos/:id" element={<GastoDetail />} />
           <Route path="/clientes" element={<Clientes />} />
           <Route path="/comprobantes" element={<Comprobantes />} />
           <Route path="/ncf" element={<Comprobantes />} />

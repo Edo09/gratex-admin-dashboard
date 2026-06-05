@@ -1,7 +1,10 @@
-import { ECF_TYPES, type TipoEcf } from "../constants";
+import { ECF_TYPES, INGRESO_TIPOS, type TipoEcf } from "../constants";
 import { useFacturasStatsQuery } from "../hooks/useFacturasQuery";
 
-const ECF_TYPE_ENTRIES = Object.entries(ECF_TYPES) as [TipoEcf, (typeof ECF_TYPES)[TipoEcf]][];
+// Solo tipos de ingreso — los de gasto (E41/E43/E47) viven en el módulo de Gastos.
+const ECF_TYPE_ENTRIES = (Object.entries(ECF_TYPES) as [TipoEcf, (typeof ECF_TYPES)[TipoEcf]][]).filter(
+  ([code]) => INGRESO_TIPOS.includes(code),
+);
 
 interface EcfTypeSelectorProps {
   value: TipoEcf;

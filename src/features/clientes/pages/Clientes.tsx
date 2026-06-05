@@ -3,6 +3,7 @@ import { PageMeta } from "@/shared/components/layout/PageMeta";
 import { PageMarks } from "@/shared/components/press/PageMarks";
 import { Icons } from "@/shared/components/press/PressIcons";
 import { useDebounce } from "@/shared/hooks/useDebounce";
+import { Pager } from "@/shared/components/ui/Pager";
 import { useClientesQuery } from "../hooks/useClientesQuery";
 import { getClientDisplayName, getClientPhone, type Cliente } from "../types";
 import { CreateClienteModal } from "../components/CreateClienteModal";
@@ -10,9 +11,13 @@ import { EditClienteModal } from "../components/EditClienteModal";
 import { DeleteConfirmModal } from "../components/DeleteConfirmModal";
 import { useDeleteCliente } from "../hooks/useDeleteCliente";
 
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
+
 export default function Clientes() {
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query, 400);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [createOpen, setCreateOpen] = useState(false);
   const [editCliente, setEditCliente] = useState<Cliente | null>(null);
   const [deleteCliente, setDeleteCliente] = useState<Cliente | null>(null);
@@ -21,9 +26,23 @@ export default function Clientes() {
 
   const deleteMutation = useDeleteCliente();
 
-  const { data } = useClientesQuery({ query: debouncedQuery, page: 1, pageSize: 50 });
+  const { data, isFetching } = useClientesQuery({ query: debouncedQuery, page, pageSize });
   const list = data?.items ?? [];
-  const total = data?.pagination?.total ?? list.length;
+  const pagination = data?.pagination;
+  const total = pagination?.total ?? list.length;
+  const totalPages = pagination?.totalPages ?? Math.max(1, Math.ceil(total / pageSize));
+  const canPrev = page > 1;
+  const canNext = page < totalPages;
+
+  const handleQueryChange = (q: string) => {
+    setQuery(q);
+    setPage(1);
+  };
+
+  const handlePageSizeChange = (n: number) => {
+    setPageSize(n);
+    setPage(1);
+  };
 
   const confirmDelete = async () => {
     if (!deleteCliente) return;
@@ -52,17 +71,36 @@ export default function Clientes() {
         </button>
       </div>
 
-      <div style={{ marginBottom: 14 }}>
-        <div className="search" style={{ maxWidth: "none" }}>
+      <div style={{ display: "flex", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
+        <div className="search" style={{ maxWidth: "none", flex: 1 }}>
           <span className="search-icon">
             <Icons.search size={14} />
           </span>
           <input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => handleQueryChange(e.target.value)}
             placeholder="Buscar por nombre, empresa, correo…"
           />
         </div>
+        <select
+          value={pageSize}
+          onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+          style={{
+            border: "1px solid var(--line)",
+            borderRadius: 6,
+            padding: "0 10px",
+            fontSize: 12,
+            fontFamily: "Geist Mono, monospace",
+            background: "var(--surface)",
+            color: "var(--ink)",
+            cursor: "pointer",
+            minWidth: 110,
+          }}
+        >
+          {PAGE_SIZE_OPTIONS.map((n) => (
+            <option key={n} value={n}>{n} / página</option>
+          ))}
+        </select>
       </div>
 
       <div className="panel" style={{ padding: "4px 16px" }}>
@@ -146,9 +184,23 @@ export default function Clientes() {
           </div>
         ))}
         {list.length === 0 && (
-          <div style={{ padding: 32, textAlign: "center", color: "var(--muted)" }}>Sin clientes</div>
+          <div style={{ padding: 32, textAlign: "center", color: "var(--muted)" }}>
+            {isFetching ? "Cargando…" : "Sin clientes"}
+          </div>
         )}
       </div>
+
+      <Pager
+        page={page}
+        pageSize={pageSize}
+        totalPages={totalPages}
+        total={total}
+        canPrev={canPrev}
+        canNext={canNext}
+        isFetching={isFetching}
+        onPrev={() => setPage((p) => Math.max(1, p - 1))}
+        onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
+      />
 
       <CreateClienteModal
         open={createOpen}

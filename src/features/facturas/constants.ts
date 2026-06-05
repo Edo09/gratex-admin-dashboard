@@ -19,6 +19,10 @@ export type EstadoDgii =
   | "RFCE_RECHAZADO"
   | "RFCE_NO_ENCONTRADO";
 
+/** Tipos e-CF de INGRESOS (lo que la empresa emite al vender). Los tipos de
+ * gasto (E41/E43/E47) se crean desde el módulo de Gastos, no aquí. */
+export const INGRESO_TIPOS: TipoEcf[] = ["31", "32", "33", "34", "44", "45", "46"];
+
 export const ECF_TYPES: Record<TipoEcf, { name: string; short: string; description: string }> = {
   "31": { name: "Factura de Crédito Fiscal", short: "Crédito Fiscal", description: "B2B — requiere RNC del comprador" },
   "32": { name: "Factura de Consumo", short: "Consumo", description: "B2C — sin comprador identificado" },
@@ -65,6 +69,12 @@ export const CODIGO_MODIFICACION_LABELS: Record<CodigoModificacion, string> = {
   "3": "Descuento",
   "4": "Otros",
 };
+
+export const REJECTED_ESTADOS = new Set<EstadoDgii>(["RECHAZADO", "RFCE_RECHAZADO"]);
+
+export function isFacturaRejected(estado: string | null | undefined): boolean {
+  return REJECTED_ESTADOS.has(String(estado ?? "") as EstadoDgii);
+}
 
 export const ESTADO_DGII_COLORS: Record<EstadoDgii, string> = {
   ENVIADO: "var(--c-amber, #f59e0b)",

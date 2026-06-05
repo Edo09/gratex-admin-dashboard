@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { facturasApi } from "@/features/facturas/api/facturas";
+import { facturasSimplesApi } from "@/features/facturas-simples/api/facturasSimples";
 import { cotizacionesApi } from "@/features/cotizaciones/api/cotizaciones";
 import { clientesApi } from "@/features/clientes/api/clientes";
 import { unwrapList } from "@/shared/api/envelope";
 import type { Factura } from "@/features/facturas/types";
+import { isFacturaRejected } from "@/features/facturas/constants";
 import { parseFacturaAmount } from "@/features/facturas/utils";
 import type { Cotizacion } from "@/features/cotizaciones/types";
 
@@ -28,9 +30,28 @@ async function paginateAll<T>(
 export function useAllFacturasQuery() {
   return useQuery({
     queryKey: ["dashboard", "facturas-all"],
+    queryFn: async () => {
+      const all = await paginateAll<Factura>(async (page, pageSize) => {
+        const response = await facturasApi.list({ page, pageSize });
+        const { items } = unwrapList<Factura>(response);
+        return { items, totalPages: response.pagination?.totalPages ?? 1 };
+      });
+      // Rejected comprobantes are not real sales — exclude from all dashboard
+      // totals/charts (same rule the Facturas list uses).
+      return all.filter((f) => !isFacturaRejected(f.estado_dgii));
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+/** Same as useAllFacturasQuery but for facturas simples (NCF). No reject filter:
+ * simples are never submitted to DGII, so they have no estado_dgii. */
+export function useAllFacturasSimplesQuery() {
+  return useQuery({
+    queryKey: ["dashboard", "facturas-simples-all"],
     queryFn: () =>
       paginateAll<Factura>(async (page, pageSize) => {
-        const response = await facturasApi.list({ page, pageSize });
+        const response = await facturasSimplesApi.list({ page, pageSize });
         const { items } = unwrapList<Factura>(response);
         return { items, totalPages: response.pagination?.totalPages ?? 1 };
       }),
@@ -81,6 +102,41 @@ export function useRecentFacturasQuery(limit = 5) {
   });
 }
 
+export function useRecentFacturasSimplesQuery(limit = 5) {
+  return useQuery({
+    queryKey: ["dashboard", "facturas-simples-recent", limit],
+    queryFn: async () =>
+      unwrapList<Factura>(await facturasSimplesApi.list({ pageSize: limit })).items,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export type FacturaSource = "ecf" | "ncf";
+export interface DashboardFactura extends Factura {
+  source: FacturaSource;
+}
+
+/** All facturas (e-CF + NCF) merged for totals/chart. Order irrelevant. */
+export function useAllFacturasMerged(): Factura[] {
+  const { data: ecf = [] } = useAllFacturasQuery(); // already reject-filtered
+  const { data: ncf = [] } = useAllFacturasSimplesQuery();
+  return [...ecf, ...ncf];
+}
+
+/** Most-recent e-CF + NCF merged, newest first, tagged with source. */
+export function useRecentFacturasMerged(limit = 5): DashboardFactura[] {
+  const { data: ecf = [] } = useRecentFacturasQuery(limit + 3);
+  const { data: ncf = [] } = useRecentFacturasSimplesQuery(limit + 3);
+  const toTime = (f: Factura) => new Date((f.date ?? "").replace(" ", "T")).getTime() || 0;
+  return [
+    ...ecf.map((f) => ({ ...f, source: "ecf" as const })),
+    ...ncf.map((f) => ({ ...f, source: "ncf" as const })),
+  ]
+    .filter((f) => !isFacturaRejected(f.estado_dgii)) // only touches e-CF
+    .sort((a, b) => toTime(b) - toTime(a))
+    .slice(0, limit);
+}
+
 export function useRecentCotizacionesQuery(limit = 6) {
   return useQuery({
     queryKey: ["dashboard", "cotizaciones-recent", limit],
@@ -106,20 +162,19 @@ export interface DashboardMonthlyPoint {
 }
 
 /**
- * Derives a 12-month series of factura and cotización totals for the current
- * year. Reads from the shared "all" queries so it's free if those are already
- * loaded for the metric cards.
+ * Derives a 12-month series of factura and cotización totals for the given
+ * year (default: current). Reads from the shared "all" queries so it's free if
+ * those are already loaded for the metric cards.
  */
-export function useMonthlyProduction(): DashboardMonthlyPoint[] {
-  const { data: facturas = [] } = useAllFacturasQuery();
+export function useMonthlyProduction(year: number = new Date().getFullYear()): DashboardMonthlyPoint[] {
+  const facturas = useAllFacturasMerged();
   const { data: cotizaciones = [] } = useAllCotizacionesQuery();
-  const currentYear = new Date().getFullYear();
 
   const facturasByMonth = new Array(12).fill(0);
   for (const f of facturas) {
     if (!f.date) continue;
     const date = new Date(f.date.replace(" ", "T"));
-    if (date.getFullYear() !== currentYear) continue;
+    if (date.getFullYear() !== year) continue;
     facturasByMonth[date.getMonth()] += parseFacturaAmount(f);
   }
 
@@ -127,7 +182,7 @@ export function useMonthlyProduction(): DashboardMonthlyPoint[] {
   for (const c of cotizaciones) {
     if (!c.date) continue;
     const date = new Date(c.date);
-    if (date.getFullYear() !== currentYear) continue;
+    if (date.getFullYear() !== year) continue;
     cotizacionesByMonth[date.getMonth()] += parseCotizacionAmount(c);
   }
 
@@ -150,14 +205,31 @@ export interface DashboardKpis {
   conversion: number | null;
 }
 
-/** Single derived view of all KPIs the dashboard tiles need. */
-export function useDashboardKpis(): DashboardKpis {
+/** Años presentes en las facturas (e-CF + NCF) + el año actual, orden desc. */
+export function useFacturaYears(): number[] {
+  const facturas = useAllFacturasMerged();
+  const years = new Set<number>([new Date().getFullYear()]);
+  for (const f of facturas) {
+    if (!f.date) continue;
+    const y = new Date(f.date.replace(" ", "T")).getFullYear();
+    if (!isNaN(y)) years.add(y);
+  }
+  return [...years].sort((a, b) => b - a);
+}
+
+/** Single derived view of all KPIs the dashboard tiles need. `ventasTotal` se
+ * filtra por `year` (default: actual). */
+export function useDashboardKpis(year: number = new Date().getFullYear()): DashboardKpis {
   const { data: clientesTotal } = useDashboardClientCount();
   const { data: cotizacionesTotal } = useDashboardCotizacionCount();
-  const { data: facturas = [] } = useAllFacturasQuery();
+  const facturas = useAllFacturasMerged();
 
   const facturasTotal = facturas.length;
-  const ventasTotal = facturas.reduce((sum, f) => sum + parseFacturaAmount(f), 0);
+  const ventasTotal = facturas.reduce((sum, f) => {
+    if (!f.date) return sum;
+    const y = new Date(f.date.replace(" ", "T")).getFullYear();
+    return y === year ? sum + parseFacturaAmount(f) : sum;
+  }, 0);
 
   const now = new Date();
   const currentMonth = now.getMonth();

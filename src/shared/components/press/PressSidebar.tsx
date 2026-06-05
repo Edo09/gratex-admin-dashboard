@@ -1,7 +1,9 @@
-import type { ReactElement } from "react";
+import { Fragment, type ReactElement } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useDashboardClientCount, useDashboardCotizacionCount } from "@/features/dashboard/hooks/useDashboardData";
 import { useFacturasQuery } from "@/features/facturas/hooks/useFacturasQuery";
+import { useEcfRecibidosQuery } from "@/features/aprobar-ecf/hooks/useEcfRecibidosQuery";
+import { useGastosQuery } from "@/features/gastos/hooks/useGastosQuery";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useTheme } from "@/shared/context/ThemeContext";
 import { ComprobanteBadge, type ComprobanteType } from "@/shared/components/ui/ComprobanteBadge";
@@ -39,15 +41,39 @@ export function PressSidebar({ onClose }: PressSidebarProps) {
   const { data: cotizacionesCount } = useDashboardCotizacionCount();
   const { data: facturasResult } = useFacturasQuery({ page: 1, pageSize: 1 });
   const facturasCount = facturasResult?.pagination?.total;
+  const { data: recibidosResult } = useEcfRecibidosQuery({ page: 1, pageSize: 1 });
+  const recibidosCount = recibidosResult?.pagination?.total;
+  const { data: gastosResult } = useGastosQuery({ page: 1, pageSize: 1 });
+  const gastosCount = gastosResult?.pagination?.total;
 
-  const items: NavItem[] = [
-    { to: "/", icon: <Icons.dashboard size={ICON_SIZE} />, label: "Dashboard" },
-    { to: "/cotizaciones", icon: <Icons.fileText size={ICON_SIZE} />, label: "Cotizaciones", badge: cotizacionesCount },
-    { to: "/facturas", icon: <Icons.receipt size={ICON_SIZE} />, label: "Facturas", badge: facturasCount, tag: "ecf" },
-    { to: "/facturas-ncf", icon: <Icons.receipt size={ICON_SIZE} />, label: "Facturas", tag: "ncf" },
-    { to: "/clientes", icon: <Icons.users size={ICON_SIZE} />, label: "Clientes", badge: clientesCount },
-    { to: "/comprobantes", icon: <Icons.hash size={ICON_SIZE} />, label: "Comprobantes" },
-    { to: "/configuracion", icon: <Icons.settings size={ICON_SIZE} />, label: "Configuración" },
+  const groups: { section: string; items: NavItem[] }[] = [
+    {
+      section: "General",
+      items: [{ to: "/", icon: <Icons.dashboard size={ICON_SIZE} />, label: "Dashboard" }],
+    },
+    {
+      section: "Ingresos",
+      items: [
+        { to: "/cotizaciones", icon: <Icons.fileText size={ICON_SIZE} />, label: "Cotizaciones", badge: cotizacionesCount },
+        { to: "/facturas", icon: <Icons.receipt size={ICON_SIZE} />, label: "Facturas", badge: facturasCount, tag: "ecf" },
+        { to: "/facturas-ncf", icon: <Icons.receipt size={ICON_SIZE} />, label: "Facturas", tag: "ncf" },
+      ],
+    },
+    {
+      section: "Gastos",
+      items: [
+        { to: "/gastos", icon: <Icons.receipt size={ICON_SIZE} />, label: "Gastos", badge: gastosCount },
+        { to: "/aprobar-ecf", icon: <Icons.bell size={ICON_SIZE} />, label: "Aprobar e-CF", badge: recibidosCount },
+      ],
+    },
+    {
+      section: "Administración",
+      items: [
+        { to: "/clientes", icon: <Icons.users size={ICON_SIZE} />, label: "Clientes", badge: clientesCount },
+        { to: "/comprobantes", icon: <Icons.hash size={ICON_SIZE} />, label: "Comprobantes" },
+        { to: "/configuracion", icon: <Icons.settings size={ICON_SIZE} />, label: "Configuración" },
+      ],
+    },
   ];
 
   const isActive = (to: string) =>
@@ -70,22 +96,26 @@ export function PressSidebar({ onClose }: PressSidebarProps) {
         </button>
       </div>
 
-      <div className="nav-h">Menú</div>
-      {items.map((it) => (
-        <Link
-          key={it.to}
-          to={it.to}
-          className={"nav-item" + (isActive(it.to) ? " active" : "")}
-          onClick={onClose}
-        >
-          <span className="nav-icon">{it.icon}</span>
-          <span>{it.label}</span>
-          {it.tag ? (
-            <ComprobanteBadge type={it.tag} size={9} style={{ padding: "1px 6px" }} />
-          ) : (
-            it.badge !== undefined && <span className="nav-badge">{it.badge}</span>
-          )}
-        </Link>
+      {groups.map((group) => (
+        <Fragment key={group.section}>
+          <div className="nav-h">{group.section}</div>
+          {group.items.map((it) => (
+            <Link
+              key={it.to}
+              to={it.to}
+              className={"nav-item" + (isActive(it.to) ? " active" : "")}
+              onClick={onClose}
+            >
+              <span className="nav-icon">{it.icon}</span>
+              <span>{it.label}</span>
+              {it.tag ? (
+                <ComprobanteBadge type={it.tag} size={9} style={{ padding: "1px 6px" }} />
+              ) : (
+                it.badge !== undefined && <span className="nav-badge">{it.badge}</span>
+              )}
+            </Link>
+          ))}
+        </Fragment>
       ))}
       <div className="sidebar-foot">
         <div className="sidebar-cta-row">
