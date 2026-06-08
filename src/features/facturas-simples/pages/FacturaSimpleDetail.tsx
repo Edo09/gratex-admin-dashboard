@@ -19,7 +19,7 @@ import {
 import { facturasSimplesApi } from "../api/facturasSimples";
 import { useFacturaSimpleByIdQuery } from "../hooks/useFacturasSimplesQuery";
 import { useDeleteFacturaSimple } from "../hooks/useDeleteFacturaSimple";
-import type { CreateFacturaSimplePayload, FacturaSimpleLine } from "../types";
+import type { FacturaSimpleLine } from "../types";
 
 function toNumber(v: unknown): number {
   if (v == null) return 0;
@@ -82,26 +82,11 @@ export default function FacturaSimpleDetail() {
   const docHeading = companyName ?? clientName;
   const dateLabel = formatDisplayDate(factura.date);
 
-  // No hay endpoint de PDF guardado para facturas simples; el PDF se regenera
-  // desde el body vía /facturas-simples/preview (igual que el modal de creación).
-  const buildPdfPayload = (): CreateFacturaSimplePayload => ({
-    client_id: factura.client_id ?? undefined,
-    client_name: factura.client_id ? undefined : factura.client_name,
-    date: factura.date ? factura.date.slice(0, 10) : undefined,
-    NCF: factura.NCF || undefined,
-    items: lines.map((l) => ({
-      description: l.desc,
-      quantity: l.qty,
-      amount: l.unit,
-      itbis_amount: l.itbis || undefined,
-    })),
-  });
-
   const viewPdf = async () => {
     setPdfBusy("view");
     try {
-      const res = await facturasSimplesApi.preview(buildPdfPayload());
-      const base64 = pickPdfBase64(res.data);
+      const response = await facturasSimplesApi.pdf(factura.id);
+      const base64 = pickPdfBase64(response);
       if (base64) openPdfFromBase64(base64);
     } finally {
       setPdfBusy(null);
@@ -111,8 +96,8 @@ export default function FacturaSimpleDetail() {
   const downloadPdf = async () => {
     setPdfBusy("download");
     try {
-      const res = await facturasSimplesApi.preview(buildPdfPayload());
-      const base64 = pickPdfBase64(res.data);
+      const response = await facturasSimplesApi.pdf(factura.id);
+      const base64 = pickPdfBase64(response);
       if (base64) downloadPdfFromBase64(base64, `factura-${ncfCode}`);
     } finally {
       setPdfBusy(null);
