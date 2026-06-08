@@ -14,11 +14,13 @@ export interface LoginResponseData {
   user: AuthUser;
 }
 
+const TENANT_ID = Number(import.meta.env.VITE_TENANT_ID);
+
 export const authApi = {
   login: (emailOrUsername: string, password: string) =>
     apiClient.post<LoginResponseData>(
       "/auth/login",
-      { emailOrUsername, password },
+      { emailOrUsername, password, tenant_id: TENANT_ID },
       { skipAuth: true },
     ),
 
