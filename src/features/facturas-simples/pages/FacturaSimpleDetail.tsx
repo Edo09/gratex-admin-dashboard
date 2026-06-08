@@ -7,6 +7,7 @@ import { ModalPortal } from "@/shared/components/press/ModalPortal";
 import { ComprobanteBadge } from "@/shared/components/ui/ComprobanteBadge";
 import { fmt } from "@/shared/utils/press-fmt";
 import { formatDisplayDate } from "@/shared/utils/format";
+import { downloadPdfFromBase64, openPdfFromBase64, pickPdfBase64 } from "@/shared/lib/pdf";
 import {
   parseFacturaAmount,
   getFacturaNcf,
@@ -15,9 +16,10 @@ import {
   getItemPrice,
   getItemQty,
 } from "@/features/facturas/utils";
+import { facturasSimplesApi } from "../api/facturasSimples";
 import { useFacturaSimpleByIdQuery } from "../hooks/useFacturasSimplesQuery";
 import { useDeleteFacturaSimple } from "../hooks/useDeleteFacturaSimple";
-import type { FacturaSimpleLine } from "../types";
+import type { CreateFacturaSimplePayload, FacturaSimpleLine } from "../types";
 
 function toNumber(v: unknown): number {
   if (v == null) return 0;
@@ -33,6 +35,7 @@ export default function FacturaSimpleDetail() {
   const deleteFactura = useDeleteFacturaSimple();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const [pdfBusy, setPdfBusy] = useState<"view" | "download" | null>(null);
 
   if (isLoading) {
     return (
@@ -79,6 +82,43 @@ export default function FacturaSimpleDetail() {
   const docHeading = companyName ?? clientName;
   const dateLabel = formatDisplayDate(factura.date);
 
+  // No hay endpoint de PDF guardado para facturas simples; el PDF se regenera
+  // desde el body vía /facturas-simples/preview (igual que el modal de creación).
+  const buildPdfPayload = (): CreateFacturaSimplePayload => ({
+    client_id: factura.client_id ?? undefined,
+    client_name: factura.client_id ? undefined : factura.client_name,
+    date: factura.date ? factura.date.slice(0, 10) : undefined,
+    NCF: factura.NCF || undefined,
+    items: lines.map((l) => ({
+      description: l.desc,
+      quantity: l.qty,
+      amount: l.unit,
+      itbis_amount: l.itbis || undefined,
+    })),
+  });
+
+  const viewPdf = async () => {
+    setPdfBusy("view");
+    try {
+      const res = await facturasSimplesApi.preview(buildPdfPayload());
+      const base64 = pickPdfBase64(res.data);
+      if (base64) openPdfFromBase64(base64);
+    } finally {
+      setPdfBusy(null);
+    }
+  };
+
+  const downloadPdf = async () => {
+    setPdfBusy("download");
+    try {
+      const res = await facturasSimplesApi.preview(buildPdfPayload());
+      const base64 = pickPdfBase64(res.data);
+      if (base64) downloadPdfFromBase64(base64, `factura-${ncfCode}`);
+    } finally {
+      setPdfBusy(null);
+    }
+  };
+
   const handleDelete = async () => {
     setDeleteError("");
     try {
@@ -116,6 +156,12 @@ export default function FacturaSimpleDetail() {
           </div>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button className="btn" onClick={viewPdf} disabled={pdfBusy !== null}>
+            <Icons.external size={13} /> {pdfBusy === "view" ? "Generando…" : "Ver"}
+          </button>
+          <button className="btn" onClick={downloadPdf} disabled={pdfBusy !== null}>
+            <Icons.download size={13} /> {pdfBusy === "download" ? "Generando…" : "Descargar"}
+          </button>
           <button
             className="btn"
             style={{ background: "var(--bad)", borderColor: "var(--bad)" }}
