@@ -13,6 +13,7 @@ import {
 } from "@/features/facturas/utils";
 import { StatusBadge } from "@/features/facturas/components/StatusBadge";
 import { ComprobanteBadge } from "@/shared/components/ui/ComprobanteBadge";
+import { useEcfRecibidosQuery } from "@/features/aprobar-ecf/hooks/useEcfRecibidosQuery";
 import { MonthlyChart } from "../components/MonthlyChart";
 import { DashboardDateLine } from "../components/DashboardHeader";
 import {
@@ -33,6 +34,10 @@ export default function Home() {
   const { data: recentCotizaciones = [] } = useRecentCotizacionesQuery(5);
   // e-CF + NCF merged, newest first, rejected e-CF already excluded.
   const recentFacturas = useRecentFacturasMerged(5);
+  // e-CF recibidos sin decisión comercial (aprobacion_comercial == null) = pendientes.
+  const { data: recibidosData } = useEcfRecibidosQuery({ page: 1, pageSize: 50 });
+  const pendientes = (recibidosData?.items ?? []).filter((e) => e.aprobacion_comercial == null);
+  const pendientesTop = pendientes.slice(0, 5);
 
   return (
     <div className="content">
@@ -74,6 +79,78 @@ export default function Home() {
         <VentasMesTile total={kpis.ventasMes} mom={kpis.ventasMomDelta} />
         <VentasAnoTile total={kpis.ventasTotal} year={year} />
       </div>
+
+      {pendientes.length > 0 && (
+        <div className="panel" style={{ marginBottom: 14 }}>
+          <div className="panel-head">
+            <div>
+              <h2 className="panel-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                e-CF por aprobar
+                <span
+                  className="mono"
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    background: "var(--c-amber, #f59e0b)",
+                    color: "#fff",
+                    padding: "1px 8px",
+                    borderRadius: 999,
+                  }}
+                >
+                  {pendientes.length}
+                </span>
+              </h2>
+              <div className="panel-sub">Recibidos pendientes de aprobación comercial ante la DGII</div>
+            </div>
+            <button className="btn-ghost" onClick={() => navigate("/aprobar-ecf")}>
+              Ver todos <Icons.chevronRight size={13} />
+            </button>
+          </div>
+          <table className="ds-table">
+            <thead>
+              <tr>
+                <th>NCF</th>
+                <th>Emisor</th>
+                <th style={{ textAlign: "right" }}>Total</th>
+                <th style={{ width: 110 }} />
+              </tr>
+            </thead>
+            <tbody>
+              {pendientesTop.map((e) => (
+                <tr key={e.track_id} onClick={() => navigate("/aprobar-ecf")}>
+                  <td>
+                    <span className="quote-code">{e.e_ncf}</span>
+                    <div className="mono" style={{ fontSize: 10, color: "var(--muted)", marginTop: 4 }}>
+                      {formatDisplayDate(e.fecha_emision)}
+                    </div>
+                  </td>
+                  <td>
+                    <div style={{ fontWeight: 600 }}>{e.razon_social_emisor || "—"}</div>
+                    <div className="mono" style={{ fontSize: 11, color: "var(--muted)" }}>
+                      RNC {e.rnc_emisor}
+                    </div>
+                  </td>
+                  <td className="mono" style={{ textAlign: "right", fontWeight: 600, fontSize: 14 }}>
+                    {fmt.money(Number(e.monto_total) || 0)}
+                  </td>
+                  <td style={{ textAlign: "right" }}>
+                    <button
+                      className="btn btn-accent"
+                      onClick={(ev) => {
+                        ev.stopPropagation();
+                        navigate("/aprobar-ecf");
+                      }}
+                      style={{ fontSize: 11, padding: "4px 10px" }}
+                    >
+                      Revisar
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       <div className="panel" style={{ marginBottom: 14 }}>
         <div className="panel-head">
