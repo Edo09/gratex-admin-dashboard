@@ -2,6 +2,27 @@ import { INDICADOR_FACTURACION_RATES } from "./constants";
 import type { IndicadorFacturacion } from "./constants";
 import type { Factura, FacturaItem, ItemDraft, FacturaTotales } from "./types";
 
+/* DGII e-CF item field limits. The DGII counts characters (not bytes), so
+ * validate with `String.length`. Tildes / ñ count as 1. */
+export const MAX_NOMBRE_ITEM = 80;        // NombreItem  → AlfNum80Type
+export const MAX_DESCRIPCION_ITEM = 1000; // DescripcionItem → AlfNum1000Type
+
+/**
+ * Split free-form item text into a short name (≤80) and a long description.
+ * Used when importing items from a cotización, where the source text mixes the
+ * product name with its detail. If the text fits in the name field it's kept
+ * whole; otherwise it's cut at the last word boundary within 80 chars and the
+ * full text is preserved in `descripcion` (avoids a mid-word cut on the name).
+ */
+export function splitItemText(text: string): { nombre_item: string; descripcion: string } {
+  const t = (text ?? "").trim();
+  if (t.length <= MAX_NOMBRE_ITEM) return { nombre_item: t, descripcion: "" };
+  const slice = t.slice(0, MAX_NOMBRE_ITEM);
+  const lastSpace = slice.lastIndexOf(" ");
+  const nombre = (lastSpace > 40 ? slice.slice(0, lastSpace) : slice).trim();
+  return { nombre_item: nombre, descripcion: t.slice(0, MAX_DESCRIPCION_ITEM) };
+}
+
 export function parseFacturaAmount(item: Factura): number {
   const raw = (item.amount ?? item.total) ?? 0;
   const val = typeof raw === "string" ? parseFloat(raw) : raw;
@@ -154,6 +175,7 @@ export function calculateItbisFromResponse(items: FacturaItem[]): ItbisBreakdown
   const drafts: ItemDraft[] = items.map((it, i) => ({
     id: i,
     nombre_item: getItemName(it),
+    descripcion: "",
     precio_unitario: getItemPrice(it),
     cantidad: getItemQty(it),
     indicador_facturacion: getItemIndicador(it),

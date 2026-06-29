@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from "react";
 import { Icons } from "@/shared/components/press/PressIcons";
 import { ModalPortal } from "@/shared/components/press/ModalPortal";
 import { extractErrorMessage } from "@/shared/api/errors";
@@ -44,7 +44,14 @@ import type {
   CreateFacturaPayload,
   FacturaItemPayload,
 } from "../types";
-import { toEcfDate, calculateItbisBreakdown, buildTotales } from "../utils";
+import {
+  toEcfDate,
+  calculateItbisBreakdown,
+  buildTotales,
+  splitItemText,
+  MAX_NOMBRE_ITEM,
+  MAX_DESCRIPCION_ITEM,
+} from "../utils";
 import { useCreateFactura } from "../hooks/useCreateFactura";
 import { useFacturaPdf } from "../hooks/useFacturaPdf";
 import { EcfTypeSelector } from "./EcfTypeSelector";
@@ -60,6 +67,7 @@ type Step = "flow" | "ecf-type" | "form";
 
 interface ItemFormState {
   nombre_item: string;
+  descripcion: string;
   precio_unitario: string;
   cantidad: string;
   indicador_facturacion: IndicadorFacturacion;
@@ -68,6 +76,7 @@ interface ItemFormState {
 
 const EMPTY_ITEM_FORM: ItemFormState = {
   nombre_item: "",
+  descripcion: "",
   precio_unitario: "",
   cantidad: "1",
   indicador_facturacion: 1,
@@ -231,14 +240,24 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
 
   const addItem = () => {
     const nombre = itemForm.nombre_item.trim();
+    const descripcion = itemForm.descripcion.trim();
     const precio = parseFloat(itemForm.precio_unitario);
     const cantidad = parseFloat(itemForm.cantidad);
     if (!nombre || isNaN(precio) || isNaN(cantidad) || precio <= 0 || cantidad <= 0) return;
+    if (nombre.length > MAX_NOMBRE_ITEM) {
+      showError(`El nombre del ítem no puede superar ${MAX_NOMBRE_ITEM} caracteres. Mueve el detalle a "Descripción".`);
+      return;
+    }
+    if (descripcion.length > MAX_DESCRIPCION_ITEM) {
+      showError(`La descripción del ítem no puede superar ${MAX_DESCRIPCION_ITEM} caracteres.`);
+      return;
+    }
     setItems((prev) => [
       ...prev,
       {
         id: Date.now(),
         nombre_item: nombre,
+        descripcion,
         precio_unitario: precio,
         cantidad,
         indicador_facturacion: itemForm.indicador_facturacion,
@@ -283,7 +302,7 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
       setItems(
         cotItems.map((it, idx) => ({
           id: Date.now() + idx,
-          nombre_item: it.description,
+          ...splitItemText(it.description),
           precio_unitario: typeof it.amount === "string" ? parseFloat(it.amount) : Number(it.amount),
           cantidad: Number(it.quantity ?? 1),
           indicador_facturacion: allowedIndicadores[0] ?? 1,
@@ -295,7 +314,7 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
       const t = typeof full.total === "string" ? parseFloat(full.total) : Number(full.total ?? 0);
       setItems([{
         id: Date.now(),
-        nombre_item: full.description,
+        ...splitItemText(full.description),
         precio_unitario: isNaN(t) ? 0 : t,
         cantidad: 1,
         indicador_facturacion: allowedIndicadores[0] ?? 1,
@@ -344,6 +363,7 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
           unidad_medida: it.unidad_medida,
           precio_unitario: it.precio_unitario,
         };
+        if (it.descripcion) item.descripcion = it.descripcion;
         if (needsRetencion) {
           item.indicador_agente_retencion_percepcion = "1";
           if (it.monto_itbis_retenido != null) item.monto_itbis_retenido = it.monto_itbis_retenido;
@@ -410,6 +430,7 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
           numero_linea: idx + 1,
           indicador_facturacion: it.indicador_facturacion,
           nombre_item: it.nombre_item,
+          ...(it.descripcion ? { descripcion: it.descripcion } : {}),
           indicador_bien_servicio: it.indicador_bien_servicio,
           cantidad: it.cantidad,
           unidad_medida: it.unidad_medida,
@@ -1147,6 +1168,18 @@ function ItemsSection({
   allowedIndicadores,
   forcedBienServicio,
 }: ItemsSectionProps) {
+  const nombreLen = itemForm.nombre_item.length;
+  const descLen = itemForm.descripcion.length;
+  const nombreOver = nombreLen > MAX_NOMBRE_ITEM;
+  const descOver = descLen > MAX_DESCRIPCION_ITEM;
+  const canAdd = !nombreOver && !descOver;
+  const counterStyle = (over: boolean): CSSProperties => ({
+    fontSize: 10,
+    marginTop: 3,
+    textAlign: "right",
+    color: over ? "var(--bad)" : "var(--muted)",
+    fontWeight: over ? 600 : 400,
+  });
   return (
     <>
       <div
@@ -1173,13 +1206,26 @@ function ItemsSection({
 
         <div className="item-add-form">
           <div className="field item-desc" style={{ margin: 0 }}>
-            <label>Descripción</label>
-            <textarea
-              rows={2}
+            <label>Nombre del ítem</label>
+            <input
+              type="text"
               value={itemForm.nombre_item}
               onChange={(e) => onItemFormChange({ ...itemForm, nombre_item: e.target.value })}
-              placeholder="Descripción del item…"
+              placeholder="Ej: Sticker Vinyl 2x2 - HACE Santiago"
+              style={nombreOver ? { borderColor: "var(--bad)" } : undefined}
             />
+            <div style={counterStyle(nombreOver)}>{nombreLen}/{MAX_NOMBRE_ITEM}</div>
+          </div>
+          <div className="field item-desc" style={{ margin: 0 }}>
+            <label>Descripción (detalle) <span style={{ color: "var(--muted)", fontWeight: 400 }}>· opcional</span></label>
+            <textarea
+              rows={2}
+              value={itemForm.descripcion}
+              onChange={(e) => onItemFormChange({ ...itemForm, descripcion: e.target.value })}
+              placeholder="Material, impresión, medidas, sucursal…"
+              style={descOver ? { borderColor: "var(--bad)" } : undefined}
+            />
+            <div style={counterStyle(descOver)}>{descLen}/{MAX_DESCRIPCION_ITEM}</div>
           </div>
           <div className="field" style={{ margin: 0 }}>
             <label>Precio ($)</label>
@@ -1262,11 +1308,14 @@ function ItemsSection({
             type="button"
             className="btn btn-accent item-add-btn"
             onClick={onAddItem}
+            disabled={!canAdd}
+            title={canAdd ? undefined : "Corrige la longitud de los campos antes de agregar"}
             style={{
               height: 36,
               minWidth: 120,
               alignSelf: "end",
               justifyContent: "center",
+              ...(canAdd ? {} : { opacity: 0.5, cursor: "not-allowed" }),
             }}
           >
             <Icons.plus size={13} sw={2} /> Agregar
@@ -1285,7 +1334,7 @@ function ItemsSection({
               <thead>
                 <tr>
                   <th style={{ width: 36, paddingLeft: 16 }}>#</th>
-                  <th>Descripción</th>
+                  <th>Ítem</th>
                   <th style={{ width: 90 }}>ITBIS</th>
                   <th style={{ width: 70 }}>Tipo</th>
                   <th style={{ width: 130, textAlign: "right" }}>Cant × Precio</th>
@@ -1299,6 +1348,11 @@ function ItemsSection({
                     <td className="mono" style={{ paddingLeft: 16 }}>{idx + 1}</td>
                     <td>
                       <div style={{ whiteSpace: "pre-line", maxWidth: 280 }}>{it.nombre_item}</div>
+                      {it.descripcion && (
+                        <div style={{ whiteSpace: "pre-line", maxWidth: 280, fontSize: 11, color: "var(--muted)", marginTop: 2 }}>
+                          {it.descripcion}
+                        </div>
+                      )}
                     </td>
                     <td className="mono" style={{ fontSize: 10 }}>
                       {INDICADOR_FACTURACION_LABELS[it.indicador_facturacion]}

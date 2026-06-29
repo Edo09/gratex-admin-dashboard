@@ -97,6 +97,8 @@ export interface FacturaFormState {
 export interface ItemDraft {
   id: number;
   nombre_item: string;
+  /** Detalle largo del ítem (material, medidas, sucursal…). Máx. 1000 chars. */
+  descripcion: string;
   precio_unitario: number;
   cantidad: number;
   indicador_facturacion: IndicadorFacturacion;
@@ -109,6 +111,7 @@ export interface ItemDraft {
 
 export interface ItemFormState {
   nombre_item: string;
+  descripcion: string;
   precio_unitario: string;
   cantidad: string;
   indicador_facturacion: IndicadorFacturacion;
@@ -162,6 +165,8 @@ export interface FacturaItemPayload {
   numero_linea: number;
   indicador_facturacion: IndicadorFacturacion;
   nombre_item: string;
+  /** Detalle del ítem → DescripcionItem (AlfNum1000Type). Omitido si vacío. */
+  descripcion?: string;
   indicador_bien_servicio: IndicadorBienServicio;
   cantidad: number;
   unidad_medida: string;
