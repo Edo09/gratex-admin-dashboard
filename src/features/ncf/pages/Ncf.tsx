@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { PageMeta } from "@/shared/components/layout/PageMeta";
 import { PageMarks } from "@/shared/components/press/PageMarks";
 import { fmt } from "@/shared/utils/press-fmt";
@@ -12,7 +13,7 @@ import {
   getFacturaClientName,
 } from "@/features/facturas/utils";
 import { StatusBadge } from "@/features/facturas/components/StatusBadge";
-import { ECF_TYPES, type TipoEcf } from "@/features/facturas/constants";
+import { ECF_TYPES, isFacturaRejected, type TipoEcf } from "@/features/facturas/constants";
 import type { StatsSecuencia, StatsByTipo } from "@/features/facturas/api/facturas";
 
 export default function Ncf() {
@@ -20,11 +21,28 @@ export default function Ncf() {
   const { data: facturasData } = useFacturasQuery({ pageSize: 5 });
   const recentFacturas = facturasData?.items ?? [];
 
-  const resumen = stats?.resumen;
   const secuencias = stats?.secuencias ?? [];
   const porTipo = stats?.por_tipo ?? [];
   const porEstado = stats?.por_estado ?? [];
   const porMes = stats?.por_mes ?? [];
+
+  // KPI totals exclude rejected e-CF (RECHAZADO / RFCE_RECHAZADO). The backend
+  // `resumen` counts them, so recompute from the per-estado breakdown, which
+  // partitions every e-CF and carries its own count + monto.
+  const kpis = useMemo(() => {
+    const r = stats?.resumen;
+    if (!r) return null;
+    const estados = stats.por_estado ?? [];
+    const tipos = stats.por_tipo ?? [];
+    if (estados.length === 0) return r;
+    const live = estados.filter((e) => !isFacturaRejected(e.estado));
+    const total_ecf = live.reduce((s, e) => s + (e.total ?? 0), 0);
+    const monto_total = live.reduce((s, e) => s + (e.monto_total ?? 0), 0);
+    const tipos_distintos = tipos.length
+      ? tipos.filter((t) => t.total - (t.rechazados ?? 0) > 0).length
+      : r.tipos_distintos;
+    return { ...r, total_ecf, monto_total, tipos_distintos };
+  }, [stats]);
 
   return (
     <div className="content">
@@ -45,7 +63,7 @@ export default function Ncf() {
         </div>
       )}
 
-      {!statsLoading && resumen && (
+      {!statsLoading && kpis && (
         <div
           style={{
             display: "grid",
@@ -54,20 +72,20 @@ export default function Ncf() {
             marginBottom: 20,
           }}
         >
-          <KpiCard label="Total e-CF" value={fmt.num(resumen.total_ecf)} accent="var(--c-cyan)" />
+          <KpiCard label="Total e-CF" value={fmt.num(kpis.total_ecf)} accent="var(--c-cyan)" />
           <KpiCard
             label="Monto total"
-            value={fmt.money(resumen.monto_total)}
+            value={fmt.money(kpis.monto_total)}
             accent="var(--c-green, #22c55e)"
           />
           <KpiCard
             label="Tipos distintos"
-            value={String(resumen.tipos_distintos)}
+            value={String(kpis.tipos_distintos)}
             accent="var(--c-amber, #f59e0b)"
           />
           <KpiCard
             label="Último emitido"
-            value={resumen.ultimo_ecf ? formatDisplayDate(resumen.ultimo_ecf) : "—"}
+            value={kpis.ultimo_ecf ? formatDisplayDate(kpis.ultimo_ecf) : "—"}
             accent="var(--ink)"
             mono
           />
