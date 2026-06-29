@@ -1211,7 +1211,7 @@ function ItemsSection({
               type="text"
               value={itemForm.nombre_item}
               onChange={(e) => onItemFormChange({ ...itemForm, nombre_item: e.target.value })}
-              placeholder="Ej: Sticker Vinyl 2x2 - HACE Santiago"
+              placeholder="Ej: Sticker Vinyl 2x2"
               style={nombreOver ? { borderColor: "var(--bad)" } : undefined}
             />
             <div style={counterStyle(nombreOver)}>{nombreLen}/{MAX_NOMBRE_ITEM}</div>
