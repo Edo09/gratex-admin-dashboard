@@ -20,11 +20,28 @@ export default function Ncf() {
   const { data: stats, isLoading: statsLoading } = useFacturasStatsQuery();
   const { data: facturasData } = useFacturasQuery({ pageSize: 5 });
   const recentFacturas = facturasData?.items ?? [];
+  // Full list — used to recompute per-type monto excluding rejected (the
+  // aggregated `por_tipo.monto_total` from the backend includes rejected and
+  // has no per-estado split, so we sum the invoices ourselves).
+  const { data: allFacturasData } = useFacturasQuery({ pageSize: 1000 });
 
   const secuencias = stats?.secuencias ?? [];
   const porTipo = stats?.por_tipo ?? [];
   const porEstado = stats?.por_estado ?? [];
   const porMes = stats?.por_mes ?? [];
+
+  // monto por tipo de e-CF, excluyendo rechazados. Mismo criterio de monto que
+  // el resto de la página (`parseFacturaAmount`), por lo que cuadra con los
+  // demás totales ya ajustados.
+  const montoByTipo = useMemo(() => {
+    const facturas = allFacturasData?.items ?? [];
+    const map = new Map<string, number>();
+    for (const f of facturas) {
+      if (isFacturaRejected(f.estado_dgii) || !f.tipo_ecf) continue;
+      map.set(f.tipo_ecf, (map.get(f.tipo_ecf) ?? 0) + parseFacturaAmount(f));
+    }
+    return { map, ready: facturas.length > 0 };
+  }, [allFacturasData]);
 
   // KPI totals exclude rejected e-CF (RECHAZADO / RFCE_RECHAZADO). The backend
   // `resumen` counts them, so recompute from the per-estado breakdown, which
@@ -140,7 +157,11 @@ export default function Ncf() {
             </thead>
             <tbody>
               {porTipo.map((t) => (
-                <PorTipoRow key={t.tipo_ecf} item={t} />
+                <PorTipoRow
+                  key={t.tipo_ecf}
+                  item={t}
+                  monto={montoByTipo.ready ? (montoByTipo.map.get(t.tipo_ecf) ?? 0) : t.monto_total}
+                />
               ))}
             </tbody>
           </table>
@@ -236,6 +257,7 @@ export default function Ncf() {
               <th style={{ paddingLeft: 20 }}>e-NCF</th>
               <th>Cliente</th>
               <th>Fecha</th>
+              <th>Estado</th>
               <th style={{ textAlign: "right", paddingRight: 20 }}>Total</th>
             </tr>
           </thead>
@@ -249,6 +271,11 @@ export default function Ncf() {
                 <td className="mono" style={{ fontSize: 11 }}>
                   {formatDisplayDate(f.date)}
                 </td>
+                <td>
+                  {f.estado_dgii
+                    ? <StatusBadge estado={f.estado_dgii} />
+                    : <span style={{ color: "var(--muted)", fontSize: 11 }}>—</span>}
+                </td>
                 <td
                   className="mono"
                   style={{ textAlign: "right", paddingRight: 20, fontWeight: 600, fontSize: 13 }}
@@ -259,7 +286,7 @@ export default function Ncf() {
             ))}
             {recentFacturas.length === 0 && (
               <tr>
-                <td colSpan={4} style={{ textAlign: "center", color: "var(--muted)", padding: 24 }}>
+                <td colSpan={5} style={{ textAlign: "center", color: "var(--muted)", padding: 24 }}>
                   Sin emisiones recientes
                 </td>
               </tr>
@@ -382,7 +409,7 @@ function SequenceCard({ seq }: { seq: StatsSecuencia }) {
   );
 }
 
-function PorTipoRow({ item }: { item: StatsByTipo }) {
+function PorTipoRow({ item, monto }: { item: StatsByTipo; monto: number }) {
   const ecfInfo = ECF_TYPES[item.tipo_ecf as TipoEcf];
   return (
     <tr>
@@ -423,7 +450,7 @@ function PorTipoRow({ item }: { item: StatsByTipo }) {
         className="mono"
         style={{ textAlign: "right", paddingRight: 20, fontWeight: 600, fontSize: 13 }}
       >
-        {fmt.money(item.monto_total)}
+        {fmt.money(monto)}
       </td>
     </tr>
   );
