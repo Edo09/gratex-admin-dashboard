@@ -14,6 +14,7 @@ export type EstadoDgii =
   | "ACEPTADO"
   | "ACEPTADO_CONDICIONAL"
   | "RECHAZADO"
+  | "RECHAZADO_ARCHIVADO"
   | "NO_ENCONTRADO"
   | "RFCE_ACEPTADO"
   | "RFCE_RECHAZADO"
@@ -70,7 +71,7 @@ export const CODIGO_MODIFICACION_LABELS: Record<CodigoModificacion, string> = {
   "4": "Otros",
 };
 
-export const REJECTED_ESTADOS = new Set<EstadoDgii>(["RECHAZADO", "RFCE_RECHAZADO"]);
+export const REJECTED_ESTADOS = new Set<EstadoDgii>(["RECHAZADO", "RECHAZADO_ARCHIVADO", "RFCE_RECHAZADO"]);
 
 export function isFacturaRejected(estado: string | null | undefined): boolean {
   return REJECTED_ESTADOS.has(String(estado ?? "") as EstadoDgii);
@@ -82,6 +83,7 @@ export const ESTADO_DGII_COLORS: Record<EstadoDgii, string> = {
   ACEPTADO: "var(--c-green, #22c55e)",
   ACEPTADO_CONDICIONAL: "var(--c-amber, #f59e0b)",
   RECHAZADO: "var(--bad, #ef4444)",
+  RECHAZADO_ARCHIVADO: "var(--bad, #ef4444)",
   NO_ENCONTRADO: "var(--muted, #6b7280)",
   RFCE_ACEPTADO: "var(--c-green, #22c55e)",
   RFCE_RECHAZADO: "var(--bad, #ef4444)",
