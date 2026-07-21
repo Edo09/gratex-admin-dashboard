@@ -7,12 +7,15 @@ interface UseFacturasQueryParams {
   query?: string;
   page?: number;
   pageSize?: number;
+  /** Filtro por tipo e-CF, ej. "E34". Vacío = todos. */
+  tipoEcf?: string;
 }
 
-export function useFacturasQuery({ query = "", page, pageSize }: UseFacturasQueryParams = {}) {
+export function useFacturasQuery({ query = "", page, pageSize, tipoEcf = "" }: UseFacturasQueryParams = {}) {
   return useQuery({
-    queryKey: ["facturas", query, page, pageSize],
-    queryFn: async () => unwrapList<Factura>(await facturasApi.list({ query, page, pageSize })),
+    queryKey: ["facturas", query, page, pageSize, tipoEcf],
+    queryFn: async () =>
+      unwrapList<Factura>(await facturasApi.list({ query, page, pageSize, tipo_ecf: tipoEcf || undefined })),
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000,

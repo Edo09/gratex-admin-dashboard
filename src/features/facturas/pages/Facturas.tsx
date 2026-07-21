@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageMeta } from "@/shared/components/layout/PageMeta";
 import { PageMarks } from "@/shared/components/press/PageMarks";
@@ -9,7 +9,7 @@ import { fmt } from "@/shared/utils/press-fmt";
 import { formatDisplayDate } from "@/shared/utils/format";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import { useStoredState } from "@/shared/hooks/useStoredState";
-import { type TipoEcf, isFacturaRejected } from "../constants";
+import { ECF_TYPES, INGRESO_TIPOS, type TipoEcf, isFacturaRejected } from "../constants";
 import {
   parseFacturaAmount,
   getFacturaNcf,
@@ -25,10 +25,24 @@ type ViewMode = "cards" | "table";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
+function tipoChipStyle(active: boolean): CSSProperties {
+  return {
+    fontSize: 11,
+    fontWeight: 600,
+    padding: "4px 10px",
+    borderRadius: 999,
+    border: `1.5px solid ${active ? "var(--c-accent)" : "var(--line)"}`,
+    background: active ? "var(--c-accent-bg, var(--bg))" : "var(--surface)",
+    color: active ? "var(--c-accent)" : "var(--ink-2)",
+    cursor: "pointer",
+  };
+}
+
 export default function Facturas() {
   const navigate = useNavigate();
   const [view, setView] = useStoredState<ViewMode>("facturas:view", "cards");
   const [showRejected, setShowRejected] = useStoredState<boolean>("facturas:showRejected", false);
+  const [tipoFilter, setTipoFilter] = useStoredState<string>("facturas:tipoEcf", "");
   const [createOpen, setCreateOpen] = useState(false);
   const [toast, setToast] = useState("");
   const [query, setQuery] = useState("");
@@ -36,7 +50,7 @@ export default function Facturas() {
   const [pageSize, setPageSize] = useState(10);
 
   const debouncedQuery = useDebounce(query, 400);
-  const { data, isFetching } = useFacturasQuery({ query: debouncedQuery, page, pageSize });
+  const { data, isFetching } = useFacturasQuery({ query: debouncedQuery, page, pageSize, tipoEcf: tipoFilter });
   const rawList = data?.items ?? [];
   const list = showRejected
     ? rawList
@@ -126,6 +140,28 @@ export default function Facturas() {
           <button className={view === "cards" ? "active" : ""} onClick={() => setView("cards")}>Cards</button>
           <button className={view === "table" ? "active" : ""} onClick={() => setView("table")}>Tabla</button>
         </div>
+      </div>
+
+      {/* Filtro por tipo e-CF (E31 facturas, E33/E34 notas, etc.) */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
+        <button
+          className="mono"
+          onClick={() => { setTipoFilter(""); setPage(1); }}
+          style={tipoChipStyle(tipoFilter === "")}
+        >
+          Todas
+        </button>
+        {INGRESO_TIPOS.map((code) => (
+          <button
+            key={code}
+            className="mono"
+            onClick={() => { setTipoFilter(`E${code}`); setPage(1); }}
+            style={tipoChipStyle(tipoFilter === `E${code}`)}
+            title={ECF_TYPES[code].name}
+          >
+            E{code} · {ECF_TYPES[code].short}
+          </button>
+        ))}
       </div>
 
       {view === "cards" ? (
@@ -270,9 +306,14 @@ function FacturaCard({ factura, onOpen }: { factura: Factura; onOpen: () => void
           <span className="quote-code">{ncf}</span>
           <div
             className="mono"
-            style={{ fontSize: 9, color: "var(--muted)", marginTop: 2 }}
+            style={{
+              fontSize: 9,
+              marginTop: 2,
+              color: tipoEcf === "33" || tipoEcf === "34" ? "var(--c-accent)" : "var(--muted)",
+              fontWeight: tipoEcf === "33" || tipoEcf === "34" ? 700 : 400,
+            }}
           >
-            {isEcf ? "e-NCF" : "NCF"}
+            {tipoEcf ? `E${tipoEcf} · ${ECF_TYPES[tipoEcf].short}` : isEcf ? "e-NCF" : "NCF"}
           </div>
           <div className="quote-date">{formatDisplayDate(factura.date)}</div>
         </div>

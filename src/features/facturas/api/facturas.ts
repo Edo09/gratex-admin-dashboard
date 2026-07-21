@@ -95,7 +95,7 @@ function apiKeyHeaders(): RequestOptions {
 }
 
 export const facturasApi = {
-  list: (params?: PageQuery) =>
+  list: (params?: PageQuery & { tipo_ecf?: string }) =>
     apiClient.get<Factura[]>(
       `/facturas${buildQueryString({ ...params })}`,
       apiKeyHeaders(),

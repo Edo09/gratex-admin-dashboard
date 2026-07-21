@@ -412,6 +412,10 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
     if (needsReferencia) {
       payload.informacion_referencia = {
         ...referencia,
+        // DGII rechaza NCF con espacios (p. ej. " E31…") — sanear siempre.
+        ncf_modificado: referencia.ncf_modificado.replace(/\s+/g, ""),
+        rnc_otro_contribuyente: referencia.rnc_otro_contribuyente?.trim() || null,
+        razon_modificacion: referencia.razon_modificacion.trim(),
         fecha_ncf_modificado: toEcfDate(referencia.fecha_ncf_modificado),
       };
       if (tipoEcf === "34") {
@@ -455,7 +459,7 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
           unidad_medida: it.unidad_medida,
           precio_unitario: it.precio_unitario,
         })),
-        ncf,
+        ncf: ncf.replace(/\s+/g, ""),
         date,
         tipo_ecf: tipoEcf,
       });
@@ -1023,7 +1027,7 @@ function ReferenciaFields({
           <label>NCF modificado *</label>
           <input
             value={referencia.ncf_modificado}
-            onChange={(e) => onChange({ ...referencia, ncf_modificado: e.target.value })}
+            onChange={(e) => onChange({ ...referencia, ncf_modificado: e.target.value.replace(/\s+/g, "") })}
             placeholder="E310000000321"
           />
         </div>
@@ -1102,7 +1106,7 @@ function FormFields({
           <label>NCF</label>
           <input
             value={ncf}
-            onChange={(e) => onNcfChange(e.target.value)}
+            onChange={(e) => onNcfChange(e.target.value.replace(/\s+/g, ""))}
             placeholder="E31…"
             style={sequenceMissing ? { borderColor: "var(--bad, #ef4444)" } : undefined}
           />

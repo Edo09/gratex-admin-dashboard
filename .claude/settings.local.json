@@ -10,7 +10,9 @@
       "PowerShell(npx tsc -b --pretty false 2>&1)",
       "Bash(npm run *)",
       "Bash(php -l src/Models/facturaModel.php)",
-      "PowerShell(npx tsc --noEmit -p tsconfig.json 2>&1)"
+      "PowerShell(npx tsc --noEmit -p tsconfig.json 2>&1)",
+      "PowerShell(php -l C:\\\\Users\\\\edgarcia\\\\Documents\\\\grat\\\\api-gratex\\\\src\\\\Controllers\\\\facturaController.php)",
+      "PowerShell(php -l C:\\\\Users\\\\edgarcia\\\\Documents\\\\grat\\\\api-gratex\\\\src\\\\Utils\\\\FacturacionElectronica\\\\ECFXmlBuilder.php)"
     ]
   }
 }
