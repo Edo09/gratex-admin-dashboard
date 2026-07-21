@@ -139,7 +139,7 @@ export interface Comprador {
 
 export interface InformacionReferencia {
   ncf_modificado: string;
-  rnc_otro_contribuyente: null;
+  rnc_otro_contribuyente: string | null;
   fecha_ncf_modificado: string;
   codigo_modificacion: CodigoModificacion;
   razon_modificacion: string;
