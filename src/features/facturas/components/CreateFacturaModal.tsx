@@ -163,6 +163,17 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
     [stats, tipoEcf],
   );
 
+  // Etiqueta legible del documento según el tipo — para título, botón y sección.
+  const docNoun =
+    tipoEcf === "33" ? "nota de débito"
+    : tipoEcf === "34" ? "nota de crédito"
+    : tipoEcf === "31" || tipoEcf === "32" ? "factura"
+    : "comprobante";
+  const docNounCap = docNoun.charAt(0).toUpperCase() + docNoun.slice(1);
+  const docIsFem = docNoun === "factura" || docNoun.startsWith("nota");
+  const docEmitVerb = docIsFem ? "emitida" : "emitido";
+  const docItemsLabel = `Ítems ${docIsFem ? "de la" : "del"} ${docNoun}`;
+
   // Recompute next e-NCF whenever tipo changes (or stats first load).
   // Siempre reasignar — incluso "" — para no arrastrar el NCF de un tipo previo
   // (p. ej. mostrar E31… tras seleccionar E34 sin secuencia disponible).
@@ -462,7 +473,7 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
     setBusy("save");
     try {
       const response = await createMutation.mutateAsync(buildPayload());
-      onCreated?.("Factura emitida");
+      onCreated?.(`${docNounCap} ${docEmitVerb}`);
       const id = response?.id;
       reset();
       onClose();
@@ -492,7 +503,7 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
           <div className="modal-pad">
             <div className="modal-head">
               <div>
-                <h2 className="modal-title">Nueva factura</h2>
+                <h2 className="modal-title">Nueva {docNoun}</h2>
                 <div className="modal-sub">
                   {step === "flow" && "Elige cómo crear la factura."}
                   {step === "ecf-type" && "Selecciona el tipo de comprobante electrónico."}
@@ -581,6 +592,7 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
                   onRemoveItem={removeItem}
                   allowedIndicadores={allowedIndicadores}
                   forcedBienServicio={forcedBienServicio}
+                  itemsLabel={docItemsLabel}
                 />
               </form>
             )}
@@ -620,6 +632,7 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
                       onRemoveItem={removeItem}
                       allowedIndicadores={allowedIndicadores}
                       forcedBienServicio={forcedBienServicio}
+                      itemsLabel={docItemsLabel}
                     />
                   </form>
                 )}
@@ -755,7 +768,7 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
                 disabled={anyBusy}
                 style={errorFlash ? { borderColor: "var(--bad, #ef4444)", boxShadow: "0 0 0 2px rgba(239,68,68,0.25)" } : undefined}
               >
-                {busy === "save" ? "Emitiendo…" : "Emitir factura"}
+                {busy === "save" ? "Emitiendo…" : `Emitir ${docNoun}`}
               </button>
             </div>
           )}
@@ -1179,6 +1192,7 @@ interface ItemsSectionProps {
   onRemoveItem: (id: number) => void;
   allowedIndicadores: IndicadorFacturacion[];
   forcedBienServicio: IndicadorBienServicio | null;
+  itemsLabel: string;
 }
 
 function ItemsSection({
@@ -1189,6 +1203,7 @@ function ItemsSection({
   onRemoveItem,
   allowedIndicadores,
   forcedBienServicio,
+  itemsLabel,
 }: ItemsSectionProps) {
   const nombreLen = itemForm.nombre_item.length;
   const descLen = itemForm.descripcion.length;
@@ -1223,7 +1238,7 @@ function ItemsSection({
             marginBottom: 10,
           }}
         >
-          Items de la factura
+          {itemsLabel}
         </div>
 
         <div className="item-add-form">
