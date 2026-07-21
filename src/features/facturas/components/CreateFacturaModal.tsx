@@ -157,10 +157,17 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
   const allowedIndicadores = ecfAllowedIndicadores(tipoEcf);
   const forcedBienServicio = ecfForcedBienServicio(tipoEcf);
 
+  // ¿Existe secuencia e-NCF autorizada (en DGII) para el tipo seleccionado?
+  const hasEcfSequence = useMemo(
+    () => !!stats?.secuencias?.some((s) => s.type === `E${tipoEcf}`),
+    [stats, tipoEcf],
+  );
+
   // Recompute next e-NCF whenever tipo changes (or stats first load).
+  // Siempre reasignar — incluso "" — para no arrastrar el NCF de un tipo previo
+  // (p. ej. mostrar E31… tras seleccionar E34 sin secuencia disponible).
   useEffect(() => {
-    const next = computeNextEncf(tipoEcf);
-    if (next) setNcf(next);
+    setNcf(computeNextEncf(tipoEcf));
   }, [tipoEcf, computeNextEncf]);
 
   const reset = () => {
@@ -409,6 +416,7 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
   };
 
   const requireValid = (): string | null => {
+    if (!ncf.trim()) return `No hay secuencia e-NCF disponible para E${tipoEcf} (${ECF_TYPES[tipoEcf].short}). Configura el rango en DGII antes de emitir.`;
     if (requiresCliente && !selectedCliente?.id) return "Selecciona un cliente";
     if (items.length === 0) return "Agrega al menos un item";
     if (needsComprador && !comprador.rnc?.trim()) return "RNC del comprador es requerido para E31";
@@ -560,6 +568,7 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
                   ncf={ncf} onNcfChange={setNcf}
                   tipoPago={tipoPago} onTipoPagoChange={setTipoPago}
                   breakdown={breakdown}
+                  sequenceMissing={!hasEcfSequence}
                 />
                 {needsReferencia && (
                   <ReferenciaFields referencia={referencia} onChange={setReferencia} />
@@ -598,6 +607,7 @@ export function CreateFacturaModal({ open, onClose, onCreated }: CreateFacturaMo
                       ncf={ncf} onNcfChange={setNcf}
                       tipoPago={tipoPago} onTipoPagoChange={setTipoPago}
                       breakdown={breakdown}
+                      sequenceMissing={!hasEcfSequence}
                     />
                     {needsReferencia && (
                       <ReferenciaFields referencia={referencia} onChange={setReferencia} />
@@ -1063,19 +1073,31 @@ function FormFields({
   tipoPago,
   onTipoPagoChange,
   breakdown,
+  sequenceMissing = false,
 }: {
   ncf: string;
   onNcfChange: (v: string) => void;
   tipoPago: TipoPago;
   onTipoPagoChange: (v: TipoPago) => void;
   breakdown: ItbisBreakdown;
+  sequenceMissing?: boolean;
 }) {
   return (
     <>
       <div className="date-ncf-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
         <div className="field" style={{ margin: 0 }}>
           <label>NCF</label>
-          <input value={ncf} onChange={(e) => onNcfChange(e.target.value)} placeholder="E31…" />
+          <input
+            value={ncf}
+            onChange={(e) => onNcfChange(e.target.value)}
+            placeholder="E31…"
+            style={sequenceMissing ? { borderColor: "var(--bad, #ef4444)" } : undefined}
+          />
+          {sequenceMissing && (
+            <div style={{ marginTop: 4, fontSize: 11, color: "var(--bad, #ef4444)" }}>
+              No hay secuencia e-NCF disponible para este tipo. Configura el rango en DGII antes de emitir.
+            </div>
+          )}
         </div>
         <div className="field" style={{ margin: 0 }}>
           <label>Tipo de pago</label>
